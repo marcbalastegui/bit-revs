@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BitRevs - Álbumes</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <div class="logo">BitRevs</div>
+        <nav>
+            <a href="#">Películas</a>
+            <a href="#">Series</a>
+            <a href="#" class="active">Álbumes</a>
+        </nav>
+        <button id="btn-add-album">+ Añadir Álbum</button>
+    </header>
+
+    <main>
+        <h1>Todos los Álbumes</h1>
+
+        <div class="controls-bar">
+            <input type="text" id="filter-input" placeholder="Filtrar por artista o año (Ej: Kanye West, 2011)...">
+            <select id="sort-select">
+                <option value="default">Orden por defecto</option>
+                <option value="rating-desc">Nota (Mayor a Menor)</option>
+                <option value="rating-asc">Nota (Menor a Mayor)</option>
+                <option value="year-desc">Año (Más reciente)</option>
+                <option value="year-asc">Año (Más antiguo)</option>
+                <option value="title-asc">Título (A-Z)</option>
+                <option value="artist-asc">Artista (A-Z)</option>
+            </select>
+        </div>
+
+        <div class="album-grid" id="album-grid">
+            </div>
+    </main>
+
+    <div id="modal-add" class="modal hidden">
+        <div class="modal-content">
+            <h2>Nueva Reseña de Álbum</h2>
+            <form id="album-form">
+                <label for="cover">Portada del Álbum:</label>
+                <input type="file" id="cover" accept="image/*" required>
+
+                <label for="title">Título:</label>
+                <input type="text" id="title" required placeholder="Ej: Abbey Road">
+
+                <label for="artist">Artista:</label>
+                <input type="text" id="artist" required placeholder="Ej: The Beatles">
+
+                <label for="year">Año:</label>
+                <input type="number" id="year" required placeholder="Ej: 1969">
+
+                <label for="album-type">Tipo de lanzamiento:</label>
+                <select id="album-type">
+                    <option value="">Estándar (Sin etiqueta)</option>
+                    <option value="Deluxe">Deluxe</option>
+                    <option value="EP">EP</option>
+                    <option value="Single">Single</option>
+                </select>
+
+                <label for="rating">Puntuación (0-10):</label>
+                <input type="text" id="rating" required placeholder="Ej: 9.5 o 9,5">
+
+                <div class="modal-actions">
+                    <button type="button" id="btn-cancel">Cancelar</button>
+                    <button type="submit">Guardar Reseña</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
