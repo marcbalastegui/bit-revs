@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>BitRevs - Mi Perfil</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <div class="logo">BitRevs</div>
+        <nav>
+            <a href="index.html">Álbumes</a>
+            <a href="profile.html" class="active">Mi Perfil</a>
+        </nav>
+    </header>
+
+    <main>
+        <div class="profile-header">
+            <div class="profile-avatar">U</div>
+            <div>
+                <h1>Mi Perfil</h1>
+                <p id="profile-stats" style="color: var(--text-muted);">Calculando estadísticas...</p>
+            </div>
+        </div>
+
+        <h2 class="section-title">Mis Mejores Valoraciones</h2>
+        <div class="album-grid" id="top-albums-grid">
+            </div>
+    </main>
+
+    <script src="db.js"></script>
+    <script src="profile.js"></script>
+</body>
+</html>

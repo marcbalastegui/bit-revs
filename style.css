@@ -272,3 +272,91 @@ main h1 {
     color: var(--text-main);
     font-family: 'Inter', sans-serif;
 }
+/* --- ESTILOS DE LA PÁGINA DEL ÁLBUM --- */
+.album-header-banner {
+    display: flex;
+    gap: 40px;
+    align-items: flex-end;
+    padding-bottom: 30px;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 30px;
+}
+
+.detail-cover {
+    width: 250px;
+    height: 250px;
+    object-fit: cover;
+    border-radius: 8px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+}
+
+.detail-info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.detail-type {
+    font-size: 1rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 5px;
+}
+
+.detail-title {
+    font-size: 3.5rem;
+    font-weight: 900;
+    line-height: 1.1;
+    margin-bottom: 5px;
+    letter-spacing: -1px;
+}
+
+.detail-artist {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-bottom: 20px;
+}
+
+.rating-big {
+    font-size: 2rem;
+    font-weight: 900;
+    padding: 10px 20px;
+    border-radius: 10px;
+    color: white;
+    text-shadow: 1px 1px 3px rgba(0,0,0,0.3);
+}
+
+.tracklist-section h2 {
+    font-size: 1.8rem;
+    border-bottom: 2px solid var(--text-main);
+    padding-bottom: 10px;
+    display: inline-block;
+}
+
+/* --- ESTILOS DE LA PÁGINA DE PERFIL --- */
+.profile-header {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 50px;
+}
+
+.profile-avatar {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background-color: var(--accent-red);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 3rem;
+    color: white;
+    font-weight: bold;
+}
+
+.section-title {
+    font-size: 1.8rem;
+    margin-bottom: 25px;
+}
