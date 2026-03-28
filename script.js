@@ -1,26 +1,22 @@
-// script.js - Lógica principal de la aplicación (Grid de Álbumes)
+// script.js - Lógica principal de la aplicación con DETECTOR DE ERRORES
 
-// Referencias seguras al DOM
 const btnAddAlbum = document.getElementById('btn-add-album');
 const modalAdd = document.getElementById('modal-add');
 const btnCancel = document.getElementById('btn-cancel');
 const albumForm = document.getElementById('album-form');
 
-// Función para borrar un álbum desde la página principal
 window.deleteAlbum = async function(event, id) {
-    event.stopPropagation(); // Evita entrar al álbum al hacer clic en la X
-    if (confirm("¿Estás seguro de que quieres borrar este álbum? Esta acción no se puede deshacer.")) {
+    event.stopPropagation();
+    if (confirm("¿Estás seguro de que quieres borrar este álbum?")) {
         try {
             await deleteAlbumFromDB(id);
-            processAndRenderAlbums(); // Recarga la cuadrícula
+            processAndRenderAlbums();
         } catch (error) {
-            console.error("Error al borrar el álbum:", error);
-            alert("No se pudo borrar el álbum.");
+            alert("Error al borrar: " + (error.message || error.name));
         }
     }
 };
 
-// Eventos del Modal
 if (btnAddAlbum && modalAdd) {
     btnAddAlbum.addEventListener('click', () => modalAdd.classList.remove('hidden'));
 }
@@ -31,7 +27,6 @@ if (btnCancel && modalAdd) {
     });
 }
 
-// Procesar el formulario de nuevo álbum
 if (albumForm) {
     albumForm.addEventListener('submit', function(e) {
         e.preventDefault();
@@ -64,20 +59,34 @@ if (albumForm) {
                     type: type,
                     rating: parseFloat(rating).toFixed(1),
                     coverBase64: event.target.result,
-                    tracks: [] // Preparado para las canciones
+                    tracks: []
                 };
 
+                // --- DETECTOR 1: Guardar en Base de Datos ---
                 try {
                     await saveAlbumToDB(newAlbum);
+                } catch (error) {
+                    alert("🚨 ERROR FASE 1 (Base de datos):\n" + (error.message || error.name || error));
+                    return; // Detenemos el proceso si falla aquí
+                }
+
+                // --- DETECTOR 2: Cerrar Formulario ---
+                try {
                     albumForm.reset();
                     modalAdd.classList.add('hidden');
+                } catch (error) {
+                    alert("🚨 ERROR FASE 2 (Interfaz):\n" + (error.message || error.name || error));
+                    return;
+                }
 
-                    // Forzar la recarga inmediata de la cuadrícula
+                // --- DETECTOR 3: Recargar la cuadrícula ---
+                try {
                     await processAndRenderAlbums();
                 } catch (error) {
-                    console.error("Error al guardar:", error);
-                    alert("Hubo un error al guardar la reseña.");
+                    alert("🚨 ERROR FASE 3 (Dibujar álbumes):\n" + (error.message || error.name || error));
+                    return;
                 }
+
             };
             reader.readAsDataURL(file);
         } else {
@@ -86,23 +95,19 @@ if (albumForm) {
     });
 }
 
-// Función BLINDADA para Filtrar, Ordenar y Dibujar
 async function processAndRenderAlbums() {
     try {
         const grid = document.getElementById('album-grid');
-        if (!grid) return; // Si no estamos en index.html, no hace nada
+        if (!grid) return;
 
-        // 1. Cargar datos
         let currentAlbums = await getAllAlbumsFromDB();
 
-        // Seguro por si la base de datos devuelve algo que no es una lista
         if (!currentAlbums || !Array.isArray(currentAlbums)) {
             currentAlbums = [];
         }
 
         let filteredAlbums = [...currentAlbums];
 
-        // 2. Filtrado por texto
         const filterInput = document.getElementById('filter-input');
         if (filterInput && filterInput.value) {
             const query = filterInput.value.toLowerCase().trim();
@@ -115,7 +120,6 @@ async function processAndRenderAlbums() {
             }
         }
 
-        // 3. Ordenamiento
         const sortSelect = document.getElementById('sort-select');
         if (sortSelect && sortSelect.value && sortSelect.value !== 'default') {
             const sortMethod = sortSelect.value;
@@ -130,15 +134,14 @@ async function processAndRenderAlbums() {
             });
         }
 
-        // 4. Dibujar en el HTML
         renderAlbums(filteredAlbums, grid);
 
     } catch (error) {
         console.error("Error crítico al procesar álbumes:", error);
+        throw error; // Lanzamos el error para que el Detector 3 lo capture
     }
 }
 
-// Función inyectora de HTML
 function renderAlbums(albumsToRender, gridElement) {
     gridElement.innerHTML = '';
 
@@ -151,12 +154,10 @@ function renderAlbums(albumsToRender, gridElement) {
         const card = document.createElement('div');
         card.classList.add('album-card');
 
-        // Navegar al álbum individual
         card.onclick = () => {
             window.location.href = `album.html?id=${album.id}`;
         };
 
-        // Color dinámico de la base de datos
         const badgeColor = typeof getColorByRating === 'function' ? getColorByRating(album.rating) : '#b3b3b3';
         const tagHtml = (album.type && album.type !== "") ? `<div class="album-tag">${album.type}</div>` : '';
 
@@ -178,12 +179,10 @@ function renderAlbums(albumsToRender, gridElement) {
     });
 }
 
-// Activar filtros en vivo (asegurando que existen primero)
 const globalFilterInput = document.getElementById('filter-input');
 const globalSortSelect = document.getElementById('sort-select');
 
 if (globalFilterInput) globalFilterInput.addEventListener('input', processAndRenderAlbums);
 if (globalSortSelect) globalSortSelect.addEventListener('change', processAndRenderAlbums);
 
-// Iniciar la carga de álbumes al abrir la página
 processAndRenderAlbums();
