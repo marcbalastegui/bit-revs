@@ -2,6 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BitRevs - Mi Perfil</title>
     <link rel="stylesheet" href="style.css">
 </head>
@@ -10,22 +11,60 @@
         <div class="logo">BitRevs</div>
         <nav>
             <a href="index.html">Álbumes</a>
-            <a href="profile.html" class="active">Mi Perfil</a>
+            <a href="#" class="active">Mi Perfil</a>
         </nav>
+        <button id="btn-edit-profile" class="edit-btn">Editar Perfil</button>
     </header>
 
     <main>
-        <div class="profile-header">
-            <div class="profile-avatar">U</div>
-            <div>
-                <h1>Mi Perfil</h1>
-                <p id="profile-stats" style="color: var(--text-muted);">Calculando estadísticas...</p>
+        <div class="profile-layout">
+
+            <div class="profile-banner-container" id="profile-banner-view">
+                <div class="banner-overlay hidden" id="banner-edit-overlay">
+                    <span>Cambiar Banner</span>
+                </div>
+            </div>
+
+            <div class="profile-header-content">
+                <div class="avatar-container" id="profile-avatar-view">
+                    <div class="profile-avatar" id="avatar-circle">
+                        <span id="avatar-fallback-char">U</span>
+                    </div>
+                    <div class="avatar-overlay hidden" id="avatar-edit-overlay">
+                        <span>EDITAR</span>
+                    </div>
+                </div>
+
+                <div class="profile-info-block">
+                    <div class="editable-name-container">
+                        <h1 id="profile-name-view">Mi Perfil</h1>
+                        <input type="text" id="profile-name-edit" class="hidden" placeholder="Ej: Tu Nombre">
+                    </div>
+                </div>
             </div>
         </div>
+
+        <input type="file" id="input-avatar" accept="image/*" class="hidden">
+        <input type="file" id="input-banner" accept="image/*" class="hidden">
+
+        <div id="edit-actions" class="edit-actions-bar hidden">
+            <button id="btn-cancel-edit">Cancelar</button>
+            <button id="btn-save-edit" class="save-btn">Guardar Cambios</button>
+        </div>
+
 
         <h2 class="section-title">Mis Mejores Valoraciones</h2>
         <div class="album-grid" id="top-albums-grid">
             </div>
+
+        <hr style="margin: 40px 0; border: none; border-top: 1px solid #e0e0e0;">
+
+        <h2 class="section-title">
+            Valoraciones recientes (<span id="total-reviews-count">0</span>)
+        </h2>
+        <div class="album-grid" id="recent-albums-grid">
+            </div>
+
     </main>
 
     <script src="db.js"></script>

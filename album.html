@@ -16,7 +16,38 @@
 
     <main id="album-detail-container">
         </main>
+<div id="modal-track" class="modal hidden">
+        <div class="modal-content">
+            <h2>Añadir Canción</h2>
+            <form id="track-form">
+                <label for="track-title">Título de la Canción:</label>
+                <input type="text" id="track-title" required placeholder="Ej: Runaway">
 
+                <label for="track-artist">Artistas invitados (opcional):</label>
+                <input type="text" id="track-artist" placeholder="Ej: Pusha T">
+
+                <div style="margin-top: 15px; display: flex; align-items: center; gap: 10px;">
+                    <input type="checkbox" id="track-interlude" style="width: auto;">
+                    <label for="track-interlude" style="margin: 0; display: inline;">Es un Interlude (Sin nota)</label>
+                </div>
+
+                <div id="rating-container">
+                    <label for="track-rating">Puntuación (0-10):</label>
+                    <input type="text" id="track-rating" placeholder="Ej: 10">
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" id="btn-cancel-track">Cancelar</button>
+                    <button type="submit">Guardar Canción</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="db.js"></script>
+    <script src="album.js"></script>
+</body>
+</html>
     <script src="db.js"></script>
     <script src="album.js"></script>
 </body>

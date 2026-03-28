@@ -35,7 +35,50 @@ async function processAndRenderAlbums() {
             return 0;
         });
     }
+// Añade esta función global arriba del todo en script.js o antes de renderAlbumsToGrid
+window.deleteAlbum = async function(event, id) {
+    event.stopPropagation(); // Evita que al hacer clic en borrar, entres al álbum
+    if (confirm("¿Estás seguro de que quieres borrar este álbum? Esta acción no se puede deshacer.")) {
+        await deleteAlbumFromDB(id);
+        processAndRenderAlbums(); // Recarga la pantalla
+    }
+};
 
+// Sustituye tu renderAlbumsToGrid por este:
+function renderAlbumsToGrid(albumsToRender) {
+    albumGrid.innerHTML = '';
+    if (albumsToRender.length === 0) {
+        albumGrid.innerHTML = '<p style="color: var(--text-muted); margin-top: 20px;">No se encontraron álbumes.</p>';
+        return;
+    }
+
+    albumsToRender.forEach(album => {
+        const card = document.createElement('div');
+        card.classList.add('album-card');
+
+        card.onclick = () => {
+            window.location.href = `album.html?id=${album.id}`;
+        };
+
+        const badgeColor = getColorByRating(album.rating);
+        const tagHtml = (album.type && album.type !== "") ? `<div class="album-tag">${album.type}</div>` : '';
+
+        // Se ha añadido el div de delete-btn
+        card.innerHTML = `
+            <div class="delete-btn" onclick="deleteAlbum(event, ${album.id})" title="Borrar Álbum">✖</div>
+            <div class="cover-container"><img src="${album.coverBase64}" alt="${album.title}"></div>
+            <div class="album-info">
+                <div class="title-row">
+                    <h3>${album.title}</h3>
+                    <span class="rating-badge" style="background-color: ${badgeColor};">${album.rating}</span>
+                </div>
+                <p>${album.artist} • ${album.year}</p>
+                ${tagHtml}
+            </div>
+        `;
+        albumGrid.appendChild(card);
+    });
+}
     renderAlbumsToGrid(filteredAlbums);
 }
 

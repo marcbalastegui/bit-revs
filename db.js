@@ -1,68 +1,99 @@
-// db.js - Gestión de Base de Datos y Utilidades
+// db.js - Gestión centralizada de IndexedDB para BitRevs
 
-const DB_NAME = 'BitRevsAlbumDB';
+const DB_NAME = 'BitRevsDB';
 const DB_VERSION = 1;
-const STORE_NAME = 'albums';
+const STORE_ALBUMS = 'albums';
+const STORE_PROFILE = 'userProfile';
 
+// 1. Iniciar/Actualizar la Base de Datos
 function openDB() {
     return new Promise((resolve, reject) => {
         const request = indexedDB.open(DB_NAME, DB_VERSION);
+
         request.onupgradeneeded = (event) => {
             const db = event.target.result;
-            if (!db.objectStoreNames.contains(STORE_NAME)) {
-                db.createObjectStore(STORE_NAME, { keyPath: 'id' });
+            // Almacén para álbumes (clave única: id)
+            if (!db.objectStoreNames.contains(STORE_ALBUMS)) {
+                db.createObjectStore(STORE_ALBUMS, { keyPath: 'id' });
+            }
+            // Almacén para datos del perfil (una sola entrada con clave 'config')
+            if (!db.objectStoreNames.contains(STORE_PROFILE)) {
+                db.createObjectStore(STORE_PROFILE, { keyPath: 'key' });
             }
         };
+
         request.onsuccess = (event) => resolve(event.target.result);
-        request.onerror = (event) => reject(event.target.error);
+        request.onerror = (event) => {
+            console.error("Error al abrir IndexedDB:", event.target.error);
+            alert("No se pudo iniciar la base de datos local.");
+            reject(event.target.error);
+        };
     });
 }
 
-function getAllAlbumsFromDB() {
-    return new Promise(async (resolve, reject) => {
-        const db = await openDB();
-        const transaction = db.transaction(STORE_NAME, 'readonly');
-        const store = transaction.objectStore(STORE_NAME);
+// 2. Funciones para ÁLBUMES
+
+async function saveAlbumToDB(newAlbum) {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction(STORE_ALBUMS, 'readwrite');
+        const store = transaction.objectStore(STORE_ALBUMS);
+        const request = store.put(newAlbum); // 'put' actualiza si existe el ID
+
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = (e) => reject(e.target.error);
+    });
+}
+
+async function getAllAlbumsFromDB() {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction(STORE_ALBUMS, 'readonly');
+        const store = transaction.objectStore(STORE_ALBUMS);
         const request = store.getAll();
+
         request.onsuccess = () => resolve(request.result);
-        request.onerror = () => reject(request.error);
+        request.onerror = (e) => reject(e.target.error);
     });
 }
 
-function saveAlbumToDB(newAlbum) {
-    return new Promise(async (resolve, reject) => {
-        const db = await openDB();
-        const transaction = db.transaction(STORE_NAME, 'readwrite');
-        const store = transaction.objectStore(STORE_NAME);
-        const request = store.add(newAlbum);
+// 3. Funciones para PERFIL DE USUARIO
+
+// Recuperar datos (o devolver por defecto si no hay nada guardado)
+async function getUserProfileFromDB() {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction(STORE_PROFILE, 'readonly');
+        const store = transaction.objectStore(STORE_PROFILE);
+        const request = store.get('config');
+
+        request.onsuccess = () => {
+            const data = request.result;
+            if (data) {
+                resolve(data);
+            } else {
+                // Datos por defecto iniciales
+                resolve({
+                    key: 'config',
+                    userName: 'Usuario BitRevs',
+                    avatarData: null, // Guardaremos DataURL de la imagen
+                    bannerData: null  // Guardaremos DataURL de la imagen
+                });
+            }
+        };
+        request.onerror = (e) => reject(e.target.error);
+    });
+}
+
+// Guardar datos actualizados
+async function saveUserProfileToDB(profileData) {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction(STORE_PROFILE, 'readwrite');
+        const store = transaction.objectStore(STORE_PROFILE);
+        const request = store.put(profileData);
+
         request.onsuccess = () => resolve(true);
-        request.onerror = () => reject(request.error);
+        request.onerror = (e) => reject(e.target.error);
     });
-}
-
-// NUEVA FUNCIÓN: Buscar un álbum por su ID
-function getAlbumByIdFromDB(id) {
-    return new Promise(async (resolve, reject) => {
-        const db = await openDB();
-        const transaction = db.transaction(STORE_NAME, 'readonly');
-        const store = transaction.objectStore(STORE_NAME);
-        const request = store.get(Number(id)); // Convertimos a número por seguridad
-        request.onsuccess = () => resolve(request.result);
-        request.onerror = () => reject(request.error);
-    });
-}
-
-// Los colores ahora viven aquí para que todas las páginas los usen
-function getColorByRating(rating) {
-    const r = parseFloat(rating);
-    if (isNaN(r)) return '#4D4D4D';
-    if (r === 10) return '#FF66CC';
-    if (r >= 9) return '#B533FF';
-    if (r >= 8) return '#3366FF';
-    if (r >= 7) return '#66CC33';
-    if (r >= 6) return '#FFD11A';
-    if (r >= 5) return '#FF8533';
-    if (r >= 4) return '#FF3333';
-    if (r >= 2) return '#996600';
-    return '#4D4D4D';
 }
