@@ -658,3 +658,29 @@ main h1 { margin-bottom: 30px; font-weight: 800; font-size: 2.2rem; }
 
 /* Helpers */
 .hidden { display: none !important; }
+/* --- BOTONES DE EDICIÓN Y PORTADAS VERTICALES --- */
+.card-actions {
+    position: absolute; top: 10px; right: 10px;
+    display: flex; gap: 8px; z-index: 10;
+    opacity: 0; transition: opacity 0.3s;
+}
+.album-card:hover .card-actions { opacity: 1; }
+
+.action-btn {
+    width: 32px; height: 32px; border-radius: 50%;
+    display: flex; justify-content: center; align-items: center;
+    color: white; cursor: pointer; font-weight: bold; font-size: 1.1rem;
+    border: none; transition: transform 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+}
+.btn-delete { background-color: rgba(211, 47, 47, 0.95); }
+.btn-edit { background-color: rgba(0, 120, 215, 0.95); }
+.action-btn:hover { transform: scale(1.1); }
+
+/* Portada vertical para Películas y Series */
+.cover-container.vertical { aspect-ratio: 2 / 3; }
+
+/* Botones para editar/borrar canciones en album.html */
+.track-actions { display: flex; gap: 15px; margin-left: auto; padding-right: 15px; }
+.track-btn { background: none; border: none; font-size: 1.2rem; cursor: pointer; color: var(--text-muted); transition: color 0.2s; }
+.track-btn.edit:hover { color: rgba(0, 120, 215, 1); }
+.track-btn.delete:hover { color: rgba(211, 47, 47, 1); }

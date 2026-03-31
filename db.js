@@ -1,105 +1,87 @@
-// db.js - Gestión centralizada de IndexedDB y utilidades para BitRevs
+// db.js - Gestión de Base de Datos para Álbumes, Películas, Series y Perfil
 
 const DB_NAME = 'BitRevsDB';
-// AQUÍ ESTÁ LA MAGIA: Subimos a la versión 2 para forzar al navegador a actualizar
-const DB_VERSION = 2;
+const DB_VERSION = 3; // VERSIÓN 3: Añadidas películas y series
 const STORE_ALBUMS = 'albums';
+const STORE_MOVIES = 'movies';
+const STORE_SERIES = 'series';
 const STORE_PROFILE = 'userProfile';
 
-// 1. Iniciar/Actualizar la Base de Datos
 function openDB() {
     return new Promise((resolve, reject) => {
         const request = indexedDB.open(DB_NAME, DB_VERSION);
 
-        // Esto se ejecutará ahora obligatoriamente al cambiar a versión 2
         request.onupgradeneeded = (event) => {
             const db = event.target.result;
-            if (!db.objectStoreNames.contains(STORE_ALBUMS)) {
-                db.createObjectStore(STORE_ALBUMS, { keyPath: 'id' });
-            }
-            if (!db.objectStoreNames.contains(STORE_PROFILE)) {
-                db.createObjectStore(STORE_PROFILE, { keyPath: 'key' });
-            }
+            if (!db.objectStoreNames.contains(STORE_ALBUMS)) db.createObjectStore(STORE_ALBUMS, { keyPath: 'id' });
+            if (!db.objectStoreNames.contains(STORE_MOVIES)) db.createObjectStore(STORE_MOVIES, { keyPath: 'id' });
+            if (!db.objectStoreNames.contains(STORE_SERIES)) db.createObjectStore(STORE_SERIES, { keyPath: 'id' });
+            if (!db.objectStoreNames.contains(STORE_PROFILE)) db.createObjectStore(STORE_PROFILE, { keyPath: 'key' });
         };
 
         request.onsuccess = (event) => resolve(event.target.result);
-
-        request.onerror = (event) => {
-            console.error("Error crítico al abrir IndexedDB:", event.target.error);
-            reject(event.target.error);
-        };
+        request.onerror = (event) => reject(event.target.error);
     });
 }
 
-// 2. Funciones para ÁLBUMES
-async function saveAlbumToDB(newAlbum) {
+// --- FUNCIONES GENÉRICAS PARA CUALQUIER CATEGORÍA (Álbumes, Pelis, Series) ---
+async function saveItemToDB(storeName, item) {
     const db = await openDB();
     return new Promise((resolve, reject) => {
-        const transaction = db.transaction(STORE_ALBUMS, 'readwrite');
-        const store = transaction.objectStore(STORE_ALBUMS);
-        const request = store.put(newAlbum);
-
+        const transaction = db.transaction(storeName, 'readwrite');
+        const store = transaction.objectStore(storeName);
+        const request = store.put(item);
         request.onsuccess = () => resolve(request.result);
         request.onerror = (e) => reject(e.target.error);
     });
 }
 
-async function getAllAlbumsFromDB() {
+async function getAllItemsFromDB(storeName) {
     const db = await openDB();
     return new Promise((resolve, reject) => {
-        const transaction = db.transaction(STORE_ALBUMS, 'readonly');
-        const store = transaction.objectStore(STORE_ALBUMS);
+        const transaction = db.transaction(storeName, 'readonly');
+        const store = transaction.objectStore(storeName);
         const request = store.getAll();
-
         request.onsuccess = () => resolve(request.result);
         request.onerror = (e) => reject(e.target.error);
     });
 }
 
-async function getAlbumByIdFromDB(id) {
+async function getItemByIdFromDB(storeName, id) {
     const db = await openDB();
     return new Promise((resolve, reject) => {
-        const transaction = db.transaction(STORE_ALBUMS, 'readonly');
-        const store = transaction.objectStore(STORE_ALBUMS);
+        const transaction = db.transaction(storeName, 'readonly');
+        const store = transaction.objectStore(storeName);
         const request = store.get(Number(id));
-
         request.onsuccess = () => resolve(request.result);
         request.onerror = (e) => reject(e.target.error);
     });
 }
 
-async function deleteAlbumFromDB(id) {
+async function deleteItemFromDB(storeName, id) {
     const db = await openDB();
     return new Promise((resolve, reject) => {
-        const transaction = db.transaction(STORE_ALBUMS, 'readwrite');
-        const store = transaction.objectStore(STORE_ALBUMS);
+        const transaction = db.transaction(storeName, 'readwrite');
+        const store = transaction.objectStore(storeName);
         const request = store.delete(Number(id));
-
         request.onsuccess = () => resolve(true);
         request.onerror = (e) => reject(e.target.error);
     });
 }
 
-// 3. Funciones para PERFIL DE USUARIO
+// --- FUNCIONES ANTIGUAS (Mantenidas por compatibilidad) ---
+const saveAlbumToDB = (album) => saveItemToDB(STORE_ALBUMS, album);
+const getAllAlbumsFromDB = () => getAllItemsFromDB(STORE_ALBUMS);
+const getAlbumByIdFromDB = (id) => getItemByIdFromDB(STORE_ALBUMS, id);
+const deleteAlbumFromDB = (id) => deleteItemFromDB(STORE_ALBUMS, id);
+
+// --- PERFIL DE USUARIO ---
 async function getUserProfileFromDB() {
     const db = await openDB();
     return new Promise((resolve, reject) => {
         const transaction = db.transaction(STORE_PROFILE, 'readonly');
-        const store = transaction.objectStore(STORE_PROFILE);
-        const request = store.get('config');
-
-        request.onsuccess = () => {
-            const data = request.result;
-            if (data) resolve(data);
-            else {
-                resolve({
-                    key: 'config',
-                    userName: 'Usuario BitRevs',
-                    avatarData: null,
-                    bannerData: null
-                });
-            }
-        };
+        const request = transaction.objectStore(STORE_PROFILE).get('config');
+        request.onsuccess = () => resolve(request.result || { key: 'config', userName: 'Usuario BitRevs', avatarData: null, bannerData: null });
         request.onerror = (e) => reject(e.target.error);
     });
 }
@@ -108,15 +90,13 @@ async function saveUserProfileToDB(profileData) {
     const db = await openDB();
     return new Promise((resolve, reject) => {
         const transaction = db.transaction(STORE_PROFILE, 'readwrite');
-        const store = transaction.objectStore(STORE_PROFILE);
-        const request = store.put(profileData);
-
+        const request = transaction.objectStore(STORE_PROFILE).put(profileData);
         request.onsuccess = () => resolve(true);
         request.onerror = (e) => reject(e.target.error);
     });
 }
 
-// 4. Utilidades Globales (Colores de Notas)
+// --- COLORES ---
 function getColorByRating(rating) {
     const r = parseFloat(rating);
     if (isNaN(r)) return '#4D4D4D';

@@ -1,30 +1,43 @@
-// album.js - Gestión detallada del álbum y sus canciones
+// album.js - Gestión detallada del álbum y edición de canciones
 
-let currentAlbum = null; // Guardamos el álbum que estamos viendo
+let currentAlbum = null;
+let editingTrackIndex = null; // Saber qué canción editamos
 
 async function loadAlbumDetails() {
-    const container = document.getElementById('album-detail-container');
     const params = new URLSearchParams(window.location.search);
     const albumId = params.get('id');
-
-    if (!albumId) {
-        container.innerHTML = '<h1>Error: No se especificó ningún álbum.</h1>';
-        return;
-    }
+    if (!albumId) return;
 
     currentAlbum = await getAlbumByIdFromDB(albumId);
-
-    if (!currentAlbum) {
-        container.innerHTML = '<h1>Álbum no encontrado.</h1>';
-        return;
-    }
-
-    // Asegurarnos de que el array de canciones existe
-    if (!currentAlbum.tracks) {
-        currentAlbum.tracks = [];
-    }
+    if (!currentAlbum) return;
+    if (!currentAlbum.tracks) currentAlbum.tracks = [];
 
     renderAlbumContent();
+}
+
+// BORRAR CANCIÓN
+window.deleteTrack = async function(index) {
+    if(confirm("¿Borrar esta canción?")) {
+        currentAlbum.tracks.splice(index, 1);
+        await saveAlbumToDB(currentAlbum);
+        renderAlbumContent();
+    }
+}
+
+// EDITAR CANCIÓN
+window.editTrack = function(index) {
+    editingTrackIndex = index;
+    const track = currentAlbum.tracks[index];
+
+    document.getElementById('track-title').value = track.title;
+    document.getElementById('track-artist').value = track.artist || "";
+    document.getElementById('track-interlude').checked = track.isInterlude;
+    document.getElementById('track-rating').value = track.rating || "";
+
+    document.getElementById('rating-container').style.display = track.isInterlude ? 'none' : 'block';
+
+    document.getElementById('modal-track').classList.remove('hidden');
+    document.querySelector('#track-form h2').textContent = "Editar Canción";
 }
 
 function renderAlbumContent() {
@@ -32,28 +45,26 @@ function renderAlbumContent() {
     const badgeColor = getColorByRating(currentAlbum.rating);
     const typeText = currentAlbum.type ? currentAlbum.type : 'Álbum';
 
-    // Construimos la lista de canciones HTML
     let tracksHtml = '';
-    if (currentAlbum.tracks.length === 0) {
-        tracksHtml = '<p style="color: var(--text-muted);">Aún no hay canciones reseñadas en este álbum.</p>';
-    } else {
-        currentAlbum.tracks.forEach(track => {
-            const trackColor = track.isInterlude ? '#4D4D4D' : getColorByRating(track.rating);
-            const displayRating = track.isInterlude ? 'INTERLUDE' : track.rating;
-            // Etiqueta para interludes: un poco más pequeña y sutil
-            const badgeClass = track.isInterlude ? 'rating-badge album-tag' : 'rating-badge';
+    currentAlbum.tracks.forEach((track, index) => {
+        const trackColor = track.isInterlude ? '#4D4D4D' : getColorByRating(track.rating);
+        const displayRating = track.isInterlude ? 'INTERLUDE' : track.rating;
+        const badgeClass = track.isInterlude ? 'rating-badge album-tag' : 'rating-badge';
 
-            tracksHtml += `
-                <div class="track-item">
-                    <div class="track-info">
-                        <h4>${track.title}</h4>
-                        <p>${track.artist ? track.artist : currentAlbum.artist}</p>
-                    </div>
-                    <span class="${badgeClass}" style="background-color: ${trackColor}; font-size: ${track.isInterlude ? '0.7rem' : '1rem'}">${displayRating}</span>
+        tracksHtml += `
+            <div class="track-item">
+                <div class="track-info">
+                    <h4>${track.title}</h4>
+                    <p>${track.artist ? track.artist : currentAlbum.artist}</p>
                 </div>
-            `;
-        });
-    }
+                <div class="track-actions">
+                    <button class="track-btn edit" onclick="editTrack(${index})" title="Editar">✎</button>
+                    <button class="track-btn delete" onclick="deleteTrack(${index})" title="Borrar">✖</button>
+                </div>
+                <span class="${badgeClass}" style="background-color: ${trackColor}; font-size: ${track.isInterlude ? '0.7rem' : '1rem'}">${displayRating}</span>
+            </div>
+        `;
+    });
 
     container.innerHTML = `
         <div class="album-header-banner">
@@ -65,86 +76,58 @@ function renderAlbumContent() {
                 <div class="rating-big" style="background-color: ${badgeColor};">${currentAlbum.rating}</div>
             </div>
         </div>
-
         <div class="tracklist-section">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                 <h2>Canciones</h2>
-                <button class="btn-add-track" id="btn-add-track">+ Añadir Canción</button>
+                <button class="btn" style="background-color: var(--text-main); color: var(--bg-primary);" id="btn-add-track">+ Añadir Canción</button>
             </div>
-            <div id="tracks-list">
-                ${tracksHtml}
-            </div>
+            <div id="tracks-list">${tracksHtml}</div>
         </div>
     `;
 
-    // Reactivamos el evento del botón de añadir canción porque lo acabamos de inyectar
     document.getElementById('btn-add-track').addEventListener('click', () => {
+        editingTrackIndex = null;
+        document.querySelector('#track-form h2').textContent = "Añadir Canción";
+        document.getElementById('track-form').reset();
+        document.getElementById('rating-container').style.display = 'block';
         document.getElementById('modal-track').classList.remove('hidden');
     });
 }
 
-// LÓGICA DEL MODAL DE CANCIONES
-const modalTrack = document.getElementById('modal-track');
-const trackForm = document.getElementById('track-form');
-const checkboxInterlude = document.getElementById('track-interlude');
-const ratingContainer = document.getElementById('rating-container');
-const ratingInput = document.getElementById('track-rating');
-
-// Ocultar/Mostrar input de nota si es Interlude
-checkboxInterlude.addEventListener('change', (e) => {
-    if (e.target.checked) {
-        ratingContainer.style.display = 'none';
-        ratingInput.removeAttribute('required'); // No pedimos nota si es interlude
-    } else {
-        ratingContainer.style.display = 'block';
-        ratingInput.setAttribute('required', 'true');
-    }
+// Configurar Modal
+document.getElementById('track-interlude').addEventListener('change', (e) => {
+    document.getElementById('rating-container').style.display = e.target.checked ? 'none' : 'block';
 });
 
-// Cerrar modal
 document.getElementById('btn-cancel-track').addEventListener('click', () => {
-    modalTrack.classList.add('hidden');
-    trackForm.reset();
-    ratingContainer.style.display = 'block';
+    document.getElementById('modal-track').classList.add('hidden');
 });
 
-// Guardar Canción
-trackForm.addEventListener('submit', async function(e) {
+document.getElementById('track-form').addEventListener('submit', async function(e) {
     e.preventDefault();
-
     const title = document.getElementById('track-title').value;
     const artist = document.getElementById('track-artist').value;
-    const isInterlude = checkboxInterlude.checked;
+    const isInterlude = document.getElementById('track-interlude').checked;
 
     let rating = "";
     if (!isInterlude) {
-        rating = ratingInput.value.replace(',', '.');
-        if (isNaN(rating) || rating < 0 || rating > 10 || rating.trim() === "") {
-            alert("Introduce un número válido entre 0 y 10.");
-            return;
-        }
+        rating = document.getElementById('track-rating').value.replace(',', '.');
+        if (isNaN(rating) || rating < 0 || rating > 10) { alert("Nota 0-10"); return; }
         rating = parseFloat(rating).toFixed(1);
     }
 
-    const newTrack = {
-        title: title,
-        artist: artist,
-        isInterlude: isInterlude,
-        rating: rating
-    };
+    const newTrack = { title, artist, isInterlude, rating };
 
-    // Añadimos la canción al álbum que tenemos en memoria
-    currentAlbum.tracks.push(newTrack);
+    // Si editamos, sustituimos; si creamos, añadimos al final.
+    if (editingTrackIndex !== null) {
+        currentAlbum.tracks[editingTrackIndex] = newTrack;
+    } else {
+        currentAlbum.tracks.push(newTrack);
+    }
 
-    // Guardamos el álbum actualizado en la Base de Datos
     await saveAlbumToDB(currentAlbum);
-
-    // Limpiamos y recargamos la vista
-    trackForm.reset();
-    ratingContainer.style.display = 'block';
-    modalTrack.classList.add('hidden');
+    document.getElementById('modal-track').classList.add('hidden');
     renderAlbumContent();
 });
 
-// Iniciar
 loadAlbumDetails();

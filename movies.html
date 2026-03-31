@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>BitRevs - Películas</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body data-store="movies">
+    <header>
+        <a href="index.html" class="logo">BitRevs</a>
+        <nav>
+            <a href="movies.html" class="active">Películas</a>
+            <a href="series.html">Series</a>
+            <a href="index.html">Álbumes</a>
+            <a href="profile.html">Mi Perfil</a>
+        </nav>
+        <button id="btn-add-media" class="save-btn">+ Añadir Película</button>
+    </header>
+    <main>
+        <h1>Todas las Películas</h1>
+        <div class="album-grid" id="media-grid"></div>
+    </main>
+
+    <div id="modal-add" class="modal hidden">
+        <div class="modal-content">
+            <h2>Nueva Reseña</h2>
+            <form id="media-form">
+                <label>Póster:</label><input type="file" id="cover" accept="image/*" required>
+                <label>Título:</label><input type="text" id="title" required>
+                <label>Año:</label><input type="number" id="year" required>
+                <label>Puntuación (0-10):</label><input type="text" id="rating" required>
+                <div class="modal-actions">
+                    <button type="button" id="btn-cancel">Cancelar</button>
+                    <button type="submit" class="save-btn">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <script src="db.js"></script>
+    <script src="media.js"></script>
+</body>
+</html>
