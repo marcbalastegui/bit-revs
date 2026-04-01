@@ -36,8 +36,9 @@ window.editTrack = function(index) {
 
     document.getElementById('rating-container').style.display = track.isInterlude ? 'none' : 'block';
 
+    // CORRECCIÓN AQUÍ: Buscamos el h2 dentro del modal-content
+    document.querySelector('#modal-track .modal-content h2').textContent = "Editar Canción";
     document.getElementById('modal-track').classList.remove('hidden');
-    document.querySelector('#track-form h2').textContent = "Editar Canción";
 }
 
 function renderAlbumContent() {
@@ -87,7 +88,10 @@ function renderAlbumContent() {
 
     document.getElementById('btn-add-track').addEventListener('click', () => {
         editingTrackIndex = null;
-        document.querySelector('#track-form h2').textContent = "Añadir Canción";
+
+        // CORRECCIÓN AQUÍ: Buscamos el h2 dentro del modal-content
+        document.querySelector('#modal-track .modal-content h2').textContent = "Añadir Canción";
+
         document.getElementById('track-form').reset();
         document.getElementById('rating-container').style.display = 'block';
         document.getElementById('modal-track').classList.remove('hidden');
@@ -97,6 +101,11 @@ function renderAlbumContent() {
 // Configurar Modal
 document.getElementById('track-interlude').addEventListener('change', (e) => {
     document.getElementById('rating-container').style.display = e.target.checked ? 'none' : 'block';
+    if (e.target.checked) {
+        document.getElementById('track-rating').removeAttribute('required');
+    } else {
+        document.getElementById('track-rating').setAttribute('required', 'true');
+    }
 });
 
 document.getElementById('btn-cancel-track').addEventListener('click', () => {
@@ -112,7 +121,10 @@ document.getElementById('track-form').addEventListener('submit', async function(
     let rating = "";
     if (!isInterlude) {
         rating = document.getElementById('track-rating').value.replace(',', '.');
-        if (isNaN(rating) || rating < 0 || rating > 10) { alert("Nota 0-10"); return; }
+        if (isNaN(rating) || rating < 0 || rating > 10 || rating.trim() === "") {
+            alert("Introduce una nota válida entre 0 y 10.");
+            return;
+        }
         rating = parseFloat(rating).toFixed(1);
     }
 
