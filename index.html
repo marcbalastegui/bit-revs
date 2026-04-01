@@ -15,14 +15,14 @@
             <a href="index.html" class="active">Álbumes</a>
             <a href="profile.html">Mi Perfil</a>
         </nav>
-        <button id="btn-add-album">+ Añadir Álbum</button>
+        <button id="btn-add-album" class="save-btn">+ Añadir Álbum</button>
     </header>
 
     <main>
         <h1>Todos los Álbumes</h1>
 
         <div class="controls-bar">
-            <input type="text" id="filter-input" placeholder="Filtrar por artista o año (Ej: Kanye West, 2011)...">
+            <input type="text" id="filter-input" placeholder="Filtrar por artista o título...">
             <select id="sort-select">
                 <option value="default">Orden por defecto</option>
                 <option value="rating-desc">Nota (Mayor a Menor)</option>
@@ -46,27 +46,27 @@
                 <input type="file" id="cover" accept="image/*" required>
 
                 <label for="title">Título:</label>
-                <input type="text" id="title" required placeholder="Ej: Abbey Road">
+                <input type="text" id="title" required placeholder="Ej: Graduation">
 
                 <label for="artist">Artista:</label>
-                <input type="text" id="artist" required placeholder="Ej: The Beatles">
+                <input type="text" id="artist" required placeholder="Ej: Kanye West">
 
                 <label for="year">Año:</label>
-                <input type="number" id="year" required placeholder="Ej: 1969">
+                <input type="number" id="year" required placeholder="Ej: 2007">
 
                 <label for="album-type">Tipo de lanzamiento:</label>
                 <select id="album-type">
-                    <option value="">Estándar (Sin etiqueta)</option>
+                    <option value="">Estándar (Álbum)</option>
                     <option value="Deluxe">Deluxe</option>
                     <option value="EP">EP</option>
                     <option value="Single">Single</option>
                 </select>
 
-<input type="hidden" id="rating" value="0">
+                <input type="hidden" id="rating" value="0">
 
                 <div class="modal-actions">
                     <button type="button" id="btn-cancel">Cancelar</button>
-                    <button type="submit">Guardar Reseña</button>
+                    <button type="submit" class="save-btn">Guardar Reseña</button>
                 </div>
             </form>
         </div>

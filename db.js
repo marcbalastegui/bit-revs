@@ -1,7 +1,7 @@
 // db.js - Gestión de Base de Datos para Álbumes, Películas, Series y Perfil
 
 const DB_NAME = 'BitRevsDB';
-const DB_VERSION = 3; // VERSIÓN 3: Añadidas películas y series
+const DB_VERSION = 3;
 const STORE_ALBUMS = 'albums';
 const STORE_MOVIES = 'movies';
 const STORE_SERIES = 'series';
@@ -24,13 +24,12 @@ function openDB() {
     });
 }
 
-// --- FUNCIONES GENÉRICAS PARA CUALQUIER CATEGORÍA (Álbumes, Pelis, Series) ---
+// --- FUNCIONES GENÉRICAS ---
 async function saveItemToDB(storeName, item) {
     const db = await openDB();
     return new Promise((resolve, reject) => {
         const transaction = db.transaction(storeName, 'readwrite');
-        const store = transaction.objectStore(storeName);
-        const request = store.put(item);
+        const request = transaction.objectStore(storeName).put(item);
         request.onsuccess = () => resolve(request.result);
         request.onerror = (e) => reject(e.target.error);
     });
@@ -40,8 +39,7 @@ async function getAllItemsFromDB(storeName) {
     const db = await openDB();
     return new Promise((resolve, reject) => {
         const transaction = db.transaction(storeName, 'readonly');
-        const store = transaction.objectStore(storeName);
-        const request = store.getAll();
+        const request = transaction.objectStore(storeName).getAll();
         request.onsuccess = () => resolve(request.result);
         request.onerror = (e) => reject(e.target.error);
     });
@@ -51,8 +49,7 @@ async function getItemByIdFromDB(storeName, id) {
     const db = await openDB();
     return new Promise((resolve, reject) => {
         const transaction = db.transaction(storeName, 'readonly');
-        const store = transaction.objectStore(storeName);
-        const request = store.get(Number(id));
+        const request = transaction.objectStore(storeName).get(Number(id));
         request.onsuccess = () => resolve(request.result);
         request.onerror = (e) => reject(e.target.error);
     });
@@ -62,14 +59,13 @@ async function deleteItemFromDB(storeName, id) {
     const db = await openDB();
     return new Promise((resolve, reject) => {
         const transaction = db.transaction(storeName, 'readwrite');
-        const store = transaction.objectStore(storeName);
-        const request = store.delete(Number(id));
+        const request = transaction.objectStore(storeName).delete(Number(id));
         request.onsuccess = () => resolve(true);
         request.onerror = (e) => reject(e.target.error);
     });
 }
 
-// --- FUNCIONES ANTIGUAS (Mantenidas por compatibilidad) ---
+// --- FUNCIONES DE ÁLBUMES ---
 const saveAlbumToDB = (album) => saveItemToDB(STORE_ALBUMS, album);
 const getAllAlbumsFromDB = () => getAllItemsFromDB(STORE_ALBUMS);
 const getAlbumByIdFromDB = (id) => getItemByIdFromDB(STORE_ALBUMS, id);
@@ -96,10 +92,23 @@ async function saveUserProfileToDB(profileData) {
     });
 }
 
-// --- COLORES ---
+// --- UTILIDADES GLOBALES (Colores y Notas) ---
+
+// Elimina el .0 de los dieces y enteros
+function formatRating(rating) {
+    const r = parseFloat(rating);
+    if (isNaN(r)) return "";
+    if (Number.isInteger(r)) {
+        return r.toString();
+    } else {
+        return r.toFixed(1);
+    }
+}
+
+// Asigna color según la nota
 function getColorByRating(rating) {
     const r = parseFloat(rating);
-    if (isNaN(r)) return '#4D4D4D';
+    if (isNaN(r) || r === 0) return '#4D4D4D'; // Gris para los de nota 0 (sin canciones)
     if (r === 10) return '#FF66CC';
     if (r >= 9) return '#B533FF';
     if (r >= 8) return '#3366FF';
