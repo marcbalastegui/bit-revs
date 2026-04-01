@@ -1,6 +1,6 @@
 // media.js - Script universal para Películas y Series
 
-const storeType = document.body.dataset.store; // Sabe si está en 'movies' o 'series'
+const storeType = document.body.dataset.store;
 const mediaGrid = document.getElementById('media-grid');
 const modalAdd = document.getElementById('modal-add');
 const mediaForm = document.getElementById('media-form');
@@ -24,7 +24,10 @@ window.editMedia = async function(event, id) {
     document.getElementById('year').value = item.year;
     document.getElementById('rating').value = item.rating;
     document.getElementById('cover').removeAttribute('required');
-    document.querySelector('#media-form h2').textContent = `Editar Reseña`;
+
+    // CORRECCIÓN AQUÍ: Buscamos dentro de .modal-content
+    document.querySelector('.modal-content h2').textContent = `Editar Reseña`;
+
     modalAdd.classList.remove('hidden');
 }
 
@@ -33,7 +36,10 @@ document.getElementById('btn-add-media').addEventListener('click', () => {
     editingId = null;
     mediaForm.reset();
     document.getElementById('cover').setAttribute('required', 'true');
-    document.querySelector('#media-form h2').textContent = `Nueva Reseña`;
+
+    // CORRECCIÓN AQUÍ: Buscamos dentro de .modal-content
+    document.querySelector('.modal-content h2').textContent = `Nueva Reseña`;
+
     modalAdd.classList.remove('hidden');
 });
 

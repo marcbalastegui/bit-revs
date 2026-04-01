@@ -37,6 +37,15 @@ async function loadProfilePage() {
     // B. Cargar Álbumes y generar estadísticas
     const allAlbums = await getAllAlbumsFromDB();
 
+const allMovies = await getAllItemsFromDB('movies');
+    const allSeries = await getAllItemsFromDB('series');
+
+    // Sumar todos para el contador de reviews
+    reviewsCountSpan.textContent = allAlbums.length + allMovies.length + allSeries.length;
+
+    // Pintar los Top 5
+    drawAlbumsToContainer([...allMovies].sort((a,b) => b.rating - a.rating).slice(0,5), document.getElementById('top-movies-grid'), true);
+    drawAlbumsToContainer([...allSeries].sort((a,b) => b.rating - a.rating).slice(0,5), document.getElementById('top-series-grid'), true);
     // Actualizar contador entre paréntesis
     reviewsCountSpan.textContent = allAlbums.length;
 
