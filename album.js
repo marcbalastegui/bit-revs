@@ -1,4 +1,4 @@
-// album.js - Gestión detallada del álbum y edición de canciones a prueba de fallos
+// album.js - Gestión detallada del álbum, canciones y CÁLCULO DE MEDIA
 
 let currentAlbum = null;
 let editingTrackIndex = null;
@@ -15,16 +15,42 @@ async function loadAlbumDetails() {
     renderAlbumContent();
 }
 
-// BORRAR CANCIÓN
+// NUEVA FUNCIÓN: Recalcular la nota media del álbum
+function recalculateAlbumRating() {
+    if (!currentAlbum || !currentAlbum.tracks || currentAlbum.tracks.length === 0) {
+        currentAlbum.rating = 0;
+        return;
+    }
+
+    let totalScore = 0;
+    let scoredTracksCount = 0;
+
+    currentAlbum.tracks.forEach(track => {
+        // Solo sumamos notas de canciones que NO son interludes
+        if (!track.isInterlude && !isNaN(parseFloat(track.rating))) {
+            totalScore += parseFloat(track.rating);
+            scoredTracksCount++;
+        }
+    });
+
+    if (scoredTracksCount === 0) {
+        currentAlbum.rating = 0;
+    } else {
+        // Media aritmética (Suma total / Número de canciones)
+        currentAlbum.rating = (totalScore / scoredTracksCount).toFixed(1);
+    }
+}
+
+
 window.deleteTrack = async function(index) {
     if(confirm("¿Borrar esta canción?")) {
         currentAlbum.tracks.splice(index, 1);
+        recalculateAlbumRating(); // Recalcular nota tras borrar
         await saveAlbumToDB(currentAlbum);
         renderAlbumContent();
     }
 }
 
-// EDITAR CANCIÓN
 window.editTrack = function(index) {
     editingTrackIndex = index;
     const track = currentAlbum.tracks[index];
@@ -36,7 +62,6 @@ window.editTrack = function(index) {
 
     document.getElementById('rating-container').style.display = track.isInterlude ? 'none' : 'block';
 
-    // BÚSQUEDA SEGURA (Si no existe, no se rompe)
     const modalTitle = document.querySelector('#modal-track h2') || document.querySelector('#modal-track .modal-content h2');
     if (modalTitle) modalTitle.textContent = "Editar Canción";
 
@@ -51,7 +76,9 @@ function renderAlbumContent() {
     let tracksHtml = '';
     currentAlbum.tracks.forEach((track, index) => {
         const trackColor = track.isInterlude ? '#4D4D4D' : getColorByRating(track.rating);
-        const displayRating = track.isInterlude ? 'INTERLUDE' : track.rating;
+
+        // Usamos formatRating para quitar ".0" de las canciones
+        const displayRating = track.isInterlude ? 'INTERLUDE' : formatRating(track.rating);
         const badgeClass = track.isInterlude ? 'rating-badge album-tag' : 'rating-badge';
 
         tracksHtml += `
@@ -69,6 +96,13 @@ function renderAlbumContent() {
         `;
     });
 
+    // Usamos formatRating para mostrar la nota grande del álbum sin ".0"
+    let displayAlbumRating = "-";
+    if (currentAlbum.tracks.length > 0) {
+         displayAlbumRating = formatRating(currentAlbum.rating);
+    }
+
+
     container.innerHTML = `
         <div class="album-header-banner">
             <img src="${currentAlbum.coverBase64}" alt="${currentAlbum.title}" class="detail-cover">
@@ -76,7 +110,7 @@ function renderAlbumContent() {
                 <span class="detail-type">${typeText} • ${currentAlbum.year}</span>
                 <h1 class="detail-title">${currentAlbum.title}</h1>
                 <h2 class="detail-artist">${currentAlbum.artist}</h2>
-                <div class="rating-big" style="background-color: ${badgeColor};">${currentAlbum.rating}</div>
+                <div class="rating-big" style="background-color: ${badgeColor};">${displayAlbumRating}</div>
             </div>
         </div>
         <div class="tracklist-section">
@@ -90,8 +124,6 @@ function renderAlbumContent() {
 
     document.getElementById('btn-add-track').addEventListener('click', () => {
         editingTrackIndex = null;
-
-        // BÚSQUEDA SEGURA
         const modalTitle = document.querySelector('#modal-track h2') || document.querySelector('#modal-track .modal-content h2');
         if (modalTitle) modalTitle.textContent = "Añadir Canción";
 
@@ -101,7 +133,6 @@ function renderAlbumContent() {
     });
 }
 
-// Configurar Modal
 document.getElementById('track-interlude').addEventListener('change', (e) => {
     document.getElementById('rating-container').style.display = e.target.checked ? 'none' : 'block';
     if (e.target.checked) {
@@ -138,6 +169,9 @@ document.getElementById('track-form').addEventListener('submit', async function(
     } else {
         currentAlbum.tracks.push(newTrack);
     }
+
+    // Recalcular nota tras añadir/editar
+    recalculateAlbumRating();
 
     await saveAlbumToDB(currentAlbum);
     document.getElementById('modal-track').classList.add('hidden');
