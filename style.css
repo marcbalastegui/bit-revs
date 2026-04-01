@@ -205,15 +205,42 @@ main h1 { margin-bottom: 30px; font-weight: 800; font-size: 2.2rem; letter-spaci
 .detail-artist { font-size: 1.5rem; font-weight: 600; color: var(--text-muted); margin-bottom: 20px; }
 .rating-big { font-size: 2rem; font-weight: 900; padding: 10px 20px; border-radius: 10px; color: white; text-shadow: 1px 1px 3px rgba(0,0,0,0.3); }
 
-/* Lista de canciones */
-.tracklist-section h2 { font-size: 1.8rem; border-bottom: 2px solid var(--text-main); padding-bottom: 10px; display: inline-block; margin-bottom: 20px; }
-.track-item { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid var(--border-color); }
-.track-info h4 { font-size: 1.1rem; margin-bottom: 4px; }
-.track-info p { font-size: 0.9rem; color: var(--text-muted); }
-.track-actions { display: flex; gap: 15px; margin-left: auto; padding-right: 15px; }
-.track-btn { background: none; border: none; font-size: 1.2rem; cursor: pointer; color: var(--text-muted); transition: color 0.2s; }
-.track-btn.edit:hover { color: rgba(0, 120, 215, 1); }
-.track-btn.delete:hover { color: rgba(211, 47, 47, 1); }
+/* Lista de canciones y botones Hover */
+.tracklist-section h2 {
+    font-size: 1.8rem; border-bottom: 2px solid var(--text-main);
+    padding-bottom: 10px; display: inline-block; margin-bottom: 20px;
+}
+.track-item {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 12px 10px; border-bottom: 1px solid var(--border-color);
+    transition: background-color 0.2s;
+    border-radius: 5px;
+}
+.track-item:hover {
+    background-color: var(--bg-secondary); /* Pequeño resalte al pasar el ratón */
+}
+.track-info h4 { font-size: 1.05rem; margin-bottom: 2px; }
+.track-info p { font-size: 0.85rem; color: var(--text-muted); }
+
+/* Contenedor de los botones (Oculto por defecto) */
+.track-actions {
+    display: flex; gap: 10px; margin-left: auto; padding-right: 15px;
+    opacity: 0; /* OCULTO */
+    transition: opacity 0.2s ease-in-out;
+}
+
+/* Al pasar el ratón por la canción, aparecen los botones */
+.track-item:hover .track-actions {
+    opacity: 1; /* VISIBLE */
+}
+
+/* Los iconos de editar/borrar más pequeños */
+.track-btn {
+    background: none; border: none; font-size: 0.9rem; /* MÁS PEQUEÑOS */
+    cursor: pointer; color: var(--text-muted); transition: color 0.2s, transform 0.2s;
+}
+.track-btn.edit:hover { color: rgba(0, 120, 215, 1); transform: scale(1.1);}
+.track-btn.delete:hover { color: rgba(211, 47, 47, 1); transform: scale(1.1);}
 
 /* --- PERFIL DE USUARIO (profile.html) --- */
 .profile-layout {

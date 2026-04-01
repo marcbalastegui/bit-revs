@@ -1,7 +1,7 @@
-// album.js - Gestión detallada del álbum y edición de canciones
+// album.js - Gestión detallada del álbum y edición de canciones a prueba de fallos
 
 let currentAlbum = null;
-let editingTrackIndex = null; // Saber qué canción editamos
+let editingTrackIndex = null;
 
 async function loadAlbumDetails() {
     const params = new URLSearchParams(window.location.search);
@@ -36,8 +36,10 @@ window.editTrack = function(index) {
 
     document.getElementById('rating-container').style.display = track.isInterlude ? 'none' : 'block';
 
-    // CORRECCIÓN AQUÍ: Buscamos el h2 dentro del modal-content
-    document.querySelector('#modal-track .modal-content h2').textContent = "Editar Canción";
+    // BÚSQUEDA SEGURA (Si no existe, no se rompe)
+    const modalTitle = document.querySelector('#modal-track h2') || document.querySelector('#modal-track .modal-content h2');
+    if (modalTitle) modalTitle.textContent = "Editar Canción";
+
     document.getElementById('modal-track').classList.remove('hidden');
 }
 
@@ -89,8 +91,9 @@ function renderAlbumContent() {
     document.getElementById('btn-add-track').addEventListener('click', () => {
         editingTrackIndex = null;
 
-        // CORRECCIÓN AQUÍ: Buscamos el h2 dentro del modal-content
-        document.querySelector('#modal-track .modal-content h2').textContent = "Añadir Canción";
+        // BÚSQUEDA SEGURA
+        const modalTitle = document.querySelector('#modal-track h2') || document.querySelector('#modal-track .modal-content h2');
+        if (modalTitle) modalTitle.textContent = "Añadir Canción";
 
         document.getElementById('track-form').reset();
         document.getElementById('rating-container').style.display = 'block';
@@ -130,7 +133,6 @@ document.getElementById('track-form').addEventListener('submit', async function(
 
     const newTrack = { title, artist, isInterlude, rating };
 
-    // Si editamos, sustituimos; si creamos, añadimos al final.
     if (editingTrackIndex !== null) {
         currentAlbum.tracks[editingTrackIndex] = newTrack;
     } else {
