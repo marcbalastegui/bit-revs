@@ -274,3 +274,42 @@ async function loadProfilePage() {
         drawAlbumsToContainer([...allSeries].sort((a,b) => b.rating - a.rating).slice(0,5), topSeriesGrid);
     }
 }
+function renderTopSection(items, containerId, isVertical) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    // Ordenar por nota y pillar los 5 mejores
+    const sorted = [...items].sort((a, b) => b.rating - a.rating).slice(0, 5);
+
+    if (sorted.length === 0) {
+        container.innerHTML = '<p style="color: var(--text-muted); padding: 20px;">Aún no hay valoraciones aquí.</p>';
+        return;
+    }
+
+    container.innerHTML = '';
+    sorted.forEach(item => {
+        const card = document.createElement('div');
+        card.classList.add('album-card');
+
+        // Solo los álbumes tienen página de detalles por ahora
+        if (containerId === 'top-albums-grid' || (containerId === 'recent-albums-grid' && !item.type)) {
+             card.onclick = () => window.location.href = `album.html?id=${item.id}`;
+        }
+
+        const badgeColor = getColorByRating(item.rating);
+        // Si es peli o serie, usamos la clase vertical
+        const coverClass = isVertical ? 'cover-container vertical' : 'cover-container';
+
+        card.innerHTML = `
+            <div class="${coverClass}"><img src="${item.coverBase64}"></div>
+            <div class="album-info">
+                <div class="title-row">
+                    <h3>${item.title}</h3>
+                    <span class="rating-badge" style="background-color: ${badgeColor};">${formatRating(item.rating)}</span>
+                </div>
+                <p>${item.year}</p>
+            </div>
+        `;
+        container.appendChild(card);
+    });
+}

@@ -30,16 +30,21 @@ window.editMedia = async function(event, id) {
     modalAdd.classList.remove('hidden');
 }
 
-// Mostrar Modal Nuevo
-document.getElementById('btn-add-media').addEventListener('click', () => {
-    editingId = null;
-    mediaForm.reset();
-    document.getElementById('cover').setAttribute('required', 'true');
-    document.querySelector('.modal-content h2').textContent = `Nueva Reseña`;
-    modalAdd.classList.remove('hidden');
-});
+// Mostrar Modal Nuevo (CON COMPROBACIÓN PARA EVITAR EL ERROR DE TU CAPTURA)
+const addMediaBtn = document.getElementById('btn-add-media');
+if (addMediaBtn) {
+    addMediaBtn.addEventListener('click', () => {
+        editingId = null;
+        mediaForm.reset();
+        document.getElementById('cover').setAttribute('required', 'true');
+        const mTitle = document.querySelector('.modal-content h2');
+        if (mTitle) mTitle.textContent = `Nueva Reseña`;
+        modalAdd.classList.remove('hidden');
+    });
+}
 
-document.getElementById('btn-cancel').addEventListener('click', () => modalAdd.classList.add('hidden'));
+// Lo mismo para el botón de cancelar
+document.getElementById('btn-cancel')?.addEventListener('click', () => modalAdd.classList.add('hidden'));
 
 // Guardar
 mediaForm.addEventListener('submit', async (e) => {

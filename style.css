@@ -28,12 +28,12 @@ body {
 }
 
 /* --- CABECERA (HEADER) --- */
-/* --- CABECERA (HEADER) --- */
+/* --- CABECERA (HEADER) ACTUALIZADA --- */
 header {
     display: flex;
-    justify-content: space-between;
+    justify-content: space-between; /* Separa los bloques a los extremos */
     align-items: center;
-    padding: 15px 40px;
+    padding: 10px 40px;
     background-color: var(--bg-primary);
     border-bottom: 2px solid var(--text-main);
     position: sticky; top: 0; z-index: 100;
@@ -42,17 +42,25 @@ header {
 .header-left {
     display: flex;
     align-items: center;
+    gap: 30px; /* Espacio entre logo y nav */
+}
+
+/* Bloque derecha: Botón + Foto de perfil */
+.header-right {
+    display: flex;
+    align-items: center;
     gap: 20px;
 }
 
 .header-avatar {
-    width: 45px; height: 45px; border-radius: 50%;
+    width: 40px; height: 40px; border-radius: 50%;
     background-color: var(--accent-red); color: white;
     display: flex; justify-content: center; align-items: center;
-    text-decoration: none; font-weight: bold; font-size: 1.2rem;
+    text-decoration: none; font-weight: bold; font-size: 1rem;
     background-size: cover; background-position: center;
-    border: 2px solid var(--bg-primary);
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2); transition: transform 0.2s;
+    border: 2px solid var(--border-color);
+    transition: transform 0.2s;
+    order: 2; /* Asegura que vaya a la derecha del botón */
 }
 .header-avatar:hover { transform: scale(1.05); }
 
@@ -250,8 +258,10 @@ main h1 { margin-bottom: 30px; font-weight: 800; font-size: 2.2rem; letter-spaci
 
 /* --- PERFIL DE USUARIO (profile.html) --- */
 .profile-header-content {
-    display: flex; align-items: flex-end; gap: 40px; /* Aumentado el margen con el nombre */
-    padding: 0 30px 20px 30px; margin-top: -50px; position: relative; z-index: 5;
+    display: flex; align-items: center; /* Centrado vertical */
+    gap: 30px;
+    padding: 20px 40px; /* Más margen interno */
+    margin-top: -40px; position: relative; z-index: 5;
 }
 .avatar-container { position: relative; width: 100px; height: 100px; flex-shrink: 0; }
 .profile-avatar {
@@ -269,11 +279,19 @@ main h1 { margin-bottom: 30px; font-weight: 800; font-size: 2.2rem; letter-spaci
     border-radius: 0 0 50px 50px; cursor: pointer; letter-spacing: 1px;
 }
 
-.profile-info-block { flex-grow: 1; padding-bottom: 5px; }
+.profile-info-block {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    flex-grow: 1;
+}
 
 /* Nuevo contenedor para alinear nombre y botón Editar */
 .profile-header-top {
-    display: flex; justify-content: space-between; align-items: center; width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
 }
 
 .editable-name-container { display: flex; align-items: center; gap: 10px; }
@@ -287,8 +305,11 @@ main h1 { margin-bottom: 30px; font-weight: 800; font-size: 2.2rem; letter-spaci
 
 /* Estilos de las nuevas estadísticas */
 .profile-stats {
-    color: #888; font-size: 1.05rem; display: flex; gap: 15px;
-    margin-top: 8px; font-weight: 600; align-items: center;
+    display: flex;
+    gap: 15px;
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    align-items: center;
 }
 .star-icon { color: #FFD11A; margin-right: 4px; font-size: 1.2rem;}
 
