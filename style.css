@@ -383,3 +383,25 @@ h1 {
     background-color: var(--accent-red-hover) !important;
     transform: translateY(-2px);
 }
+
+/* --- BOTÓN AÑADIR CANCIÓN --- */
+#btn-add-track {
+    background-color: var(--bg-secondary) !important;
+    color: var(--text-main) !important;
+    border: 1px solid var(--border-color);
+    padding: 10px 20px;
+    border-radius: 12px;
+    font-weight: 700;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: var(--shadow-subtle);
+}
+
+#btn-add-track:hover {
+    background-color: var(--text-main) !important;
+    color: var(--bg-primary) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(0,0,0,0.1);
+}
