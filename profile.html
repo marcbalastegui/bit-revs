@@ -7,23 +7,24 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<header>
-    <div class="header-left">
-        <a href="index.html" class="logo">BitRevs</a>
-    </div>
-    <nav>
-        <a href="movies.html">Películas</a>
-        <a href="series.html">Series</a>
-        <a href="index.html">Álbumes</a>
-    </nav>
-    <div class="header-right">
-        <button id="btn-add-album" class="save-btn">+ Añadir Álbum</button>
-        <a href="profile.html" class="header-avatar" id="global-header-avatar" style="border-color: var(--accent-red);" title="Mi Perfil">U</a>
-    </div>
-</header>
+    <header>
+        <div class="header-left">
+            <a href="index.html" class="logo">BitRevs</a>
+        </div>
+        <nav>
+            <a href="movies.html">Películas</a>
+            <a href="series.html">Series</a>
+            <a href="index.html">Álbumes</a>
+        </nav>
+        <div class="header-right">
+            <button id="btn-add-album" class="save-btn">+ Añadir Álbum</button>
+            <a href="profile.html" class="header-avatar" id="global-header-avatar" style="border-color: var(--accent-red);" title="Mi Perfil">U</a>
+        </div>
+    </header>
 
     <main>
-<div class="profile-layout">
+        <div class="profile-layout">
+
             <div class="profile-banner-container" id="profile-banner-view">
                 <div class="banner-overlay hidden" id="banner-edit-overlay">
                     <span>Cambiar Banner</span>
@@ -48,6 +49,7 @@
                         </div>
                         <button id="btn-edit-profile" class="edit-btn">Editar Perfil</button>
                     </div>
+
                     <div class="profile-stats">
                         <span id="stat-avg-rating"><span class="star-icon">★</span> 0.0 Media</span>
                         <span>•</span>
@@ -65,20 +67,22 @@
             <button id="btn-save-edit" class="save-btn">Guardar Cambios</button>
         </div>
 
-<h2 class="section-title">Mis Mejores Álbumes</h2>
-    <div class="album-grid" id="top-albums-grid"></div>
 
-    <h2 class="section-title">Películas Mejor Puntuadas</h2>
-    <div class="album-grid" id="top-movies-grid"></div>
+        <h2 class="section-title">Mis Mejores Álbumes</h2>
+        <div class="album-grid" id="top-albums-grid"></div>
 
-    <h2 class="section-title">Series Mejor Puntuadas</h2>
-    <div class="album-grid" id="top-series-grid"></div>
+        <h2 class="section-title">Películas Mejor Puntuadas</h2>
+        <div class="album-grid" id="top-movies-grid"></div>
 
-    <hr style="margin: 40px 0; border: none; border-top: 1px solid var(--border-color);">
+        <h2 class="section-title">Series Mejor Puntuadas</h2>
+        <div class="album-grid" id="top-series-grid"></div>
 
-    <h2 class="section-title">Valoraciones recientes</h2>
-    <div class="album-grid" id="recent-albums-grid"></div>
-</main>
+        <hr style="margin: 40px 0; border: none; border-top: 1px solid var(--border-color);">
+
+        <h2 class="section-title">Valoraciones recientes</h2>
+        <div class="album-grid" id="recent-albums-grid"></div>
+
+    </main>
 
     <script src="db.js"></script>
     <script src="profile.js"></script>
