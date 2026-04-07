@@ -9,33 +9,33 @@
 <header>
     <div class="header-left">
         <a href="index.html" class="logo">BitRevs</a>
-        <nav>
-            <a href="movies.html" >Películas</a>
-            <a href="series.html" class="active">Series</a>
-            <a href="index.html" >Álbumes</a>
-        </nav>
     </div>
-
+    <nav>
+        <a href="movies.html">Películas</a>
+        <a href="series.html" class="active">Series</a>
+        <a href="index.html">Álbumes</a>
+    </nav>
     <div class="header-right">
         <button id="btn-add-media" class="save-btn">+ Añadir Serie</button>
         <a href="profile.html" class="header-avatar" id="global-header-avatar" title="Mi Perfil">U</a>
     </div>
 </header>
-    <main>
-        <h1>Todas las Series</h1>
-        <div class="controls-bar">
-    <input type="text" id="filter-input" placeholder="Filtrar por título o año...">
-    <select id="sort-select">
-        <option value="default">Orden por defecto</option>
-        <option value="rating-desc">Nota (Mayor a Menor)</option>
-        <option value="rating-asc">Nota (Menor a Mayor)</option>
-        <option value="year-desc">Año (Más reciente)</option>
-        <option value="year-asc">Año (Más antiguo)</option>
-        <option value="title-asc">Título (A-Z)</option>
-    </select>
-</div>
-        <div class="album-grid" id="media-grid"></div>
-    </main>
+<main>
+    <h1>Todas las Series</h1>
+
+    <div class="controls-bar">
+        <input type="text" id="filter-input" placeholder="Filtrar por título o año...">
+        <select id="sort-select">
+            <option value="default">Orden por defecto</option>
+            <option value="rating-desc">Nota (Mayor a Menor)</option>
+            <option value="rating-asc">Nota (Menor a Mayor)</option>
+            <option value="year-desc">Año (Más reciente)</option>
+            <option value="year-asc">Año (Más antiguo)</option>
+        </select>
+    </div>
+
+    <div class="album-grid" id="media-grid"></div>
+</main>
 
     <div id="modal-add" class="modal hidden">
         <div class="modal-content">

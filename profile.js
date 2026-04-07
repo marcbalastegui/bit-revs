@@ -1,6 +1,6 @@
-// profile.js - Gestión de interfaz de perfil y base de datos (IndexedDB)
+// profile.js - Gestión de interfaz de perfil, estadísticas y base de datos
 
-// Estado local de los datos del perfil cargados
+// Estado local de los datos del perfil
 let currentProfileData = null;
 
 // Referencias a elementos del DOM (Vista normal)
@@ -8,8 +8,6 @@ const profileNameView = document.getElementById('profile-name-view');
 const avatarCircle = document.getElementById('avatar-circle');
 const avatarFallbackChar = document.getElementById('avatar-fallback-char');
 const bannerView = document.getElementById('profile-banner-view');
-const topAlbumsGrid = document.getElementById('top-albums-grid');
-const recentAlbumsGrid = document.getElementById('recent-albums-grid');
 const reviewsCountSpan = document.getElementById('total-reviews-count');
 
 // Referencias a elementos del DOM (Edición)
@@ -23,224 +21,22 @@ const profileNameEdit = document.getElementById('profile-name-edit');
 const inputAvatar = document.getElementById('input-avatar');
 const inputBanner = document.getElementById('input-banner');
 
-// Temporales para guardar DataURLs antes de salvar en DB definitavente
+// Temporales para edición de imágenes
 let tempAvatarData = null;
 let tempBannerData = null;
 
-
-// 1. CARGA INICIAL DE DATOS
+// 1. CARGA Y RENDERIZADO INICIAL
 async function loadProfilePage() {
-    // A. Cargar datos del usuario desde db.js
+    // A. Cargar datos del usuario
     currentProfileData = await getUserProfileFromDB();
     applyProfileDataToUI(currentProfileData);
 
-    // B. Cargar Álbumes y generar estadísticas
-    const allAlbums = await getAllAlbumsFromDB();
-
-const allMovies = await getAllItemsFromDB('movies');
-    const allSeries = await getAllItemsFromDB('series');
-
-    // Sumar todos para el contador de reviews
-    reviewsCountSpan.textContent = allAlbums.length + allMovies.length + allSeries.length;
-
-    // Pintar los Top 5
-    drawAlbumsToContainer([...allMovies].sort((a,b) => b.rating - a.rating).slice(0,5), document.getElementById('top-movies-grid'), true);
-    drawAlbumsToContainer([...allSeries].sort((a,b) => b.rating - a.rating).slice(0,5), document.getElementById('top-series-grid'), true);
-    // Actualizar contador entre paréntesis
-    reviewsCountSpan.textContent = allAlbums.length;
-
-    // Dibujar las secciones del grid
-    renderGrids(allAlbums);
-}
-
-// Aplicar los datos recuperados de la base de datos a los elementos visuales
-function applyProfileDataToUI(data) {
-    profileNameView.textContent = data.userName;
-    profileNameEdit.value = data.userName;
-
-    // Resetear avatar
-    avatarCircle.style.backgroundImage = 'none';
-    avatarFallbackChar.style.display = 'block';
-
-    if (data.avatarData) {
-        // Si hay imagen guardada, la ponemos de fondo del círculo
-        avatarCircle.style.backgroundImage = `url(${data.avatarData})`;
-        avatarFallbackChar.style.display = 'none'; // Ocultar inicial
-    } else {
-        // Si no hay imagen, poner inicial del nombre
-        avatarFallbackChar.textContent = data.userName.charAt(0).toUpperCase();
-    }
-
-    // Resetear banner
-    bannerView.style.backgroundImage = 'none';
-    if (data.bannerData) {
-        bannerView.style.backgroundImage = `url(${data.bannerData})`;
-        bannerView.classList.add('has-banner'); // Clase para ajustar estilos de cabecera si hay banner
-    } else {
-        bannerView.classList.remove('has-banner');
-    }
-}
-
-// Dibujar las secciones del grid (Mejores y Recientes)
-function renderGrids(allAlbums) {
-    // 1. Mis Mejores Valoraciones (Top 5)
-    const topAlbums = [...allAlbums].sort((a, b) => b.rating - a.rating).slice(0, 5);
-    drawAlbumsToContainer(topAlbums, topAlbumsGrid);
-
-    // 2. Valoraciones Recientes (Todos ordenados por fecha de creación, inversa)
-    const recentAlbums = [...allAlbums].sort((a, b) => b.id - a.id);
-    drawAlbumsToContainer(recentAlbums, recentAlbumsGrid);
-}
-
-// Función reutilizable para dibujar álbumes en un grid
-function drawAlbumsToContainer(albums, container) {
-    container.innerHTML = '';
-    if (albums.length === 0) {
-        container.innerHTML = '<p style="color: var(--text-muted);">Aún no hay álbumes aquí.</p>';
-        return;
-    }
-
-    albums.forEach(album => {
-        const card = document.createElement('div');
-        card.classList.add('album-card');
-
-        // Asignamos una función de color falsa si no existe en db.js aún
-        const ratingColor = (typeof getColorByRating === 'function') ? getColorByRating(album.rating) : '#b3b3b3';
-
-        card.innerHTML = `
-            <div class="cover-container"><img src="${album.coverBase64}" alt="${album.title}"></div>
-            <div class="album-info">
-                <div class="title-row">
-                    <h3>${album.title}</h3>
-                    <span class="rating-badge" style="background-color: ${ratingColor};">${album.rating}</span>
-                </div>
-                <p>${album.artist} • ${album.year}</p>
-            </div>
-        `;
-        container.appendChild(card);
-    });
-}
-
-
-// 2. GESTIÓN DE LA EDICIÓN DEL PERFIL
-
-// Activar modo edición
-btnEditProfile.addEventListener('click', () => {
-    toggleEditMode(true);
-    // Resetear temporales con datos actuales por si acaso
-    tempAvatarData = currentProfileData.avatarData;
-    tempBannerData = currentProfileData.bannerData;
-});
-
-// Cancelar edición
-btnCancelEdit.addEventListener('click', () => {
-    toggleEditMode(false);
-    applyProfileDataToUI(currentProfileData); // Revertir UI a los datos guardados
-});
-
-// Guardar edición
-btnSaveEdit.addEventListener('click', async () => {
-    const newName = profileNameEdit.value.trim();
-    if (!newName) {
-        alert("El nombre de usuario no puede estar vacío.");
-        return;
-    }
-
-    // Preparar objeto de datos actualizado
-    const updatedProfile = {
-        key: 'config',
-        userName: newName,
-        avatarData: tempAvatarData, // GuardarDataURLs finales
-        bannerData: tempBannerData
-    };
-
-    // Guardar en la Base de Datos (db.js)
-    await saveUserProfileToDB(updatedProfile);
-    currentProfileData = updatedProfile; // Actualizar estado local
-
-    // Salir del modo edición y refrescar UI
-    toggleEditMode(false);
-    applyProfileDataToUI(updatedProfile);
-});
-
-// Función central para cambiar entre modo ver y modo editar
-function toggleEditMode(isEditing) {
-    if (isEditing) {
-        btnEditProfile.classList.add('hidden');
-        editActionsBar.classList.remove('hidden');
-
-        bannerEditOverlay.classList.remove('hidden');
-        avatarEditOverlay.classList.remove('hidden');
-
-        profileNameView.classList.add('hidden');
-        profileNameEdit.classList.remove('hidden');
-        profileNameEdit.focus();
-    } else {
-        btnEditProfile.classList.remove('hidden');
-        editActionsBar.classList.add('hidden');
-
-        bannerEditOverlay.classList.add('hidden');
-        avatarEditOverlay.classList.add('hidden');
-
-        profileNameView.classList.remove('hidden');
-        profileNameEdit.classList.add('hidden');
-    }
-}
-
-
-// 3. SUBIDA DE IMÁGENES (AVATAR Y BANNER)
-
-// Click en "EDITAR" del avatar -> abre el input file
-avatarEditOverlay.addEventListener('click', () => inputAvatar.click());
-
-// Click en "Cambiar Banner" -> abre el input file
-bannerEditOverlay.addEventListener('click', () => inputBanner.click());
-
-// Procesar el archivo seleccionado para el Avatar
-inputAvatar.addEventListener('change', (e) => processImageFile(e.target.files[0], 'avatar'));
-
-// Procesar el archivo seleccionado para el Banner
-inputBanner.addEventListener('change', (e) => processImageFile(e.target.files[0], 'banner'));
-
-// Función genérica para leer el archivo de imagen como DataURL (FileReader)
-function processImageFile(file, type) {
-    if (!file) return;
-    if (!file.type.startsWith('image/')) {
-        alert("Por favor, selecciona un archivo de imagen válido.");
-        return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-        const dataURL = event.target.result;
-
-        if (type === 'avatar') {
-            tempAvatarData = dataURL;
-            // Actualización visual temporal inmediata
-            avatarCircle.style.backgroundImage = `url(${dataURL})`;
-            avatarFallbackChar.style.display = 'none';
-        } else if (type === 'banner') {
-            tempBannerData = dataURL;
-            // Actualización visual temporal inmediata
-            bannerView.style.backgroundImage = `url(${dataURL})`;
-        }
-    };
-    reader.readAsDataURL(file); // Iniciar la lectura
-}
-
-
-// INICIAR
-// 1. CARGA INICIAL DE DATOS
-async function loadProfilePage() {
-    currentProfileData = await getUserProfileFromDB();
-    applyProfileDataToUI(currentProfileData);
-
-    // Cargar TODO
+    // B. Cargar todos los datos de la DB
     const allAlbums = await getAllAlbumsFromDB();
     const allMovies = await getAllItemsFromDB('movies');
     const allSeries = await getAllItemsFromDB('series');
 
-    // Calcular Estadísticas
+    // C. Calcular Estadísticas Globales
     const allReviews = [...allAlbums, ...allMovies, ...allSeries];
     let totalScore = 0;
     let scorableCount = 0;
@@ -253,63 +49,192 @@ async function loadProfilePage() {
         }
     });
 
-    const avgRating = scorableCount > 0 ? (totalScore / scorableCount).toFixed(1) : "0.0";
+    const avgRating = scorableCount > 0 ? (totalScore / scorableCount) : 0;
 
-    // Inyectar Estadísticas en el HTML
-    document.getElementById('stat-avg-rating').innerHTML = `<span class="star-icon">★</span> ${avgRating} Media`;
-    document.getElementById('stat-total-reviews').textContent = `${allReviews.length} Valoraciones`;
+    // Inyectar Estadísticas en el HTML (usando formatRating de db.js)
+    const avgElement = document.getElementById('stat-avg-rating');
+    const totalElement = document.getElementById('stat-total-reviews');
 
-    // Dibujar las secciones del grid
-    renderGrids(allAlbums);
-
-    // Pintar los Top 5 de Pelis y Series
-    const topMoviesGrid = document.getElementById('top-movies-grid');
-    const topSeriesGrid = document.getElementById('top-series-grid');
-
-    if (topMoviesGrid) {
-        drawAlbumsToContainer([...allMovies].sort((a,b) => b.rating - a.rating).slice(0,5), topMoviesGrid);
-        // Si tienes una clase especial para vertical, agrégala aquí al contenedor o en la función drawAlbumsToContainer
+    if (avgElement) {
+        avgElement.innerHTML = `<span class="star-icon">★</span> ${formatRating(avgRating)} Media`;
     }
-    if (topSeriesGrid) {
-        drawAlbumsToContainer([...allSeries].sort((a,b) => b.rating - a.rating).slice(0,5), topSeriesGrid);
+    if (totalElement) {
+        totalElement.textContent = `${allReviews.length} Valoraciones`;
     }
+
+    // D. Dibujar secciones del perfil
+    // Mis mejores álbumes
+    renderSection(allAlbums, 'top-albums-grid', false, true);
+
+    // Películas mejor puntuadas (Vertical)
+    renderSection(allMovies, 'top-movies-grid', true, true);
+
+    // Series mejor puntuadas (Vertical)
+    renderSection(allSeries, 'top-series-grid', true, true);
+
+    // Valoraciones recientes (Mezcla de todo, ordenado por ID/Fecha)
+    const recentReviews = allReviews.sort((a, b) => b.id - a.id).slice(0, 10);
+    renderSection(recentReviews, 'recent-albums-grid', false, false);
 }
-function renderTopSection(items, containerId, isVertical) {
+
+// Función unificada para renderizar grids en el perfil
+function renderSection(items, containerId, isVertical, sortByRating = true) {
     const container = document.getElementById(containerId);
     if (!container) return;
 
-    // Ordenar por nota y pillar los 5 mejores
-    const sorted = [...items].sort((a, b) => b.rating - a.rating).slice(0, 5);
+    let displayItems = [...items];
 
-    if (sorted.length === 0) {
-        container.innerHTML = '<p style="color: var(--text-muted); padding: 20px;">Aún no hay valoraciones aquí.</p>';
+    if (sortByRating) {
+        displayItems.sort((a, b) => b.rating - a.rating).slice(0, 5);
+        displayItems = displayItems.slice(0, 5); // Solo los 5 mejores
+    }
+
+    if (displayItems.length === 0) {
+        container.innerHTML = '<p style="color: var(--text-muted); padding: 20px;">No hay valoraciones aquí todavía.</p>';
         return;
     }
 
     container.innerHTML = '';
-    sorted.forEach(item => {
+    displayItems.forEach(item => {
         const card = document.createElement('div');
         card.classList.add('album-card');
 
         // Solo los álbumes tienen página de detalles por ahora
-        if (containerId === 'top-albums-grid' || (containerId === 'recent-albums-grid' && !item.type)) {
-             card.onclick = () => window.location.href = `album.html?id=${item.id}`;
+        // Detectamos si es álbum si no tiene una propiedad que lo identifique como peli/serie o por el ID del container
+        if (containerId === 'top-albums-grid' || (!isVertical && !item.type)) {
+            card.onclick = () => window.location.href = `album.html?id=${item.id}`;
         }
 
         const badgeColor = getColorByRating(item.rating);
-        // Si es peli o serie, usamos la clase vertical
         const coverClass = isVertical ? 'cover-container vertical' : 'cover-container';
 
         card.innerHTML = `
-            <div class="${coverClass}"><img src="${item.coverBase64}"></div>
+            <div class="${coverClass}"><img src="${item.coverBase64}" alt="${item.title}"></div>
             <div class="album-info">
                 <div class="title-row">
                     <h3>${item.title}</h3>
                     <span class="rating-badge" style="background-color: ${badgeColor};">${formatRating(item.rating)}</span>
                 </div>
-                <p>${item.year}</p>
+                <p>${item.artist || item.year} ${item.artist ? '• ' + item.year : ''}</p>
             </div>
         `;
         container.appendChild(card);
     });
 }
+
+// Aplicar datos del perfil a la UI
+function applyProfileDataToUI(data) {
+    profileNameView.textContent = data.userName;
+    profileNameEdit.value = data.userName;
+
+    // Foto de perfil
+    avatarCircle.style.backgroundImage = 'none';
+    avatarFallbackChar.style.display = 'block';
+
+    if (data.avatarData) {
+        avatarCircle.style.backgroundImage = `url(${data.avatarData})`;
+        avatarFallbackChar.style.display = 'none';
+    } else {
+        avatarFallbackChar.textContent = data.userName.charAt(0).toUpperCase();
+    }
+
+    // Banner
+    if (data.bannerData) {
+        bannerView.style.backgroundImage = `url(${data.bannerData})`;
+        bannerView.classList.add('has-banner');
+    } else {
+        bannerView.style.backgroundImage = 'none';
+        bannerView.classList.remove('has-banner');
+    }
+}
+
+// 2. LÓGICA DE EDICIÓN
+btnEditProfile.addEventListener('click', () => {
+    toggleEditMode(true);
+    tempAvatarData = currentProfileData.avatarData;
+    tempBannerData = currentProfileData.bannerData;
+});
+
+btnCancelEdit.addEventListener('click', () => {
+    toggleEditMode(false);
+    applyProfileDataToUI(currentProfileData);
+});
+
+btnSaveEdit.addEventListener('click', async () => {
+    const newName = profileNameEdit.value.trim();
+    if (!newName) {
+        alert("El nombre de usuario no puede estar vacío.");
+        return;
+    }
+
+    const updatedProfile = {
+        key: 'config',
+        userName: newName,
+        avatarData: tempAvatarData,
+        bannerData: tempBannerData
+    };
+
+    await saveUserProfileToDB(updatedProfile);
+    currentProfileData = updatedProfile;
+
+    toggleEditMode(false);
+    applyProfileDataToUI(updatedProfile);
+
+    // Actualizar también el avatar del header si existe
+    const headerAvatar = document.getElementById('global-header-avatar');
+    if (headerAvatar) {
+        if (tempAvatarData) {
+            headerAvatar.style.backgroundImage = `url(${tempAvatarData})`;
+            headerAvatar.textContent = '';
+        } else {
+            headerAvatar.textContent = newName.charAt(0).toUpperCase();
+        }
+    }
+});
+
+function toggleEditMode(isEditing) {
+    if (isEditing) {
+        btnEditProfile.classList.add('hidden');
+        editActionsBar.classList.remove('hidden');
+        bannerEditOverlay.classList.remove('hidden');
+        avatarEditOverlay.classList.remove('hidden');
+        profileNameView.classList.add('hidden');
+        profileNameEdit.classList.remove('hidden');
+        profileNameEdit.focus();
+    } else {
+        btnEditProfile.classList.remove('hidden');
+        editActionsBar.classList.add('hidden');
+        bannerEditOverlay.classList.add('hidden');
+        avatarEditOverlay.classList.add('hidden');
+        profileNameView.classList.remove('hidden');
+        profileNameEdit.classList.add('hidden');
+    }
+}
+
+// 3. PROCESAMIENTO DE IMÁGENES
+avatarEditOverlay.addEventListener('click', () => inputAvatar.click());
+bannerEditOverlay.addEventListener('click', () => inputBanner.click());
+
+inputAvatar.addEventListener('change', (e) => processImageFile(e.target.files[0], 'avatar'));
+inputBanner.addEventListener('change', (e) => processImageFile(e.target.files[0], 'banner'));
+
+function processImageFile(file, type) {
+    if (!file || !file.type.startsWith('image/')) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+        const dataURL = event.target.result;
+        if (type === 'avatar') {
+            tempAvatarData = dataURL;
+            avatarCircle.style.backgroundImage = `url(${dataURL})`;
+            avatarFallbackChar.style.display = 'none';
+        } else {
+            tempBannerData = dataURL;
+            bannerView.style.backgroundImage = `url(${dataURL})`;
+        }
+    };
+    reader.readAsDataURL(file);
+}
+
+// INICIAR PÁGINA
+loadProfilePage();
