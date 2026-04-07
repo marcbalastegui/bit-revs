@@ -230,4 +230,47 @@ function processImageFile(file, type) {
 
 
 // INICIAR
-loadProfilePage();
+// 1. CARGA INICIAL DE DATOS
+async function loadProfilePage() {
+    currentProfileData = await getUserProfileFromDB();
+    applyProfileDataToUI(currentProfileData);
+
+    // Cargar TODO
+    const allAlbums = await getAllAlbumsFromDB();
+    const allMovies = await getAllItemsFromDB('movies');
+    const allSeries = await getAllItemsFromDB('series');
+
+    // Calcular Estadísticas
+    const allReviews = [...allAlbums, ...allMovies, ...allSeries];
+    let totalScore = 0;
+    let scorableCount = 0;
+
+    allReviews.forEach(item => {
+        const rating = parseFloat(item.rating);
+        if (!isNaN(rating) && rating > 0) {
+            totalScore += rating;
+            scorableCount++;
+        }
+    });
+
+    const avgRating = scorableCount > 0 ? (totalScore / scorableCount).toFixed(1) : "0.0";
+
+    // Inyectar Estadísticas en el HTML
+    document.getElementById('stat-avg-rating').innerHTML = `<span class="star-icon">★</span> ${avgRating} Media`;
+    document.getElementById('stat-total-reviews').textContent = `${allReviews.length} Valoraciones`;
+
+    // Dibujar las secciones del grid
+    renderGrids(allAlbums);
+
+    // Pintar los Top 5 de Pelis y Series
+    const topMoviesGrid = document.getElementById('top-movies-grid');
+    const topSeriesGrid = document.getElementById('top-series-grid');
+
+    if (topMoviesGrid) {
+        drawAlbumsToContainer([...allMovies].sort((a,b) => b.rating - a.rating).slice(0,5), topMoviesGrid);
+        // Si tienes una clase especial para vertical, agrégala aquí al contenedor o en la función drawAlbumsToContainer
+    }
+    if (topSeriesGrid) {
+        drawAlbumsToContainer([...allSeries].sort((a,b) => b.rating - a.rating).slice(0,5), topSeriesGrid);
+    }
+}

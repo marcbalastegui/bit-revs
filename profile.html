@@ -7,20 +7,21 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <header>
-        <div class="logo">BitRevs</div>
+<header>
+        <div class="header-left">
+            <a href="profile.html" class="header-avatar" id="global-header-avatar" title="Mi Perfil">U</a>
+            <a href="index.html" class="logo">BitRevs</a>
+        </div>
         <nav>
             <a href="movies.html">Películas</a>
             <a href="series.html">Series</a>
-            <a href="index.html" class="active">Álbumes</a>
-            <a href="profile.html">Mi Perfil</a>
+            <a href="index.html">Álbumes</a>
         </nav>
-        <button id="btn-edit-profile" class="edit-btn">Editar Perfil</button>
+        <button id="btn-add-album" class="save-btn">+ Añadir Álbum</button>
     </header>
 
     <main>
-        <div class="profile-layout">
-
+<div class="profile-layout">
             <div class="profile-banner-container" id="profile-banner-view">
                 <div class="banner-overlay hidden" id="banner-edit-overlay">
                     <span>Cambiar Banner</span>
@@ -38,9 +39,17 @@
                 </div>
 
                 <div class="profile-info-block">
-                    <div class="editable-name-container">
-                        <h1 id="profile-name-view">Mi Perfil</h1>
-                        <input type="text" id="profile-name-edit" class="hidden" placeholder="Ej: Tu Nombre">
+                    <div class="profile-header-top">
+                        <div class="editable-name-container">
+                            <h1 id="profile-name-view">Mi Perfil</h1>
+                            <input type="text" id="profile-name-edit" class="hidden" placeholder="Ej: Tu Nombre">
+                        </div>
+                        <button id="btn-edit-profile" class="edit-btn">Editar Perfil</button>
+                    </div>
+                    <div class="profile-stats">
+                        <span id="stat-avg-rating"><span class="star-icon">★</span> 0.0 Media</span>
+                        <span>•</span>
+                        <span id="stat-total-reviews">0 Valoraciones</span>
                     </div>
                 </div>
             </div>
@@ -54,24 +63,20 @@
             <button id="btn-save-edit" class="save-btn">Guardar Cambios</button>
         </div>
 
+<h2 class="section-title">Mis Mejores Álbumes</h2>
+    <div class="album-grid" id="top-albums-grid"></div>
 
-        <h2 class="section-title">Mis Mejores Valoraciones</h2>
-        <div class="album-grid" id="top-albums-grid">
-            </div>
+    <h2 class="section-title">Películas Mejor Puntuadas</h2>
+    <div class="album-grid" id="top-movies-grid"></div>
 
-        <hr style="margin: 40px 0; border: none; border-top: 1px solid #e0e0e0;">
+    <h2 class="section-title">Series Mejor Puntuadas</h2>
+    <div class="album-grid" id="top-series-grid"></div>
 
-        <h2 class="section-title">
-            Valoraciones recientes (<span id="total-reviews-count">0</span>)
-        </h2>
-        <div class="album-grid" id="recent-albums-grid">
-            </div>
-<h2 class="section-title">Películas Mejor Puntuadas</h2>
-        <div class="album-grid" id="top-movies-grid"></div>
+    <hr style="margin: 40px 0; border: none; border-top: 1px solid var(--border-color);">
 
-        <h2 class="section-title">Series Mejor Puntuadas</h2>
-        <div class="album-grid" id="top-series-grid"></div>
-    </main>
+    <h2 class="section-title">Valoraciones recientes</h2>
+    <div class="album-grid" id="recent-albums-grid"></div>
+</main>
 
     <script src="db.js"></script>
     <script src="profile.js"></script>

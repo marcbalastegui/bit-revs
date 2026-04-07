@@ -6,18 +6,31 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body data-store="movies">
-    <header>
-        <a href="index.html" class="logo">BitRevs</a>
+<header>
+        <div class="header-left">
+            <a href="profile.html" class="header-avatar" id="global-header-avatar" title="Mi Perfil">U</a>
+            <a href="index.html" class="logo">BitRevs</a>
+        </div>
         <nav>
             <a href="movies.html" class="active">Películas</a>
             <a href="series.html">Series</a>
             <a href="index.html">Álbumes</a>
-            <a href="profile.html">Mi Perfil</a>
         </nav>
-        <button id="btn-add-media" class="save-btn">+ Añadir Película</button>
+        <button id="btn-add-album" class="save-btn">+ Añadir Álbum</button>
     </header>
     <main>
         <h1>Todas las Películas</h1>
+        <div class="controls-bar">
+    <input type="text" id="filter-input" placeholder="Filtrar por título o año...">
+    <select id="sort-select">
+        <option value="default">Orden por defecto</option>
+        <option value="rating-desc">Nota (Mayor a Menor)</option>
+        <option value="rating-asc">Nota (Menor a Mayor)</option>
+        <option value="year-desc">Año (Más reciente)</option>
+        <option value="year-asc">Año (Más antiguo)</option>
+        <option value="title-asc">Título (A-Z)</option>
+    </select>
+</div>
         <div class="album-grid" id="media-grid"></div>
     </main>
 

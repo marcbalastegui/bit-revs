@@ -119,3 +119,18 @@ function getColorByRating(rating) {
     if (r >= 2) return '#996600';
     return '#4D4D4D';
 }
+// --- CARGA DE AVATAR GLOBAL EN CABECERA ---
+document.addEventListener('DOMContentLoaded', async () => {
+    const headerAvatar = document.getElementById('global-header-avatar');
+    if (headerAvatar && typeof getUserProfileFromDB === 'function') {
+        try {
+            const profile = await getUserProfileFromDB();
+            if (profile.avatarData) {
+                headerAvatar.style.backgroundImage = `url(${profile.avatarData})`;
+                headerAvatar.textContent = '';
+            } else {
+                headerAvatar.textContent = profile.userName.charAt(0).toUpperCase();
+            }
+        } catch (e) { console.error("Error cargando avatar global", e); }
+    }
+});
