@@ -6,12 +6,13 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body data-store="series">
+<header>
     <div class="header-left">
         <a href="index.html" class="logo">BitRevs</a>
         <nav>
-            <a href="movies.html">Películas</a>
+            <a href="movies.html" >Películas</a>
             <a href="series.html" class="active">Series</a>
-            <a href="index.html">Álbumes</a>
+            <a href="index.html" >Álbumes</a>
         </nav>
     </div>
 
@@ -19,6 +20,7 @@
         <button id="btn-add-media" class="save-btn">+ Añadir Serie</button>
         <a href="profile.html" class="header-avatar" id="global-header-avatar" title="Mi Perfil">U</a>
     </div>
+</header>
     <main>
         <h1>Todas las Series</h1>
         <div class="controls-bar">
@@ -32,8 +34,8 @@
         <option value="title-asc">Título (A-Z)</option>
     </select>
 </div>
-            </main>
-
+        <div class="album-grid" id="media-grid"></div>
+    </main>
 
     <div id="modal-add" class="modal hidden">
         <div class="modal-content">
