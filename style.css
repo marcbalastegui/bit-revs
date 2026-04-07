@@ -1,3 +1,5 @@
+/* style.css - Diseño Final BitRevs */
+
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap');
 
 /* --- VARIABLES Y RESETEO --- */
@@ -24,7 +26,7 @@ body {
     -webkit-font-smoothing: antialiased;
 }
 
-/* --- CABECERA (HEADER) PROFESIONAL --- */
+/* --- CABECERA (HEADER) --- */
 header {
     display: flex;
     justify-content: space-between;
@@ -46,7 +48,6 @@ header .logo {
     letter-spacing: -1px;
 }
 
-nav { display: flex; align-items: center; }
 nav a {
     color: var(--text-muted);
     text-decoration: none;
@@ -57,7 +58,6 @@ nav a {
 }
 nav a:hover, nav a.active { color: var(--accent-red); }
 
-/* Bloque derecha: Botón + Foto */
 .header-right { display: flex; align-items: center; gap: 20px; }
 
 .header-avatar {
@@ -67,85 +67,9 @@ nav a:hover, nav a.active { color: var(--accent-red); }
     text-decoration: none; font-weight: bold; font-size: 1.1rem;
     background-size: cover; background-position: center;
     border: 2px solid var(--border-color);
-    transition: transform 0.2s;
-    order: 2; /* Avatar goes to the right of the button */
-}
-.header-avatar:hover { transform: scale(1.05); }
-
-
-/* --- COMPONENTES GLOBALES --- */
-button, .btn {
-    padding: 10px 20px;
-    border-radius: 5px;
-    border: none;
-    font-weight: bold;
-    cursor: pointer;
-    font-size: 0.9rem;
-    transition: background-color 0.2s;
 }
 
-/* Specific buttons from headers and body */
-#btn-add-album, #btn-add-media, .save-btn {
-    background-color: var(--accent-red);
-    color: white;
-}
-#btn-add-album:hover, #btn-add-media:hover, .save-btn:hover { background-color: var(--accent-red-hover); }
-
-.edit-btn {
-    background-color: var(--bg-secondary);
-    color: var(--text-main);
-    border: 1px solid var(--border-color);
-}
-.edit-btn:hover { background-color: #f0f0f0; }
-
-.hidden { display: none !important; }
-
-/* Modales */
-.modal {
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background-color: rgba(0,0,0,0.5);
-    display: flex; justify-content: center; align-items: center; z-index: 1000;
-}
-.modal-content {
-    background-color: var(--bg-primary);
-    padding: 30px; border-radius: 8px; width: 400px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-}
-.modal-content h2 { margin-bottom: 20px; color: var(--text-main); }
-.modal-content label { display: block; margin-top: 15px; margin-bottom: 5px; font-weight: bold; font-size: 0.9rem;}
-.modal-content input, .modal-content select {
-    width: 100%; padding: 10px;
-    border-radius: 5px; border: 1px solid var(--border-color);
-    background-color: var(--bg-secondary); color: var(--text-main);
-    font-family: 'Inter', sans-serif;
-}
-.modal-actions { margin-top: 25px; display: flex; justify-content: flex-end; gap: 10px; }
-#btn-cancel, #btn-cancel-track { background-color: var(--bg-secondary); color: var(--text-main); }
-
-
-/* Barra de filtros superior */
-.controls-bar {
-    display: flex; gap: 15px; margin-bottom: 30px;
-}
-.controls-bar input, .controls-bar select {
-    padding: 12px; border-radius: 8px; border: 1px solid var(--border-color);
-    background-color: var(--bg-primary); color: var(--text-main); font-family: 'Inter', sans-serif;
-}
-.controls-bar input { flex-grow: 1; outline: none;}
-.controls-bar input:focus { border-color: var(--text-main); }
-
-
-/* --- CONTENIDO PRINCIPAL Y GRID --- */
-main { padding: 40px; }
-main h1 { margin-bottom: 30px; font-weight: 800; font-size: 2.2rem; }
-.section-title { margin: 40px 0 20px 0; font-size: 1.8rem; font-weight: 800; }
-
-.album-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 30px;
-}
-
+/* --- TARJETAS (Álbumes, Pelis, Series) --- */
 .album-card {
     background-color: var(--bg-primary);
     border: 1px solid var(--border-color);
@@ -155,146 +79,95 @@ main h1 { margin-bottom: 30px; font-weight: 800; font-size: 2.2rem; }
 }
 .album-card:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
 
-/* Cover container for album cards */
+/* CONTENEDOR DE ICONOS EDITAR/BORRAR (Sutiles y Hover) */
+.card-actions {
+    position: absolute; top: 8px; right: 8px;
+    display: flex; gap: 6px; z-index: 10;
+    opacity: 0; /* OCULTOS POR DEFECTO */
+    transition: opacity 0.3s ease;
+}
+
+.album-card:hover .card-actions {
+    opacity: 1; /* APARECEN AL HACER HOVER EN LA TARJETA */
+}
+
+.action-btn {
+    width: 28px; height: 28px; border-radius: 50%;
+    display: flex; justify-content: center; align-items: center;
+    color: white; border: none; cursor: pointer;
+    font-size: 0.85rem; transition: transform 0.2s, background-color 0.2s;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+.btn-delete { background-color: rgba(211, 47, 47, 0.85); }
+.btn-edit { background-color: rgba(0, 120, 215, 0.85); }
+.action-btn:hover { transform: scale(1.1); }
+
 .cover-container { width: 100%; aspect-ratio: 1 / 1; border-bottom: 1px solid var(--border-color); }
 .cover-container.vertical { aspect-ratio: 2 / 3; }
 .cover-container img { width: 100%; height: 100%; object-fit: cover; }
 
-/* Floating delete button in main grid */
-.album-card .delete-btn {
-    position: absolute; top: 10px; right: 10px;
-    background-color: rgba(211, 47, 47, 0.95);
-    color: white; width: 28px; height: 28px; border-radius: 50%;
-    display: flex; justify-content: center; align-items: center;
-    cursor: pointer; font-weight: bold; font-size: 0.9rem; z-index: 10;
-    transition: transform 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-}
-.album-card .delete-btn:hover { transform: scale(1.1); }
+.album-info { padding: 12px; }
+.title-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.title-row h3 { font-size: 1rem; flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rating-badge { padding: 2px 6px; border-radius: 4px; font-weight: 800; font-size: 0.9rem; color: white; flex-shrink: 0; }
 
-.album-info { padding: 15px; }
-.title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; gap: 10px; }
-.title-row h3 { font-size: 1.1rem; flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.album-info p { color: var(--text-muted); font-size: 0.9rem; }
-
-/* Note Badge colors */
-.rating-badge {
-    padding: 3px 8px; border-radius: 4px;
-    font-weight: 800; font-size: 1rem;
-    color: white; text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
-    flex-shrink: 0;
-}
-
-/* Album Type Tags */
-.album-tag {
-    display: inline-block; padding: 3px 10px; border-radius: 20px;
-    font-size: 0.7rem; font-weight: 800; text-transform: uppercase;
-    background-color: var(--bg-secondary); color: var(--text-muted);
-    border: 1px solid var(--border-color); margin-top: 8px; letter-spacing: 0.5px;
-}
-
-
-/* --- VISTA DETALLADA DEL ÁLBUM (album.html) --- */
-.album-header-banner {
-    display: flex; gap: 40px; align-items: flex-end;
-    padding-bottom: 30px; border-bottom: 1px solid var(--border-color); margin-bottom: 30px;
-}
-.detail-cover {
-    width: 250px; height: 250px; object-fit: cover;
-    border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-}
-.detail-info { display: flex; flex-direction: column; align-items: flex-start; }
-.detail-type { font-size: 1rem; font-weight: bold; text-transform: uppercase; color: var(--text-muted); margin-bottom: 5px; }
-.detail-title { font-size: 3.5rem; font-weight: 900; line-height: 1.1; margin-bottom: 5px; letter-spacing: -1px; }
-.detail-artist { font-size: 1.5rem; font-weight: 600; color: var(--text-muted); margin-bottom: 20px; }
-.rating-big { font-size: 2rem; font-weight: 900; padding: 10px 20px; border-radius: 10px; color: white; text-shadow: 1px 1px 3px rgba(0,0,0,0.3); }
-
-/* Tracks list in detailed view */
-.tracklist-section h2 { font-size: 1.8rem; border-bottom: 2px solid var(--text-main); padding-bottom: 10px; display: inline-block; margin-bottom: 20px; }
-.track-item { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid var(--border-color); }
-.track-info h4 { font-size: 1.1rem; margin-bottom: 4px; }
-.track-info p { font-size: 0.9rem; color: var(--text-muted); }
-
-
-/* --- PERFIL DE USUARIO (profile.html) - NUEVA ESTRUCTURA FIJA --- */
+/* --- PERFIL --- */
 .profile-layout {
-    position: relative; margin-bottom: 40px; /* Separación de las secciones */
+    position: relative; margin-bottom: 40px;
     border: 1px solid var(--border-color); border-radius: 12px;
-    overflow: hidden; background-color: var(--bg-primary); /* Base color covered by negative margin */
+    overflow: hidden; background-color: var(--bg-primary);
 }
 
-/* Banner Interactivo */
 .profile-banner-container {
-    height: 180px; /* Taller banner placeholder */
-    background-color: #eee;
-    background-size: cover; background-position: center; position: relative;
+    height: 180px; background-color: #eee;
+    background-size: cover; background-position: center;
 }
-.profile-banner-container.has-banner { height: 250px; /* Taller for added effect */ }
+.profile-banner-container.has-banner { height: 250px; }
 
-.banner-overlay {
-    position: absolute; top: 15px; right: 15px; /* Top right of banner area */
-    background-color: rgba(0,0,0,0.7); color: white;
-    padding: 8px 16px; border-radius: 20px; font-size: 0.8rem; cursor: pointer; font-weight: bold; z-index: 10;
-}
-.banner-overlay:hover { background-color: rgba(0,0,0,0.8); }
-
-
-/* Contenido flotando sobre el banner */
 .profile-header-content {
-    display: flex; align-items: flex-start; /* Align content to the top of the white box */
-    gap: 30px; /* Space between avatar and name */
-    padding: 0 40px 25px 40px; /* Taller top padding */
-    margin-top: -50px; /* Pull the white box up over the banner */
-    position: relative; z-index: 5;
-    background-color: var(--bg-primary); /* White box covers banner */
+    display: flex; align-items: flex-start;
+    padding: 20px 40px; margin-top: -50px; /* Sube la caja blanca sobre el banner */
+    background-color: var(--bg-primary); position: relative; z-index: 5;
 }
 
-/* Avatar Container (overlaps) */
-.avatar-container { position: relative; width: 100px; height: 100px; flex-shrink: 0; }
+.avatar-container { position: relative; width: 100px; height: 100px; flex-shrink: 0; margin-right: 25px; }
 .profile-avatar {
     width: 100%; height: 100%; border-radius: 50%;
     background-color: var(--accent-red); color: white;
     display: flex; justify-content: center; align-items: center;
     font-size: 3rem; font-weight: bold;
-    border: 4px solid var(--bg-primary); /* Thick white border creates overlap effect */
-    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    border: 4px solid var(--bg-primary); box-shadow: 0 4px 10px rgba(0,0,0,0.1);
     background-size: cover; background-position: center;
 }
-.avatar-overlay {
-    position: absolute; bottom: 0; left: 0; width: 100%; height: 40%;
-    background-color: rgba(0,0,0,0.7); color: white; display: flex; justify-content: center; align-items: center;
-    font-size: 0.7rem; font-weight: bold; text-transform: uppercase;
-    border-radius: 0 0 50px 50px; cursor: pointer; letter-spacing: 1px;
-}
 
-/* Name and Stats Block */
 .profile-info-block {
-    flex-grow: 1; display: flex;
-    flex-direction: column;
-    gap: 5px; /* Spacing between name row and stats row */
+    flex-grow: 1;
+    padding-top: 60px; /* BAJA EL TEXTO PARA QUE NO TOQUE EL BANNER */
+    display: flex; flex-direction: column; gap: 4px;
 }
 
-/* Name Row (Username + Edit Button) */
-.profile-header-top { display: flex; justify-content: space-between; align-items: center; width: 100%; }
+.profile-header-top { display: flex; justify-content: space-between; align-items: center; }
+.profile-info-block h1 { font-size: 2rem; font-weight: 800; margin: 0; }
 
-.editable-name-container { display: flex; align-items: center; gap: 10px; }
-.profile-info-block h1 { font-size: 2.2rem; margin: 0; color: var(--text-main); font-weight: 800;}
-#profile-name-edit {
-    font-size: 1.8rem; font-family: 'Inter', sans-serif; font-weight: bold;
-    padding: 8px; border: 2px solid var(--border-color);
-    border-radius: 5px; background-color: var(--bg-secondary); width: 100%; color: var(--text-main);
+/* BOTÓN EDITAR PERFIL SUTIL (Solo Hover) */
+#btn-edit-profile {
+    opacity: 0; /* OCULTO POR DEFECTO */
+    transition: opacity 0.3s ease;
+    background-color: var(--bg-secondary);
+    color: var(--text-muted);
+    border: 1px solid var(--border-color);
+    padding: 6px 12px; font-size: 0.8rem;
 }
-#profile-name-edit:focus { outline: none; border-color: var(--accent-red); }
 
-/* Profile Stats Row (Media, Reviews) */
-.profile-stats {
-    display: flex; gap: 15px; color: var(--text-muted); font-size: 0.95rem; font-weight: 600; align-items: center;
+.profile-info-block:hover #btn-edit-profile {
+    opacity: 1; /* APARECE AL PASAR EL RATÓN POR LA INFO */
 }
-.star-icon { color: #FFD11A; margin-right: 4px; font-size: 1.2rem;}
 
-/* Actions bar (Save/Cancel) below info block */
-.edit-actions-bar {
-    display: flex; justify-content: flex-end; gap: 10px;
-    margin-top: -10px; margin-bottom: 30px;
-}
-#btn-cancel-edit { background-color: var(--bg-secondary); color: var(--text-main); border: 1px solid var(--border-color);}
-#total-reviews-count { color: var(--text-muted); font-weight: 400; font-size: 1.5rem; margin-left: 5px;}
+.profile-stats { display: flex; gap: 12px; color: var(--text-muted); font-size: 0.9rem; font-weight: 600; align-items: center; }
+.star-icon { color: #FFD11A; margin-right: 3px; }
+
+/* Botones de acción al editar (Guardar/Cancelar) siempre visibles al estar en modo edición */
+.edit-actions-bar { display: flex; justify-content: flex-end; gap: 10px; margin-top: 15px; }
+
+/* Helpers */
+.hidden { display: none !important; }
