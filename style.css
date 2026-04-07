@@ -362,46 +362,49 @@ h1 {
 .track-btn.edit:hover { color: #007aff; transform: scale(1.1); }
 .track-btn.delete:hover { color: #ff3b30; transform: scale(1.1); }
 
-/* --- BOTÓN GUARDAR CANCIÓN (Pop-up) --- */
-#btn-save-track,
-.modal-actions button[type="submit"] {
-    background-color: var(--accent-red) !important;
-    color: white !important;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 10px;
-    font-weight: 800;
-    font-family: 'Inter', sans-serif;
-    font-size: 0.95rem;
-    cursor: pointer;
-    transition: background-color 0.2s, transform 0.2s;
-    box-shadow: var(--shadow-subtle);
-}
+/* =========================================================
+   === FIX DEFINITIVO DE BOTONES (Añadir y Guardar) ===
+   ========================================================= */
 
-#btn-save-track:hover,
-.modal-actions button[type="submit"]:hover {
-    background-color: var(--accent-red-hover) !important;
-    transform: translateY(-2px);
-}
-
-/* --- BOTÓN AÑADIR CANCIÓN --- */
+/* 1. Botón "Añadir Canción" (En la vista del álbum) */
 #btn-add-track {
     background-color: var(--bg-secondary) !important;
     color: var(--text-main) !important;
-    border: 1px solid var(--border-color);
-    padding: 10px 20px;
-    border-radius: 12px;
-    font-weight: 700;
-    font-family: 'Inter', sans-serif;
-    font-size: 0.95rem;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    box-shadow: var(--shadow-subtle);
+    border: 1px solid var(--border-color) !important;
+    padding: 8px 16px !important;
+    border-radius: 10px !important;
+    font-weight: 700 !important;
+    font-family: 'Inter', sans-serif !important;
+    font-size: 0.9rem !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+    box-shadow: var(--shadow-subtle) !important;
 }
 
 #btn-add-track:hover {
     background-color: var(--text-main) !important;
     color: var(--bg-primary) !important;
-    transform: translateY(-2px);
-    box-shadow: 0 6px 15px rgba(0,0,0,0.1);
+    transform: translateY(-2px) !important;
+}
+
+/* 2. Botón "Guardar Canción" (Dentro del Pop-up) */
+#btn-save-track,
+.modal-actions button[type="submit"] {
+    background-color: var(--accent-red) !important;
+    color: white !important;
+    border: none !important;
+    padding: 10px 20px !important;
+    border-radius: 10px !important;
+    font-weight: 800 !important;
+    font-family: 'Inter', sans-serif !important;
+    font-size: 0.95rem !important;
+    cursor: pointer !important;
+    transition: background-color 0.2s, transform 0.2s !important;
+    box-shadow: var(--shadow-subtle) !important;
+}
+
+#btn-save-track:hover,
+.modal-actions button[type="submit"]:hover {
+    background-color: var(--accent-red-hover) !important;
+    transform: translateY(-2px) !important;
 }
