@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BitRevs - Top Canciones</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* ── TOP PAGE SPECIFIC STYLES ── */
+        .top-page-header {
+            margin-bottom: 32px;
+        }
+
+        .top-page-header h1 {
+            margin-bottom: 8px;
+        }
+
+        .top-page-header p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin: 0;
+        }
+
+        /* Controls bar reutiliza el estilo de index.html */
+        .top-search-input {
+            flex: 1;
+            min-width: 180px;
+        }
+
+        /* ── RANKING LIST ── */
+        #top-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .top-row {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 10px 14px;
+            border-radius: 8px;
+            background: var(--bg-secondary, #181818);
+            transition: background 0.15s;
+            cursor: default;
+        }
+
+        .top-row:hover {
+            background: var(--bg-hover, #282828);
+        }
+
+        /* Número de posición */
+        .top-rank {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--text-muted, #b3b3b3);
+            min-width: 36px;
+            text-align: right;
+            flex-shrink: 0;
+        }
+
+        /* Flecha de movimiento */
+        .top-arrow {
+            font-size: 0.75rem;
+            font-weight: 700;
+            min-width: 18px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        .top-arrow.up   { color: #1DB954; } /* verde */
+        .top-arrow.down { color: #E53935; } /* rojo */
+        .top-arrow.new  { color: #FFD700; font-size: 0.6rem; letter-spacing: 0.03em; }
+
+        /* Portada miniatura */
+        .top-cover {
+            width: 44px;
+            height: 44px;
+            object-fit: cover;
+            border-radius: 4px;
+            flex-shrink: 0;
+        }
+
+        /* Info textual */
+        .top-info {
+            flex: 1;
+            min-width: 0;
+            overflow: hidden;
+        }
+
+        .top-track-title {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text-main, #fff);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .top-track-meta {
+            font-size: 0.78rem;
+            color: var(--text-muted, #b3b3b3);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-top: 2px;
+        }
+
+        /* Badge de nota */
+        .top-badge {
+            flex-shrink: 0;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #fff;
+            min-width: 42px;
+            text-align: center;
+        }
+
+        /* Empty / loading states */
+        .top-empty {
+            color: var(--text-muted);
+            margin-top: 40px;
+            text-align: center;
+        }
+
+        @media (max-width: 540px) {
+            .top-cover { width: 36px; height: 36px; }
+            .top-rank  { min-width: 26px; font-size: 0.85rem; }
+            .top-track-title { font-size: 0.88rem; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="header-left">
+        <a href="index.html" class="logo">BitRevs</a>
+    </div>
+    <nav>
+        <a href="movies.html">Películas</a>
+        <a href="series.html">Series</a>
+        <a href="index.html">Álbumes</a>
+        <a href="top.html" class="active">Top Canciones</a>
+    </nav>
+    <div class="header-right">
+        <!-- botón invisible para mantener alineación del header -->
+        <button style="visibility:hidden;" class="save-btn">+</button>
+        <a href="profile.html" class="header-avatar" id="global-header-avatar" title="Mi Perfil">U</a>
+    </div>
+</header>
+
+<main>
+    <div class="top-page-header">
+        <h1>Top Canciones</h1>
+        <p id="top-subtitle">Cargando ranking…</p>
+    </div>
+
+    <div class="controls-bar" style="margin-bottom: 24px;">
+        <input
+            type="text"
+            id="top-filter"
+            class="top-search-input"
+            placeholder="Filtrar por artista o álbum…"
+        >
+    </div>
+
+    <div id="top-list"></div>
+</main>
+
+<script src="db.js"></script>
+<script src="top.js"></script>
+</body>
+</html>
