@@ -523,7 +523,7 @@ h1 {
 .track-fav-btn.active { opacity: 1; color: var(--accent-red); }
 .track-fav-btn.active svg { fill: var(--accent-red); }
 
-/* Checkbox de filtro favoritos */
+/* Checkbox de filtro favorits */
 .fav-filter-label {
     display: flex; align-items: center; gap: 6px;
     font-weight: 600; font-size: 0.9rem;
