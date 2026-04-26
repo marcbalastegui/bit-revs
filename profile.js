@@ -63,16 +63,10 @@ async function loadProfilePage() {
     }
 
     // D. Dibujar secciones del perfil
-    // Mis mejores álbumes
     renderSection(allAlbums, 'top-albums-grid', false, true);
-
-    // Películas mejor puntuadas (Vertical)
     renderSection(allMovies, 'top-movies-grid', true, true);
-
-    // Series mejor puntuadas (Vertical)
     renderSection(allSeries, 'top-series-grid', true, true);
 
-    // Valoraciones recientes (Mezcla de todo, ordenado por ID/Fecha)
     const recentReviews = allReviews.sort((a, b) => b.id - a.id).slice(0, 10);
     renderSection(recentReviews, 'recent-albums-grid', false, false);
 }
@@ -86,7 +80,7 @@ function renderSection(items, containerId, isVertical, sortByRating = true) {
 
     if (sortByRating) {
         displayItems.sort((a, b) => b.rating - a.rating).slice(0, 5);
-        displayItems = displayItems.slice(0, 5); // Solo los 5 mejores
+        displayItems = displayItems.slice(0, 5);
     }
 
     if (displayItems.length === 0) {
@@ -99,8 +93,6 @@ function renderSection(items, containerId, isVertical, sortByRating = true) {
         const card = document.createElement('div');
         card.classList.add('album-card');
 
-        // Solo los álbumes tienen página de detalles por ahora
-        // Detectamos si es álbum si no tiene una propiedad que lo identifique como peli/serie o por el ID del container
         if (containerId === 'top-albums-grid' || (!isVertical && !item.type)) {
             card.onclick = () => window.location.href = `album.html?id=${item.id}`;
         }
@@ -127,7 +119,6 @@ function applyProfileDataToUI(data) {
     profileNameView.textContent = data.userName;
     profileNameEdit.value = data.userName;
 
-    // Foto de perfil
     avatarCircle.style.backgroundImage = 'none';
     avatarFallbackChar.style.display = 'block';
 
@@ -138,7 +129,6 @@ function applyProfileDataToUI(data) {
         avatarFallbackChar.textContent = data.userName.charAt(0).toUpperCase();
     }
 
-    // Banner
     if (data.bannerData) {
         bannerView.style.backgroundImage = `url(${data.bannerData})`;
         bannerView.classList.add('has-banner');
@@ -180,7 +170,6 @@ btnSaveEdit.addEventListener('click', async () => {
     toggleEditMode(false);
     applyProfileDataToUI(updatedProfile);
 
-    // Actualizar también el avatar del header si existe
     const headerAvatar = document.getElementById('global-header-avatar');
     if (headerAvatar) {
         if (tempAvatarData) {
@@ -235,6 +224,115 @@ function processImageFile(file, type) {
     };
     reader.readAsDataURL(file);
 }
+
+// ── 4. EXPORTAR / IMPORTAR DATOS ──────────────────────────────────────────
+
+// EXPORTAR: vuelca toda la IndexedDB en un JSON y lo descarga
+async function exportData() {
+    try {
+        const albums  = await getAllAlbumsFromDB();
+        const movies  = await getAllItemsFromDB('movies');
+        const series  = await getAllItemsFromDB('series');
+        const profile = await getUserProfileFromDB();
+
+        const backup = {
+            _version: 1,
+            _exportedAt: new Date().toISOString(),
+            albums,
+            movies,
+            series,
+            profile
+        };
+
+        const json = JSON.stringify(backup, null, 2);
+        const blob = new Blob([json], { type: 'application/json' });
+        const url  = URL.createObjectURL(blob);
+
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `bitrevs_backup_${new Date().toISOString().slice(0,10)}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+
+        showBackupMessage('✓ Backup exportado correctamente', 'success');
+    } catch (err) {
+        console.error('Error al exportar:', err);
+        showBackupMessage('✗ Error al exportar los datos', 'error');
+    }
+}
+
+// IMPORTAR: lee el JSON y restaura todos los datos en IndexedDB
+async function importData(file) {
+    if (!file) return;
+
+    const confirmed = confirm(
+        "⚠️ ATENCIÓN: Importar un backup SOBREESCRIBIRÁ todos tus datos actuales.\n\n¿Estás seguro de que quieres continuar?"
+    );
+    if (!confirmed) {
+        document.getElementById('input-import').value = '';
+        return;
+    }
+
+    try {
+        const text   = await file.text();
+        const backup = JSON.parse(text);
+
+        // Validación mínima del archivo
+        if (!backup.albums || !backup.movies || !backup.series) {
+            throw new Error("El archivo no parece un backup válido de BitRevs.");
+        }
+
+        // Restaurar álbumes
+        for (const album of backup.albums) {
+            await saveAlbumToDB(album);
+        }
+
+        // Restaurar películas
+        for (const movie of backup.movies) {
+            await saveItemToDB('movies', movie);
+        }
+
+        // Restaurar series
+        for (const serie of backup.series) {
+            await saveItemToDB('series', serie);
+        }
+
+        // Restaurar perfil si existe en el backup
+        if (backup.profile) {
+            await saveUserProfileToDB(backup.profile);
+        }
+
+        showBackupMessage('✓ Backup importado correctamente. Recargando…', 'success');
+
+        // Recargamos la página para reflejar todos los datos restaurados
+        setTimeout(() => window.location.reload(), 1500);
+
+    } catch (err) {
+        console.error('Error al importar:', err);
+        showBackupMessage('✗ Error: ' + err.message, 'error');
+    }
+
+    document.getElementById('input-import').value = '';
+}
+
+// Mensaje de feedback bajo los botones
+function showBackupMessage(text, type) {
+    const el = document.getElementById('backup-message');
+    if (!el) return;
+    el.textContent = text;
+    el.style.color = type === 'success' ? '#2e7d32' : '#c62828';
+    el.style.opacity = '1';
+    setTimeout(() => { el.style.opacity = '0'; }, 3000);
+}
+
+// Eventos de los botones de backup
+document.getElementById('btn-export')?.addEventListener('click', exportData);
+document.getElementById('input-import')?.addEventListener('change', (e) => {
+    importData(e.target.files[0]);
+});
+document.getElementById('btn-import')?.addEventListener('click', () => {
+    document.getElementById('input-import')?.click();
+});
 
 // INICIAR PÁGINA
 loadProfilePage();

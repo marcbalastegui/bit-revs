@@ -79,7 +79,19 @@
         <div class="album-grid" id="top-series-grid"></div>
 
         <hr style="margin: 40px 0; border: none; border-top: 1px solid var(--border-color);">
-
+<!-- SECCIÓN BACKUP -->
+<h2 class="section-title">Datos y Backup</h2>
+<div style="display:flex; flex-direction:column; gap:12px; max-width:420px;">
+    <p style="color:var(--text-muted); font-size:0.9rem;">
+        Exporta tus datos para hacer una copia de seguridad, o importa un backup anterior.
+    </p>
+    <div style="display:flex; gap:12px;">
+        <button id="btn-export" class="save-btn">⬇ Exportar backup</button>
+        <button id="btn-import" style="background:var(--bg-secondary); border:1px solid var(--border-color); padding:10px 20px; border-radius:10px; font-weight:700; cursor:pointer;">⬆ Importar backup</button>
+    </div>
+    <p id="backup-message" style="font-size:0.85rem; font-weight:600; transition: opacity 0.5s;"></p>
+</div>
+<input type="file" id="input-import" accept=".json" class="hidden">
         <h2 class="section-title">Valoraciones recientes</h2>
         <div class="album-grid" id="recent-albums-grid"></div>
 
