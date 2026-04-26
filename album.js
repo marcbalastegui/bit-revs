@@ -32,28 +32,11 @@ function recalculateAlbumRating() {
         }
     });
 
-    currentAlbum.rating = scoredTracksCount === 0
-        ? 0
-        : (totalScore / scoredTracksCount).toFixed(1);
-}
-
-// ── FAVORITOS ─────────────────────────────────────────────────────────────
-
-window.toggleAlbumFavorite = async function() {
-    currentAlbum.favorite = !currentAlbum.favorite;
-    await saveAlbumToDB(currentAlbum);
-    const btn = document.getElementById('btn-album-favorite');
-    if (btn) {
-        btn.classList.toggle('active', currentAlbum.favorite);
-        btn.title = currentAlbum.favorite ? 'Quitar de favoritos' : 'Añadir a favoritos';
+    if (scoredTracksCount === 0) {
+        currentAlbum.rating = 0;
+    } else {
+        currentAlbum.rating = (totalScore / scoredTracksCount).toFixed(1);
     }
-}
-
-window.toggleTrackFavorite = async function(index) {
-    currentAlbum.tracks[index].favorite = !currentAlbum.tracks[index].favorite;
-    await saveAlbumToDB(currentAlbum);
-    const btn = document.querySelector(`.track-fav-btn[data-index="${index}"]`);
-    if (btn) btn.classList.toggle('active', currentAlbum.tracks[index].favorite);
 }
 
 window.deleteTrack = async function(index) {
@@ -117,18 +100,15 @@ function addDragListeners(item, index) {
 
         if (dragSrcIndex === null || dragSrcIndex === index) return;
 
+        // Reordenar el array de tracks
         const moved = currentAlbum.tracks.splice(dragSrcIndex, 1)[0];
         currentAlbum.tracks.splice(index, 0, moved);
+
         dragSrcIndex = null;
 
         await saveAlbumToDB(currentAlbum);
         renderAlbumContent();
     });
-}
-
-// ── SVG CORAZÓN ───────────────────────────────────────────────────────────
-function heartSVG() {
-    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`;
 }
 
 // ── RENDER ────────────────────────────────────────────────────────────────
@@ -137,14 +117,12 @@ function renderAlbumContent() {
     const container = document.getElementById('album-detail-container');
     const badgeColor = getColorByRating(currentAlbum.rating);
     const typeText = currentAlbum.type ? currentAlbum.type : 'Álbum';
-    const isFav = currentAlbum.favorite || false;
 
     let tracksHtml = '';
     currentAlbum.tracks.forEach((track, index) => {
         const trackColor = track.isInterlude ? '#4D4D4D' : getColorByRating(track.rating);
         const displayRating = track.isInterlude ? 'INTERLUDE' : formatRating(track.rating);
         const badgeClass = track.isInterlude ? 'rating-badge album-tag' : 'rating-badge';
-        const trackFav = track.favorite || false;
 
         tracksHtml += `
             <div class="track-item" data-index="${index}">
@@ -154,7 +132,6 @@ function renderAlbumContent() {
                     <p>${track.artist ? track.artist : currentAlbum.artist}</p>
                 </div>
                 <div class="track-actions">
-                    <button class="track-fav-btn${trackFav ? ' active' : ''}" data-index="${index}" onclick="toggleTrackFavorite(${index})" title="${trackFav ? 'Quitar de favoritos' : 'Añadir a favoritos'}">${heartSVG()}</button>
                     <button class="track-btn edit" onclick="editTrack(${index})" title="Editar">✎</button>
                     <button class="track-btn delete" onclick="deleteTrack(${index})" title="Borrar">✖</button>
                 </div>
@@ -175,10 +152,7 @@ function renderAlbumContent() {
                 <span class="detail-type">${typeText} • ${currentAlbum.year}</span>
                 <h1 class="detail-title">${currentAlbum.title}</h1>
                 <h2 class="detail-artist">${currentAlbum.artist}</h2>
-                <div style="display:flex; align-items:center; gap:16px; margin-top:auto;">
-                    <div class="rating-big" style="background-color: ${badgeColor};">${displayAlbumRating}</div>
-                    <button id="btn-album-favorite" class="album-fav-btn${isFav ? ' active' : ''}" onclick="toggleAlbumFavorite()" title="${isFav ? 'Quitar de favoritos' : 'Añadir a favoritos'}">${heartSVG()}</button>
-                </div>
+                <div class="rating-big" style="background-color: ${badgeColor};">${displayAlbumRating}</div>
             </div>
         </div>
         <div class="tracklist-section">
@@ -190,6 +164,7 @@ function renderAlbumContent() {
         </div>
     `;
 
+    // Añadir listeners de drag a cada track
     document.querySelectorAll('.track-item').forEach((el, index) => {
         addDragListeners(el, index);
     });
@@ -205,7 +180,7 @@ function renderAlbumContent() {
     });
 }
 
-// ── EVENTOS DEL MODAL ─────────────────────────────────────────────────────
+// ── EVENTOS DEL MODAL DE CANCIÓN ──────────────────────────────────────────
 
 document.getElementById('track-interlude').addEventListener('change', (e) => {
     document.getElementById('rating-container').style.display = e.target.checked ? 'none' : 'block';
