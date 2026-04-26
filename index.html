@@ -11,78 +11,79 @@
     <div class="header-left">
         <a href="index.html" class="logo">BitRevs</a>
     </div>
-<nav>
-    <a href="movies.html">Películas</a>
-    <a href="series.html">Series</a>
-    <a href="index.html" class="active">Álbumes</a>
-    <a href="top.html">Top Canciones</a>
-</nav>
+    <nav>
+        <a href="movies.html">Películas</a>
+        <a href="series.html">Series</a>
+        <a href="index.html" class="active">Álbumes</a>
+        <a href="top.html">Top Canciones</a>
+    </nav>
     <div class="header-right">
         <button id="btn-add-album" class="save-btn">+ Añadir Álbum</button>
         <a href="profile.html" class="header-avatar" id="global-header-avatar" title="Mi Perfil">U</a>
     </div>
 </header>
 
-    <main>
-        <h1>Todos los Álbumes</h1>
+<main>
+    <h1>Todos los Álbumes</h1>
 
-<div class="controls-bar">
-    <input type="text" id="filter-input" placeholder="Filtrar por artista o título...">
-    <select id="sort-select">
-        <option value="default">Orden por defecto</option>
-        <option value="rating-desc">Nota (Mayor a Menor)</option>
-        <option value="rating-asc">Nota (Menor a Mayor)</option>
-        <option value="year-desc">Año (Más reciente)</option>
-        <option value="year-asc">Año (Más antiguo)</option>
-        <option value="title-asc">Título (A-Z)</option>
-        <option value="artist-asc">Artista (A-Z)</option>
-    </select>
-    <select id="genre-filter">
-        <option value="">Todos los géneros</option>
-    </select>
-</div>
-
-        <div class="album-grid" id="album-grid">
-            </div>
-    </main>
-
-    <div id="modal-add" class="modal hidden">
-        <div class="modal-content">
-            <h2>Nueva Reseña de Álbum</h2>
-            <form id="album-form">
-                <label for="cover">Portada del Álbum:</label>
-                <input type="file" id="cover" accept="image/*" required>
-
-                <label for="title">Título:</label>
-                <input type="text" id="title" required placeholder="Ej: Graduation">
-
-                <label for="artist">Artista:</label>
-                <input type="text" id="artist" required placeholder="Ej: Kanye West">
-
-                <label for="year">Año:</label>
-                <input type="number" id="year" required placeholder="Ej: 2007">
-
-                <label for="album-type">Tipo de lanzamiento:</label>
-                <select id="album-type">
-                    <option value="">Estándar (Álbum)</option>
-                    <option value="Deluxe">Deluxe</option>
-                    <option value="EP">EP</option>
-                    <option value="Single">Single</option>
-                </select>
-
-                <input type="hidden" id="rating" value="0">
-<label>Géneros:</label>
-<div id="genre-chips" style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:8px;"></div>
-<input type="text" id="genre-custom" placeholder="Otro género (ej: Afrobeats, Drill…)" style="margin-top:4px;">
-                <div class="modal-actions">
-                    <button type="button" id="btn-cancel">Cancelar</button>
-                    <button type="submit" class="save-btn">Guardar Reseña</button>
-                </div>
-            </form>
-        </div>
+    <div class="controls-bar">
+        <input type="text" id="filter-input" placeholder="Filtrar por artista o título...">
+        <select id="sort-select">
+            <option value="default">Orden por defecto</option>
+            <option value="rating-desc">Nota (Mayor a Menor)</option>
+            <option value="rating-asc">Nota (Menor a Mayor)</option>
+            <option value="year-desc">Año (Más reciente)</option>
+            <option value="year-asc">Año (Más antiguo)</option>
+            <option value="title-asc">Título (A-Z)</option>
+            <option value="artist-asc">Artista (A-Z)</option>
+        </select>
+        <select id="genre-filter">
+            <option value="">Todos los géneros</option>
+        </select>
     </div>
 
-    <script src="db.js"></script>
-    <script src="script.js"></script>
+    <div class="album-grid" id="album-grid"></div>
+</main>
+
+<div id="modal-add" class="modal hidden">
+    <div class="modal-content">
+        <h2>Nueva Reseña de Álbum</h2>
+        <form id="album-form">
+            <label for="cover">Portada del Álbum:</label>
+            <input type="file" id="cover" accept="image/*" required>
+
+            <label for="title">Título:</label>
+            <input type="text" id="title" required placeholder="Ej: Graduation">
+
+            <label for="artist">Artista:</label>
+            <input type="text" id="artist" required placeholder="Ej: Kanye West">
+
+            <label for="year">Año:</label>
+            <input type="number" id="year" required placeholder="Ej: 2007">
+
+            <label for="album-type">Tipo de lanzamiento:</label>
+            <select id="album-type">
+                <option value="">Estándar (Álbum)</option>
+                <option value="Deluxe">Deluxe</option>
+                <option value="EP">EP</option>
+                <option value="Single">Single</option>
+            </select>
+
+            <input type="hidden" id="rating" value="0">
+
+            <label>Géneros:</label>
+            <div id="genre-chips" style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:8px;"></div>
+            <input type="text" id="genre-custom" placeholder="Otro género (ej: Afrobeats, Drill…)" style="margin-top:4px;">
+
+            <div class="modal-actions">
+                <button type="button" id="btn-cancel">Cancelar</button>
+                <button type="submit" class="save-btn">Guardar Reseña</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="db.js"></script>
+<script src="script.js"></script>
 </body>
 </html>
