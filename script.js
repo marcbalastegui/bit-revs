@@ -6,6 +6,45 @@ const btnCancel = document.getElementById('btn-cancel');
 const albumForm = document.getElementById('album-form');
 let editingAlbumId = null;
 
+// ── GÉNEROS PREDEFINIDOS ──────────────────────────────────────────────────
+const GENRES_PREDEFINED = [
+    'Rap/Hip-Hop', 'Pop', 'R&B/Soul', 'Rock',
+    'Electrónica', 'Jazz', 'Reggaeton', 'Indie', 'Metal'
+];
+
+// Renderiza los chips de género en el modal
+function renderGenreSelector(selectedGenres = []) {
+    const container = document.getElementById('genre-chips');
+    if (!container) return;
+    container.innerHTML = '';
+
+    GENRES_PREDEFINED.forEach(genre => {
+        const chip = document.createElement('button');
+        chip.type = 'button';
+        chip.className = 'genre-chip' + (selectedGenres.includes(genre) ? ' selected' : '');
+        chip.textContent = genre;
+        chip.dataset.genre = genre;
+        chip.addEventListener('click', () => {
+            chip.classList.toggle('selected');
+        });
+        container.appendChild(chip);
+    });
+}
+
+// Recoge los géneros seleccionados (chips + custom)
+function getSelectedGenres() {
+    const chips = document.querySelectorAll('.genre-chip.selected');
+    const selected = Array.from(chips).map(c => c.dataset.genre);
+
+    const customInput = document.getElementById('genre-custom');
+    if (customInput && customInput.value.trim() !== '') {
+        const customs = customInput.value.split(',').map(g => g.trim()).filter(g => g !== '');
+        customs.forEach(g => { if (!selected.includes(g)) selected.push(g); });
+    }
+
+    return selected;
+}
+
 // BORRAR ÁLBUM
 window.deleteAlbum = async function(event, id) {
     event.stopPropagation();
@@ -25,9 +64,15 @@ window.editAlbum = async function(event, id) {
     document.getElementById('title').value = album.title;
     document.getElementById('artist').value = album.artist;
     document.getElementById('year').value = album.year;
-    if(document.getElementById('album-type')) document.getElementById('album-type').value = album.type;
+    if (document.getElementById('album-type')) document.getElementById('album-type').value = album.type;
 
-    // Cambiamos el título del modal y quitamos la obligación de subir foto nueva
+    // Géneros: separamos predefinidos de customs
+    const genres = album.genres || [];
+    const customGenres = genres.filter(g => !GENRES_PREDEFINED.includes(g));
+    renderGenreSelector(genres);
+    const customInput = document.getElementById('genre-custom');
+    if (customInput) customInput.value = customGenres.join(', ');
+
     document.querySelector('#modal-add .modal-content h2').textContent = "Editar Álbum";
     document.getElementById('cover').removeAttribute('required');
     modalAdd.classList.remove('hidden');
@@ -40,6 +85,9 @@ if (btnAddAlbum && modalAdd) {
         document.querySelector('#modal-add .modal-content h2').textContent = "Nueva Reseña de Álbum";
         document.getElementById('cover').setAttribute('required', 'true');
         if (albumForm) albumForm.reset();
+        renderGenreSelector([]);
+        const customInput = document.getElementById('genre-custom');
+        if (customInput) customInput.value = '';
         modalAdd.classList.remove('hidden');
     });
 }
@@ -61,22 +109,23 @@ if (albumForm) {
         const year = document.getElementById('year').value;
         const typeElement = document.getElementById('album-type');
         const type = typeElement ? typeElement.value : "";
+        const genres = getSelectedGenres();
 
         const fileInput = document.getElementById('cover');
         const file = fileInput.files[0];
 
-        // Rescatamos los datos antiguos si estamos editando (para no perder las canciones)
         let albumToSave = null;
         if (editingAlbumId) {
             albumToSave = await getAlbumByIdFromDB(editingAlbumId);
         } else {
-            albumToSave = { id: Date.now(), tracks: [], rating: 0 }; // Nota inicial 0
+            albumToSave = { id: Date.now(), tracks: [], rating: 0 };
         }
 
         albumToSave.title = title;
         albumToSave.artist = artist;
         albumToSave.year = parseInt(year) || 0;
         albumToSave.type = type;
+        albumToSave.genres = genres;
 
         if (file) {
             const reader = new FileReader();
@@ -94,7 +143,7 @@ if (albumForm) {
 async function finalizeSave(album) {
     try {
         await saveAlbumToDB(album);
-        if(albumForm) albumForm.reset();
+        if (albumForm) albumForm.reset();
         modalAdd.classList.add('hidden');
         await processAndRenderAlbums();
     } catch (error) {
@@ -113,6 +162,7 @@ async function processAndRenderAlbums() {
 
         let filteredAlbums = [...currentAlbums];
 
+        // Filtro por texto
         const filterInput = document.getElementById('filter-input');
         if (filterInput && filterInput.value) {
             const query = filterInput.value.toLowerCase().trim();
@@ -125,6 +175,16 @@ async function processAndRenderAlbums() {
             }
         }
 
+        // Filtro por género
+        const genreFilter = document.getElementById('genre-filter');
+        if (genreFilter && genreFilter.value !== '') {
+            const selectedGenre = genreFilter.value;
+            filteredAlbums = filteredAlbums.filter(a =>
+                a.genres && a.genres.includes(selectedGenre)
+            );
+        }
+
+        // Ordenación
         const sortSelect = document.getElementById('sort-select');
         if (sortSelect && sortSelect.value && sortSelect.value !== 'default') {
             const sortMethod = sortSelect.value;
@@ -160,7 +220,11 @@ function renderAlbums(albumsToRender, gridElement) {
         const badgeColor = typeof getColorByRating === 'function' ? getColorByRating(album.rating) : '#b3b3b3';
         const tagHtml = (album.type && album.type !== "") ? `<div class="album-tag">${album.type}</div>` : '';
 
-        // Formatear nota: Si hay canciones se muestra calculada y sin el .0 (Ej: 10 en lugar de 10.0)
+        // Géneros como chips pequeños en la card
+        const genresHtml = (album.genres && album.genres.length > 0)
+            ? `<div class="card-genres">${album.genres.map(g => `<span class="card-genre-tag">${g}</span>`).join('')}</div>`
+            : '';
+
         let displayRating = "-";
         if (album.tracks && album.tracks.length > 0) {
             displayRating = typeof formatRating === 'function' ? formatRating(album.rating) : album.rating;
@@ -181,16 +245,42 @@ function renderAlbums(albumsToRender, gridElement) {
                 </div>
                 <p>${album.artist || 'Artista Desconocido'} • ${album.year || 'N/A'}</p>
                 ${tagHtml}
+                ${genresHtml}
             </div>
         `;
         gridElement.appendChild(card);
     });
 }
 
+// Poblar el select de filtro por género con los géneros que realmente existen
+async function populateGenreFilter() {
+    const genreFilter = document.getElementById('genre-filter');
+    if (!genreFilter) return;
+
+    const albums = await getAllAlbumsFromDB();
+    const allGenres = new Set();
+    albums.forEach(a => { if (a.genres) a.genres.forEach(g => allGenres.add(g)); });
+
+    // Limpiamos opciones excepto la primera
+    genreFilter.innerHTML = '<option value="">Todos los géneros</option>';
+    [...allGenres].sort().forEach(genre => {
+        const opt = document.createElement('option');
+        opt.value = genre;
+        opt.textContent = genre;
+        genreFilter.appendChild(opt);
+    });
+}
+
 const globalFilterInput = document.getElementById('filter-input');
 const globalSortSelect = document.getElementById('sort-select');
+const globalGenreFilter = document.getElementById('genre-filter');
 
 if (globalFilterInput) globalFilterInput.addEventListener('input', processAndRenderAlbums);
 if (globalSortSelect) globalSortSelect.addEventListener('change', processAndRenderAlbums);
+if (globalGenreFilter) globalGenreFilter.addEventListener('change', processAndRenderAlbums);
 
-processAndRenderAlbums();
+// Init
+(async () => {
+    await populateGenreFilter();
+    await processAndRenderAlbums();
+})();

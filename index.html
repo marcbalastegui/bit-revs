@@ -29,6 +29,9 @@
         <div class="controls-bar">
             <input type="text" id="filter-input" placeholder="Filtrar por artista o título...">
             <select id="sort-select">
+                <select id="genre-filter">
+    <option value="">Todos los géneros</option>
+</select>
                 <option value="default">Orden por defecto</option>
                 <option value="rating-desc">Nota (Mayor a Menor)</option>
                 <option value="rating-asc">Nota (Menor a Mayor)</option>
@@ -68,7 +71,9 @@
                 </select>
 
                 <input type="hidden" id="rating" value="0">
-
+<label>Géneros:</label>
+<div id="genre-chips" style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:8px;"></div>
+<input type="text" id="genre-custom" placeholder="Otro género (ej: Afrobeats, Drill…)" style="margin-top:4px;">
                 <div class="modal-actions">
                     <button type="button" id="btn-cancel">Cancelar</button>
                     <button type="submit" class="save-btn">Guardar Reseña</button>

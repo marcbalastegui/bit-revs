@@ -408,3 +408,47 @@ h1 {
     background-color: var(--accent-red-hover) !important;
     transform: translateY(-2px) !important;
 }
+/* ── GÉNEROS ── */
+
+/* Chips en el modal de añadir/editar álbum */
+.genre-chip {
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 1.5px solid var(--border-color);
+    background: var(--bg-secondary);
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    font-family: 'Inter', sans-serif;
+}
+
+.genre-chip:hover {
+    border-color: var(--accent-red);
+    color: var(--accent-red);
+}
+
+.genre-chip.selected {
+    background: var(--accent-red);
+    border-color: var(--accent-red);
+    color: white;
+}
+
+/* Tags de género en las cards del grid */
+.card-genres {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-top: 8px;
+}
+
+.card-genre-tag {
+    padding: 2px 8px;
+    border-radius: 10px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--text-muted);
+}
