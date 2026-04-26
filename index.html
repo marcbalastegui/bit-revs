@@ -26,21 +26,21 @@
     <main>
         <h1>Todos los Álbumes</h1>
 
-        <div class="controls-bar">
-            <input type="text" id="filter-input" placeholder="Filtrar por artista o título...">
-            <select id="sort-select">
-                <select id="genre-filter">
-    <option value="">Todos los géneros</option>
-</select>
-                <option value="default">Orden por defecto</option>
-                <option value="rating-desc">Nota (Mayor a Menor)</option>
-                <option value="rating-asc">Nota (Menor a Mayor)</option>
-                <option value="year-desc">Año (Más reciente)</option>
-                <option value="year-asc">Año (Más antiguo)</option>
-                <option value="title-asc">Título (A-Z)</option>
-                <option value="artist-asc">Artista (A-Z)</option>
-            </select>
-        </div>
+<div class="controls-bar">
+    <input type="text" id="filter-input" placeholder="Filtrar por artista o título...">
+    <select id="sort-select">
+        <option value="default">Orden por defecto</option>
+        <option value="rating-desc">Nota (Mayor a Menor)</option>
+        <option value="rating-asc">Nota (Menor a Mayor)</option>
+        <option value="year-desc">Año (Más reciente)</option>
+        <option value="year-asc">Año (Más antiguo)</option>
+        <option value="title-asc">Título (A-Z)</option>
+        <option value="artist-asc">Artista (A-Z)</option>
+    </select>
+    <select id="genre-filter">
+        <option value="">Todos los géneros</option>
+    </select>
+</div>
 
         <div class="album-grid" id="album-grid">
             </div>
