@@ -15,7 +15,7 @@ async function loadAlbumDetails() {
     renderAlbumContent();
 }
 
-// NUEVA FUNCIÓN: Recalcular la nota media del álbum
+// Recalcular la nota media del álbum
 function recalculateAlbumRating() {
     if (!currentAlbum || !currentAlbum.tracks || currentAlbum.tracks.length === 0) {
         currentAlbum.rating = 0;
@@ -26,7 +26,6 @@ function recalculateAlbumRating() {
     let scoredTracksCount = 0;
 
     currentAlbum.tracks.forEach(track => {
-        // Solo sumamos notas de canciones que NO son interludes
         if (!track.isInterlude && !isNaN(parseFloat(track.rating))) {
             totalScore += parseFloat(track.rating);
             scoredTracksCount++;
@@ -36,16 +35,14 @@ function recalculateAlbumRating() {
     if (scoredTracksCount === 0) {
         currentAlbum.rating = 0;
     } else {
-        // Media aritmética (Suma total / Número de canciones)
         currentAlbum.rating = (totalScore / scoredTracksCount).toFixed(1);
     }
 }
 
-
 window.deleteTrack = async function(index) {
-    if(confirm("¿Borrar esta canción?")) {
+    if (confirm("¿Borrar esta canción?")) {
         currentAlbum.tracks.splice(index, 1);
-        recalculateAlbumRating(); // Recalcular nota tras borrar
+        recalculateAlbumRating();
         await saveAlbumToDB(currentAlbum);
         renderAlbumContent();
     }
@@ -68,6 +65,54 @@ window.editTrack = function(index) {
     document.getElementById('modal-track').classList.remove('hidden');
 }
 
+// ── DRAG & DROP ───────────────────────────────────────────────────────────
+
+let dragSrcIndex = null;
+
+function addDragListeners(item, index) {
+    item.setAttribute('draggable', 'true');
+
+    item.addEventListener('dragstart', (e) => {
+        dragSrcIndex = index;
+        item.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+    });
+
+    item.addEventListener('dragend', () => {
+        item.classList.remove('dragging');
+        document.querySelectorAll('.track-item').forEach(el => el.classList.remove('drag-over'));
+    });
+
+    item.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        document.querySelectorAll('.track-item').forEach(el => el.classList.remove('drag-over'));
+        item.classList.add('drag-over');
+    });
+
+    item.addEventListener('dragleave', () => {
+        item.classList.remove('drag-over');
+    });
+
+    item.addEventListener('drop', async (e) => {
+        e.preventDefault();
+        item.classList.remove('drag-over');
+
+        if (dragSrcIndex === null || dragSrcIndex === index) return;
+
+        // Reordenar el array de tracks
+        const moved = currentAlbum.tracks.splice(dragSrcIndex, 1)[0];
+        currentAlbum.tracks.splice(index, 0, moved);
+
+        dragSrcIndex = null;
+
+        await saveAlbumToDB(currentAlbum);
+        renderAlbumContent();
+    });
+}
+
+// ── RENDER ────────────────────────────────────────────────────────────────
+
 function renderAlbumContent() {
     const container = document.getElementById('album-detail-container');
     const badgeColor = getColorByRating(currentAlbum.rating);
@@ -76,13 +121,12 @@ function renderAlbumContent() {
     let tracksHtml = '';
     currentAlbum.tracks.forEach((track, index) => {
         const trackColor = track.isInterlude ? '#4D4D4D' : getColorByRating(track.rating);
-
-        // Usamos formatRating para quitar ".0" de las canciones
         const displayRating = track.isInterlude ? 'INTERLUDE' : formatRating(track.rating);
         const badgeClass = track.isInterlude ? 'rating-badge album-tag' : 'rating-badge';
 
         tracksHtml += `
-            <div class="track-item">
+            <div class="track-item" data-index="${index}">
+                <span class="drag-handle" title="Arrastra para reordenar">⠿</span>
                 <div class="track-info">
                     <h4>${track.title}</h4>
                     <p>${track.artist ? track.artist : currentAlbum.artist}</p>
@@ -96,12 +140,10 @@ function renderAlbumContent() {
         `;
     });
 
-    // Usamos formatRating para mostrar la nota grande del álbum sin ".0"
     let displayAlbumRating = "-";
     if (currentAlbum.tracks.length > 0) {
-         displayAlbumRating = formatRating(currentAlbum.rating);
+        displayAlbumRating = formatRating(currentAlbum.rating);
     }
-
 
     container.innerHTML = `
         <div class="album-header-banner">
@@ -122,6 +164,11 @@ function renderAlbumContent() {
         </div>
     `;
 
+    // Añadir listeners de drag a cada track
+    document.querySelectorAll('.track-item').forEach((el, index) => {
+        addDragListeners(el, index);
+    });
+
     document.getElementById('btn-add-track').addEventListener('click', () => {
         editingTrackIndex = null;
         const modalTitle = document.querySelector('#modal-track h2') || document.querySelector('#modal-track .modal-content h2');
@@ -132,6 +179,8 @@ function renderAlbumContent() {
         document.getElementById('modal-track').classList.remove('hidden');
     });
 }
+
+// ── EVENTOS DEL MODAL DE CANCIÓN ──────────────────────────────────────────
 
 document.getElementById('track-interlude').addEventListener('change', (e) => {
     document.getElementById('rating-container').style.display = e.target.checked ? 'none' : 'block';
@@ -170,7 +219,6 @@ document.getElementById('track-form').addEventListener('submit', async function(
         currentAlbum.tracks.push(newTrack);
     }
 
-    // Recalcular nota tras añadir/editar
     recalculateAlbumRating();
 
     await saveAlbumToDB(currentAlbum);
