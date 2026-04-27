@@ -62,9 +62,23 @@ async function buildRanking() {
         });
     });
 
-    // Ordenar: mayor nota primero; empate → orden alfabético de título
+    // Construir un mapa rápido albumId → rating del álbum
+    const albumRatingMap = {};
+    albums.forEach(album => {
+        albumRatingMap[album.id] = parseFloat(album.rating) || 0;
+    });
+
+    // Ordenar: mayor nota primero; empate → mayor nota del álbum primero;
+    // si aún hay empate → orden alfabético de título
     allTracks.sort((a, b) => {
         if (b.rating !== a.rating) return b.rating - a.rating;
+
+        // Desempate por nota del álbum
+        const albumRatingA = albumRatingMap[a.albumId] || 0;
+        const albumRatingB = albumRatingMap[b.albumId] || 0;
+        if (albumRatingB !== albumRatingA) return albumRatingB - albumRatingA;
+
+        // Si también empatan en nota del álbum, orden alfabético
         return a.title.localeCompare(b.title);
     });
 
