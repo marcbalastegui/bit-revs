@@ -25,13 +25,12 @@ window.editMedia = async function(event, id) {
     document.getElementById('title').value = item.title;
     document.getElementById('year').value = item.year;
     document.getElementById('rating').value = item.rating;
-    document.getElementById('review').value = item.review || '';
     document.getElementById('cover').removeAttribute('required');
     document.querySelector('.modal-content h2').textContent = `Editar Reseña`;
     modalAdd.classList.remove('hidden');
 }
 
-// Mostrar Modal Nuevo
+// Mostrar Modal Nuevo (CON COMPROBACIÓN PARA EVITAR EL ERROR DE TU CAPTURA)
 const addMediaBtn = document.getElementById('btn-add-media');
 if (addMediaBtn) {
     addMediaBtn.addEventListener('click', () => {
@@ -44,6 +43,7 @@ if (addMediaBtn) {
     });
 }
 
+// Lo mismo para el botón de cancelar
 document.getElementById('btn-cancel')?.addEventListener('click', () => modalAdd.classList.add('hidden'));
 
 // Guardar
@@ -52,13 +52,9 @@ mediaForm.addEventListener('submit', async (e) => {
     const title = document.getElementById('title').value;
     const year = document.getElementById('year').value;
     let rating = document.getElementById('rating').value.replace(',', '.');
-    const review = document.getElementById('review') ? document.getElementById('review').value : '';
 
     let itemToSave = editingId ? await getItemByIdFromDB(storeType, editingId) : { id: Date.now() };
-    itemToSave.title = title;
-    itemToSave.year = year;
-    itemToSave.rating = parseFloat(rating).toFixed(1);
-    itemToSave.review = review;
+    itemToSave.title = title; itemToSave.year = year; itemToSave.rating = parseFloat(rating).toFixed(1);
 
     const file = document.getElementById('cover').files[0];
     if (file) {
@@ -113,8 +109,6 @@ function renderMediaGrid(items) {
         const card = document.createElement('div');
         card.classList.add('album-card');
         const badgeColor = getColorByRating(item.rating);
-        const timeAgo = getRelativeTime(item.updatedAt || item.createdAt);
-        const reviewSnippet = item.review ? `<p class="card-review">${item.review.substring(0, 80)}${item.review.length > 80 ? '…' : ''}</p>` : '';
 
         card.innerHTML = `
             <div class="card-actions">
@@ -128,8 +122,6 @@ function renderMediaGrid(items) {
                     <span class="rating-badge" style="background-color: ${badgeColor};">${formatRating(item.rating)}</span>
                 </div>
                 <p>${item.year}</p>
-                ${reviewSnippet}
-                <p class="card-time">${timeAgo}</p>
             </div>
         `;
         mediaGrid.appendChild(card);

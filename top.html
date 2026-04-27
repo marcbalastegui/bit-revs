@@ -150,9 +150,6 @@
         <!-- botón invisible para mantener alineación del header -->
         <button style="visibility:hidden;" class="save-btn">+</button>
         <a href="profile.html" class="header-avatar" id="global-header-avatar" title="Mi Perfil">U</a>
-    <form action="search.html" method="get" style="display:flex; align-items:center;">
-    <input type="search" name="q" placeholder="Buscar…" style="padding:8px 16px; border-radius:20px; border:1px solid var(--border-color); width:180px;">
-</form>
     </div>
 </header>
 
@@ -176,10 +173,5 @@
 
 <script src="db.js"></script>
 <script src="top.js"></script>
-<script>
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/service-worker.js');
-  }
-</script>
 </body>
 </html>
