@@ -474,4 +474,18 @@ h1 {
     border-top: 2px solid var(--accent-red);
     background-color: var(--bg-secondary);
 }
+/* ── RESEÑA Y TIEMPO EN CARDS ── */
+.card-review {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 8px;
+    line-height: 1.3;
+    font-style: italic;
+}
 
+.card-time {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    margin-top: 6px;
+    font-weight: 500;
+}
