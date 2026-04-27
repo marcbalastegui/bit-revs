@@ -1,7 +1,7 @@
 // db.js - Gestión de Base de Datos para Álbumes, Películas, Series y Perfil
 
 const DB_NAME = 'BitRevsDB';
-const DB_VERSION = 3;
+const DB_VERSION = 5;
 const STORE_ALBUMS = 'albums';
 const STORE_MOVIES = 'movies';
 const STORE_SERIES = 'series';
