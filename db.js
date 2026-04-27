@@ -1,7 +1,7 @@
 // db.js - Gestión de Base de Datos para Álbumes, Películas, Series y Perfil
 
 const DB_NAME = 'BitRevsDB';
-const DB_VERSION = 3;
+const DB_VERSION = 4; // subimos versión para asegurar que se actualicen stores
 const STORE_ALBUMS = 'albums';
 const STORE_MOVIES = 'movies';
 const STORE_SERIES = 'series';
@@ -26,6 +26,9 @@ function openDB() {
 
 // --- FUNCIONES GENÉRICAS ---
 async function saveItemToDB(storeName, item) {
+    if (!item.createdAt) item.createdAt = new Date().toISOString();
+    item.updatedAt = new Date().toISOString();
+
     const db = await openDB();
     return new Promise((resolve, reject) => {
         const transaction = db.transaction(storeName, 'readwrite');
@@ -119,6 +122,25 @@ function getColorByRating(rating) {
     if (r >= 2) return '#996600';
     return '#4D4D4D';
 }
+
+// Calcula el tiempo relativo desde una fecha ISO
+function getRelativeTime(isoString) {
+    if (!isoString) return '';
+    const now = new Date();
+    const then = new Date(isoString);
+    const diffMs = now - then;
+    const seconds = Math.floor(diffMs / 1000);
+    if (seconds < 60) return 'Ahora';
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `Hace ${minutes} min`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `Hace ${hours} h`;
+    const days = Math.floor(hours / 24);
+    if (days < 30) return `Hace ${days} d`;
+    const months = Math.floor(days / 30);
+    return `Hace ${months} mes${months > 1 ? 'es' : ''}`;
+}
+
 // --- CARGA DE AVATAR GLOBAL EN CABECERA ---
 document.addEventListener('DOMContentLoaded', async () => {
     const headerAvatar = document.getElementById('global-header-avatar');

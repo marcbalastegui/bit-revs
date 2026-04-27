@@ -48,7 +48,7 @@ async function loadWrapped() {
     // 4. Álbum mejor puntuado
     const topAlbum = [...scoredAlbums].sort((a, b) => parseFloat(b.rating) - parseFloat(a.rating))[0];
 
-    // 5. Canción mejor puntuada (en caso de empate, la del álbum mejor puntuado)
+    // 5. Canción mejor puntuada
     const topTrack = [...allTracks].sort((a, b) => {
         const diff = parseFloat(b.rating) - parseFloat(a.rating);
         if (diff !== 0) return diff;
@@ -65,7 +65,7 @@ async function loadWrapped() {
     });
     const topGenre = Object.entries(genreCount).sort((a, b) => b[1] - a[1])[0];
 
-    // 7. Distribución de notas (0-2, 2-4, 4-5, 5-6, 6-7, 7-8, 8-9, 9-10)
+    // 7. Distribución de notas (rangos)
     const ranges = [
         { label: '0-2', min: 0,  max: 2  },
         { label: '2-4', min: 2,  max: 4  },
@@ -86,6 +86,16 @@ async function loadWrapped() {
     }));
 
     const maxCount = Math.max(...distribution.map(d => d.count), 1);
+
+    // 8. Distribución por década
+    const decades = {};
+    albums.forEach(a => {
+        if (!a.year) return;
+        const decade = Math.floor(a.year / 10) * 10;
+        decades[decade] = (decades[decade] || 0) + 1;
+    });
+    const sortedDecades = Object.entries(decades).sort((a, b) => a[0] - b[0]);
+    const maxDecadeCount = Math.max(...sortedDecades.map(d => d[1]), 1);
 
     // ── CONSTRUIR HTML ────────────────────────────────────────────────────
 
@@ -194,6 +204,24 @@ async function loadWrapped() {
         <div class="stat-card col-6">
             <div class="stat-label">Distribución de notas</div>
             <div class="chart-container">${barsHtml}</div>
+        </div>`;
+
+    // Distribución por década
+    const decadesBarsHtml = sortedDecades.map(([decade, count]) => {
+        const heightPct = Math.round((count / maxDecadeCount) * 100);
+        return `
+            <div class="chart-bar-wrap">
+                <div class="chart-bar" style="height:${heightPct}%; background:var(--accent-red);">
+                    ${count > 0 ? `<span class="chart-bar-count">${count}</span>` : ''}
+                </div>
+                <span class="chart-label">${decade}s</span>
+            </div>`;
+    }).join('');
+
+    html += `
+        <div class="stat-card col-6">
+            <div class="stat-label">Álbumes por década</div>
+            <div class="chart-container">${decadesBarsHtml}</div>
         </div>`;
 
     grid.innerHTML = html;

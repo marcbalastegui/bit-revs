@@ -64,7 +64,8 @@ window.editAlbum = async function(event, id) {
     document.getElementById('title').value = album.title;
     document.getElementById('artist').value = album.artist;
     document.getElementById('year').value = album.year;
-    if (document.getElementById('album-type')) document.getElementById('album-type').value = album.type;
+    if (document.getElementById('album-type')) document.getElementById('album-type').value = album.type || '';
+    if (document.getElementById('review')) document.getElementById('review').value = album.review || '';
 
     // Géneros: separamos predefinidos de customs
     const genres = album.genres || [];
@@ -110,6 +111,7 @@ if (albumForm) {
         const typeElement = document.getElementById('album-type');
         const type = typeElement ? typeElement.value : "";
         const genres = getSelectedGenres();
+        const review = document.getElementById('review') ? document.getElementById('review').value : '';
 
         const fileInput = document.getElementById('cover');
         const file = fileInput.files[0];
@@ -126,6 +128,7 @@ if (albumForm) {
         albumToSave.year = parseInt(year) || 0;
         albumToSave.type = type;
         albumToSave.genres = genres;
+        albumToSave.review = review;
 
         if (file) {
             const reader = new FileReader();
@@ -230,6 +233,9 @@ function renderAlbums(albumsToRender, gridElement) {
             displayRating = typeof formatRating === 'function' ? formatRating(album.rating) : album.rating;
         }
 
+        const timeAgo = getRelativeTime(album.updatedAt || album.createdAt);
+        const reviewSnippet = album.review ? `<p class="card-review">${album.review.substring(0, 80)}${album.review.length > 80 ? '…' : ''}</p>` : '';
+
         card.innerHTML = `
             <div class="card-actions">
                 <button class="action-btn btn-edit" onclick="editAlbum(event, ${album.id})" title="Editar">✎</button>
@@ -246,6 +252,8 @@ function renderAlbums(albumsToRender, gridElement) {
                 <p>${album.artist || 'Artista Desconocido'} • ${album.year || 'N/A'}</p>
                 ${tagHtml}
                 ${genresHtml}
+                ${reviewSnippet}
+                <p class="card-time">${timeAgo}</p>
             </div>
         `;
         gridElement.appendChild(card);

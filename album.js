@@ -124,6 +124,10 @@ function renderAlbumContent() {
         const displayRating = track.isInterlude ? 'INTERLUDE' : formatRating(track.rating);
         const badgeClass = track.isInterlude ? 'rating-badge album-tag' : 'rating-badge';
 
+        // Enlace a Spotify para previsualización
+        const searchQuery = encodeURIComponent(`${track.title} ${track.artist || currentAlbum.artist}`);
+        const spotifyUrl = `https://open.spotify.com/search/${searchQuery}`;
+
         tracksHtml += `
             <div class="track-item" data-index="${index}">
                 <span class="drag-handle" title="Arrastra para reordenar">⠿</span>
@@ -132,6 +136,7 @@ function renderAlbumContent() {
                     <p>${track.artist ? track.artist : currentAlbum.artist}</p>
                 </div>
                 <div class="track-actions">
+                    <a href="${spotifyUrl}" target="_blank" class="track-btn preview" title="Escuchar en Spotify">▶</a>
                     <button class="track-btn edit" onclick="editTrack(${index})" title="Editar">✎</button>
                     <button class="track-btn delete" onclick="deleteTrack(${index})" title="Borrar">✖</button>
                 </div>
@@ -145,6 +150,8 @@ function renderAlbumContent() {
         displayAlbumRating = formatRating(currentAlbum.rating);
     }
 
+    const reviewHtml = currentAlbum.review ? `<div class="album-review"><p>${currentAlbum.review}</p></div>` : '';
+
     container.innerHTML = `
         <div class="album-header-banner">
             <img src="${currentAlbum.coverBase64}" alt="${currentAlbum.title}" class="detail-cover">
@@ -152,6 +159,7 @@ function renderAlbumContent() {
                 <span class="detail-type">${typeText} • ${currentAlbum.year}</span>
                 <h1 class="detail-title">${currentAlbum.title}</h1>
                 <h2 class="detail-artist">${currentAlbum.artist}</h2>
+                ${reviewHtml}
                 <div class="rating-big" style="background-color: ${badgeColor};">${displayAlbumRating}</div>
             </div>
         </div>
