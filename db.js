@@ -29,7 +29,8 @@ async function saveItemToDB(storeName, item) {
     const db = await openDB();
     return new Promise((resolve, reject) => {
         const transaction = db.transaction(storeName, 'readwrite');
-        const request = transaction.objectStore(storeName).put(item);
+        const store = transaction.objectStore(storeName);
+        const request = store.put(item);
         request.onsuccess = () => resolve(request.result);
         request.onerror = (e) => reject(e.target.error);
     });
@@ -86,7 +87,8 @@ async function saveUserProfileToDB(profileData) {
     const db = await openDB();
     return new Promise((resolve, reject) => {
         const transaction = db.transaction(STORE_PROFILE, 'readwrite');
-        const request = transaction.objectStore(STORE_PROFILE).put(profileData);
+        const store = transaction.objectStore(STORE_PROFILE);
+        const request = store.put(profileData);
         request.onsuccess = () => resolve(true);
         request.onerror = (e) => reject(e.target.error);
     });
@@ -94,21 +96,15 @@ async function saveUserProfileToDB(profileData) {
 
 // --- UTILIDADES GLOBALES (Colores y Notas) ---
 
-// Elimina el .0 de los dieces y enteros
 function formatRating(rating) {
     const r = parseFloat(rating);
     if (isNaN(r)) return "";
-    if (Number.isInteger(r)) {
-        return r.toString();
-    } else {
-        return r.toFixed(1);
-    }
+    return Number.isInteger(r) ? r.toString() : r.toFixed(1);
 }
 
-// Asigna color según la nota
 function getColorByRating(rating) {
     const r = parseFloat(rating);
-    if (isNaN(r) || r === 0) return '#4D4D4D'; // Gris para los de nota 0 (sin canciones)
+    if (isNaN(r) || r === 0) return '#4D4D4D';
     if (r === 10) return '#FF66CC';
     if (r >= 9) return '#B533FF';
     if (r >= 8) return '#3366FF';
@@ -119,6 +115,7 @@ function getColorByRating(rating) {
     if (r >= 2) return '#996600';
     return '#4D4D4D';
 }
+
 // --- CARGA DE AVATAR GLOBAL EN CABECERA ---
 document.addEventListener('DOMContentLoaded', async () => {
     const headerAvatar = document.getElementById('global-header-avatar');
@@ -134,21 +131,3 @@ document.addEventListener('DOMContentLoaded', async () => {
         } catch (e) { console.error("Error cargando avatar global", e); }
     }
 });
-
-// Añadir al guardar cualquier ítem
-async function saveItemToDB(storeName, item) {
-    if (!item.createdAt) item.createdAt = new Date().toISOString();
-    item.updatedAt = new Date().toISOString();
-    // ... resto igual
-}
-
-// Añadir función para limpiar un store (para migración)
-async function clearStore(storeName) {
-    const db = await openDB();
-    return new Promise((resolve, reject) => {
-        const tx = db.transaction(storeName, 'readwrite');
-        tx.objectStore(storeName).clear();
-        tx.oncomplete = resolve;
-        tx.onerror = reject;
-    });
-}
