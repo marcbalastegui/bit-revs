@@ -489,3 +489,43 @@ h1 {
     margin-top: 6px;
     font-weight: 500;
 }
+/* --- FIX: BOTÓN FAVORITOS EN TARJETAS --- */
+.card-fav-btn {
+    position: absolute;
+    top: 10px;
+    left: 10px; /* Lo ponemos a la izquierda para que no choque con editar/borrar */
+    z-index: 10;
+    background: rgba(0, 0, 0, 0.4);
+    border: none;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    cursor: pointer;
+    backdrop-filter: blur(4px);
+    transition: all 0.2s ease;
+}
+
+/* Efecto al pasar el ratón */
+.card-fav-btn:hover {
+    background: rgba(0, 0, 0, 0.7);
+    transform: scale(1.1);
+}
+
+/* Tamaño del icono del corazón */
+.card-fav-btn svg {
+    width: 18px;
+    height: 18px;
+    transition: fill 0.2s, color 0.2s;
+}
+
+/* Cuando le das a favorito (clase active) */
+.card-fav-btn.active {
+    color: var(--accent-red);
+}
+.card-fav-btn.active svg {
+    fill: var(--accent-red); /* Rellena el corazón de rojo */
+}
