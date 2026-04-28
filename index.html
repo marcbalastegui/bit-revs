@@ -41,7 +41,9 @@
         <select id="genre-filter">
             <option value="">Todos los géneros</option>
         </select>
-
+        <label class="fav-filter-label">
+            <input type="checkbox" id="fav-filter"> ♥ Solo favoritos
+        </label>
     </div>
 
     <div class="album-grid" id="album-grid"></div>
@@ -57,13 +59,15 @@
             <label for="title">Título:</label>
             <input type="text" id="title" required placeholder="Ej: Graduation">
 
-            <label for="artist">Artista:</label>
+            <label for="artist">Artista Principal:</label>
             <input type="text" id="artist" required placeholder="Ej: Kanye West">
+
+            <label for="featured-artists">Artistas Colaboradores (opcional):</label>
+            <input type="text" id="featured-artists" placeholder="Ej: Kid Cudi, Pusha T (separados por coma)">
 
             <label for="year">Año:</label>
             <input type="number" id="year" required placeholder="Ej: 2007">
-            <label for="review">Reseña (opcional):</label>
-<textarea id="review" rows="3" placeholder="Escribe tu opinión..."></textarea>
+
             <label for="album-type">Tipo de lanzamiento:</label>
             <select id="album-type">
                 <option value="">Estándar (Álbum)</option>

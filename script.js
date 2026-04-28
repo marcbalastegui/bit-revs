@@ -74,6 +74,7 @@ window.editAlbum = async function(event, id) {
     editingAlbumId = album.id;
     document.getElementById('title').value = album.title;
     document.getElementById('artist').value = album.artist;
+    document.getElementById('featured-artists').value = (album.featuredArtists || []).join(', ');
     document.getElementById('year').value = album.year;
     if (document.getElementById('album-type')) document.getElementById('album-type').value = album.type;
 
@@ -98,6 +99,7 @@ if (btnAddAlbum && modalAdd) {
         renderGenreSelector([]);
         const customInput = document.getElementById('genre-custom');
         if (customInput) customInput.value = '';
+        document.getElementById('featured-artists').value = '';
         modalAdd.classList.remove('hidden');
     });
 }
@@ -116,6 +118,10 @@ if (albumForm) {
 
         const title = document.getElementById('title').value;
         const artist = document.getElementById('artist').value;
+        const featuredArtistsInput = document.getElementById('featured-artists').value;
+        const featuredArtists = featuredArtistsInput
+            ? featuredArtistsInput.split(',').map(a => a.trim()).filter(a => a !== '')
+            : [];
         const year = document.getElementById('year').value;
         const typeElement = document.getElementById('album-type');
         const type = typeElement ? typeElement.value : "";
@@ -133,6 +139,7 @@ if (albumForm) {
 
         albumToSave.title = title;
         albumToSave.artist = artist;
+        albumToSave.featuredArtists = featuredArtists;
         albumToSave.year = parseInt(year) || 0;
         albumToSave.type = type;
         albumToSave.genres = genres;
@@ -161,6 +168,22 @@ async function finalizeSave(album) {
     }
 }
 
+// ── CONSTRUIR ARTISTAS PARA MOSTRAR ───────────────────────────────────────
+function getArtistDisplay(album) {
+    let display = album.artist || 'Artista Desconocido';
+    if (album.featuredArtists && album.featuredArtists.length > 0) {
+        display += ' ft. ' + album.featuredArtists.join(', ');
+    }
+    return display;
+}
+
+function getArtistLinks(album) {
+    const allArtists = [album.artist, ...(album.featuredArtists || [])].filter(a => a);
+    return allArtists.map(artist =>
+        `<a href="artist.html?name=${encodeURIComponent(artist)}" style="color:var(--text-muted); text-decoration:none; font-weight:500; cursor:pointer; transition:color 0.2s;" onmouseover="this.style.color='var(--accent-red)'" onmouseout="this.style.color='var(--text-muted)'">${artist}</a>`
+    ).join(', ');
+}
+
 // ── FILTRAR Y DIBUJAR ─────────────────────────────────────────────────────
 async function processAndRenderAlbums() {
     try {
@@ -177,11 +200,13 @@ async function processAndRenderAlbums() {
         if (filterInput && filterInput.value) {
             const query = filterInput.value.toLowerCase().trim();
             if (query !== "") {
-                filteredAlbums = filteredAlbums.filter(a =>
-                    (a.artist && a.artist.toLowerCase().includes(query)) ||
-                    (a.title && a.title.toLowerCase().includes(query)) ||
-                    (a.year && a.year.toString().includes(query))
-                );
+                filteredAlbums = filteredAlbums.filter(a => {
+                    const artistMatch = (a.artist && a.artist.toLowerCase().includes(query));
+                    const titleMatch = (a.title && a.title.toLowerCase().includes(query));
+                    const yearMatch = (a.year && a.year.toString().includes(query));
+                    const featuredMatch = (a.featuredArtists && a.featuredArtists.some(f => f.toLowerCase().includes(query)));
+                    return artistMatch || titleMatch || yearMatch || featuredMatch;
+                });
             }
         }
 
@@ -245,6 +270,8 @@ function renderAlbums(albumsToRender, gridElement) {
             displayRating = typeof formatRating === 'function' ? formatRating(album.rating) : album.rating;
         }
 
+        const artistLinks = getArtistLinks(album);
+
         card.innerHTML = `
             <div class="card-actions">
                 <button class="action-btn btn-edit" onclick="editAlbum(event, ${album.id})" title="Editar">✎</button>
@@ -259,7 +286,7 @@ function renderAlbums(albumsToRender, gridElement) {
                     <h3>${album.title || 'Sin Título'}</h3>
                     <span class="rating-badge" style="background-color: ${badgeColor};">${displayRating}</span>
                 </div>
-                <p><a href="artist.html?name=${encodeURIComponent(album.artist)}" style="color:var(--text-muted); text-decoration:none; font-weight:500; cursor:pointer; transition:color 0.2s;" onmouseover="this.style.color='var(--accent-red)'" onmouseout="this.style.color='var(--text-muted)'">${album.artist || 'Artista Desconocido'}</a> • ${album.year || 'N/A'}</p>
+                <p>${artistLinks} • ${album.year || 'N/A'}</p>
                 ${tagHtml}
                 ${genresHtml}
             </div>

@@ -1,4 +1,4 @@
-// artist.js - Estadísticas por artista
+// artist.js - Estadísticas por artista (incluye colaboraciones)
 
 async function loadArtistStats() {
     const params = new URLSearchParams(window.location.search);
@@ -13,7 +13,13 @@ async function loadArtistStats() {
     }
 
     const albums = await getAllAlbumsFromDB();
-    const artistAlbums = albums.filter(a => a.artist && a.artist.toLowerCase() === artistName.toLowerCase());
+
+    // Encontrar álbumes donde el artista es principal O colaborador
+    const artistAlbums = albums.filter(a => {
+        const isPrincipal = a.artist && a.artist.toLowerCase() === artistName.toLowerCase();
+        const isFeatured = a.featuredArtists && a.featuredArtists.some(f => f.toLowerCase() === artistName.toLowerCase());
+        return isPrincipal || isFeatured;
+    });
 
     if (artistAlbums.length === 0) {
         document.getElementById('artist-grid').innerHTML = `
@@ -29,9 +35,11 @@ async function loadArtistStats() {
 
     // ── EXTRAER DATOS ─────────────────────────────────────────────────────
 
-    // Todas las canciones del artista
+    // Todas las canciones del artista (de sus álbumes como principal)
     const allTracks = [];
-    artistAlbums.forEach(album => {
+    const principalAlbums = artistAlbums.filter(a => a.artist && a.artist.toLowerCase() === artistName.toLowerCase());
+
+    principalAlbums.forEach(album => {
         if (!album.tracks) return;
         album.tracks.forEach(track => {
             if (!track.isInterlude && parseFloat(track.rating) > 0) {
@@ -40,8 +48,8 @@ async function loadArtistStats() {
         });
     });
 
-    // Media de álbumes
-    const albumsWithRating = artistAlbums.filter(a => parseFloat(a.rating) > 0);
+    // Media de álbumes (como principal)
+    const albumsWithRating = principalAlbums.filter(a => parseFloat(a.rating) > 0);
     const avgAlbumRating = albumsWithRating.length > 0
         ? albumsWithRating.reduce((sum, a) => sum + parseFloat(a.rating), 0) / albumsWithRating.length
         : 0;
@@ -51,7 +59,7 @@ async function loadArtistStats() {
         ? allTracks.reduce((sum, t) => sum + parseFloat(t.rating), 0) / allTracks.length
         : 0;
 
-    // Mejor álbum
+    // Mejor álbum (como principal)
     const bestAlbum = [...albumsWithRating].sort((a, b) => parseFloat(b.rating) - parseFloat(a.rating))[0];
 
     // Mejor canción
@@ -63,7 +71,7 @@ async function loadArtistStats() {
         return parseFloat(albumB?.rating || 0) - parseFloat(albumA?.rating || 0);
     })[0];
 
-    // Géneros
+    // Géneros (de todos sus álbumes, principal y featured)
     const genreSet = new Set();
     artistAlbums.forEach(a => {
         if (a.genres) a.genres.forEach(g => genreSet.add(g));
@@ -91,6 +99,10 @@ async function loadArtistStats() {
 
     const maxCount = Math.max(...distribution.map(d => d.count), 1);
 
+    // Separar álbumes propios de colaboraciones
+    const ownAlbums = artistAlbums.filter(a => a.artist && a.artist.toLowerCase() === artistName.toLowerCase());
+    const collaborations = artistAlbums.filter(a => !ownAlbums.includes(a));
+
     // ── CONSTRUIR HTML ────────────────────────────────────────────────────
 
     let html = '';
@@ -107,8 +119,8 @@ async function loadArtistStats() {
     html += `
         <div class="stat-card col-4">
             <div class="stat-label">Total de álbumes</div>
-            <div class="stat-value-big">${artistAlbums.length}</div>
-            <div class="stat-value-sub">en tu colección</div>
+            <div class="stat-value-big">${ownAlbums.length}</div>
+            <div class="stat-value-sub">${collaborations.length} colaboraciones</div>
         </div>`;
 
     // Total de canciones
@@ -187,8 +199,8 @@ async function loadArtistStats() {
             <div class="chart-container">${barsHtml}</div>
         </div>`;
 
-    // Lista de álbumes
-    const albumsListHtml = artistAlbums
+    // Lista de álbumes propios
+    const albumsListHtml = ownAlbums
         .filter(a => parseFloat(a.rating) > 0)
         .sort((a, b) => parseFloat(b.rating) - parseFloat(a.rating))
         .map(album => {
@@ -209,6 +221,32 @@ async function loadArtistStats() {
             <div class="stat-label">Todos los álbumes</div>
             <div class="albums-list">${albumsListHtml}</div>
         </div>`;
+
+    // Lista de colaboraciones
+    if (collaborations.length > 0) {
+        const collabsListHtml = collaborations
+            .filter(a => parseFloat(a.rating) > 0)
+            .sort((a, b) => parseFloat(b.rating) - parseFloat(a.rating))
+            .map(album => {
+                const badgeColor = getColorByRating(album.rating);
+                const roleText = album.artist === artistName ? 'Principal' : 'Feat.';
+                return `
+                    <div class="album-row">
+                        <img class="album-row-cover" src="${album.coverBase64}" alt="${album.title}">
+                        <div class="album-row-info">
+                            <div class="album-row-title">${album.title}</div>
+                            <div class="album-row-meta">${album.artist}${album.featuredArtists && album.featuredArtists.length > 0 ? ' ft. ' + album.featuredArtists.join(', ') : ''}</div>
+                        </div>
+                        <span class="album-row-badge" style="background:${badgeColor}">${formatRating(album.rating)}</span>
+                    </div>`;
+            }).join('');
+
+        html += `
+            <div class="stat-card col-12">
+                <div class="stat-label">Colaboraciones</div>
+                <div class="albums-list">${collabsListHtml}</div>
+            </div>`;
+    }
 
     document.getElementById('artist-grid').innerHTML = html;
 }
