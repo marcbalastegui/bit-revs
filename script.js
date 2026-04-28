@@ -97,8 +97,7 @@ if (btnAddAlbum && modalAdd) {
         document.getElementById('cover').setAttribute('required', 'true');
         if (albumForm) albumForm.reset();
         renderGenreSelector([]);
-        const customInput = document.getElementById('genre-custom');
-        if (customInput) customInput.value = '';
+        document.getElementById('genre-custom').value = '';
         document.getElementById('featured-artists').value = '';
         modalAdd.classList.remove('hidden');
     });
@@ -116,20 +115,21 @@ if (albumForm) {
     albumForm.addEventListener('submit', async function(e) {
         e.preventDefault();
 
-        const title = document.getElementById('title').value;
-        const artist = document.getElementById('artist').value;
-        const featuredArtistsInput = document.getElementById('featured-artists').value;
-        const featuredArtists = featuredArtistsInput
-            ? featuredArtistsInput.split(',').map(a => a.trim()).filter(a => a !== '')
+        // Leer TODOS los valores ANTES de cualquier reset
+        const title = document.getElementById('title').value.trim();
+        const artist = document.getElementById('artist').value.trim();
+        const featuredArtistsRaw = document.getElementById('featured-artists').value.trim();
+        const featuredArtists = featuredArtistsRaw !== ''
+            ? featuredArtistsRaw.split(',').map(a => a.trim()).filter(a => a !== '')
             : [];
         const year = document.getElementById('year').value;
         const typeElement = document.getElementById('album-type');
         const type = typeElement ? typeElement.value : "";
         const genres = getSelectedGenres();
-
         const fileInput = document.getElementById('cover');
         const file = fileInput.files[0];
 
+        // Construir objeto a guardar
         let albumToSave = null;
         if (editingAlbumId) {
             albumToSave = await getAlbumByIdFromDB(editingAlbumId);
@@ -169,19 +169,11 @@ async function finalizeSave(album) {
 }
 
 // ── CONSTRUIR ARTISTAS PARA MOSTRAR ───────────────────────────────────────
-function getArtistDisplay(album) {
-    let display = album.artist || 'Artista Desconocido';
-    if (album.featuredArtists && album.featuredArtists.length > 0) {
-        display += ' ft. ' + album.featuredArtists.join(', ');
-    }
-    return display;
-}
-
 function getArtistLinks(album) {
     const allArtists = [album.artist, ...(album.featuredArtists || [])].filter(a => a);
     return allArtists.map(artist =>
         `<a href="artist.html?name=${encodeURIComponent(artist)}" style="color:var(--text-muted); text-decoration:none; font-weight:500; cursor:pointer; transition:color 0.2s;" onmouseover="this.style.color='var(--accent-red)'" onmouseout="this.style.color='var(--text-muted)'">${artist}</a>`
-    ).join(', ');
+    ).join(' ft. ');
 }
 
 // ── FILTRAR Y DIBUJAR ─────────────────────────────────────────────────────
@@ -195,16 +187,16 @@ async function processAndRenderAlbums() {
 
         let filteredAlbums = [...currentAlbums];
 
-        // Filtro por texto
+        // Filtro por texto (incluye artistas colaboradores)
         const filterInput = document.getElementById('filter-input');
         if (filterInput && filterInput.value) {
             const query = filterInput.value.toLowerCase().trim();
             if (query !== "") {
                 filteredAlbums = filteredAlbums.filter(a => {
-                    const artistMatch = (a.artist && a.artist.toLowerCase().includes(query));
-                    const titleMatch = (a.title && a.title.toLowerCase().includes(query));
-                    const yearMatch = (a.year && a.year.toString().includes(query));
-                    const featuredMatch = (a.featuredArtists && a.featuredArtists.some(f => f.toLowerCase().includes(query)));
+                    const artistMatch = a.artist && a.artist.toLowerCase().includes(query);
+                    const titleMatch = a.title && a.title.toLowerCase().includes(query);
+                    const yearMatch = a.year && a.year.toString().includes(query);
+                    const featuredMatch = a.featuredArtists && a.featuredArtists.some(f => f.toLowerCase().includes(query));
                     return artistMatch || titleMatch || yearMatch || featuredMatch;
                 });
             }
