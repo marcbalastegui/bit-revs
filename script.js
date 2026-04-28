@@ -259,7 +259,7 @@ function renderAlbums(albumsToRender, gridElement) {
                     <h3>${album.title || 'Sin Título'}</h3>
                     <span class="rating-badge" style="background-color: ${badgeColor};">${displayRating}</span>
                 </div>
-                <p>${album.artist || 'Artista Desconocido'} • ${album.year || 'N/A'}</p>
+                <p><a href="artist.html?name=${encodeURIComponent(album.artist)}" style="color:var(--text-muted); text-decoration:none; font-weight:500; cursor:pointer; transition:color 0.2s;" onmouseover="this.style.color='var(--accent-red)'" onmouseout="this.style.color='var(--text-muted)'">${album.artist || 'Artista Desconocido'}</a> • ${album.year || 'N/A'}</p>
                 ${tagHtml}
                 ${genresHtml}
             </div>
