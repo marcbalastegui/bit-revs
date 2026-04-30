@@ -210,11 +210,6 @@ async function processAndRenderAlbums() {
             );
         }
 
-        // Filtro por favoritos
-        const favFilter = document.getElementById('fav-filter');
-        if (favFilter && favFilter.checked) {
-            filteredAlbums = filteredAlbums.filter(a => a.favorite === true);
-        }
 
         // Ordenación
         const sortSelect = document.getElementById('sort-select');
@@ -309,12 +304,10 @@ async function populateGenreFilter() {
 const globalFilterInput = document.getElementById('filter-input');
 const globalSortSelect = document.getElementById('sort-select');
 const globalGenreFilter = document.getElementById('genre-filter');
-const globalFavFilter = document.getElementById('fav-filter');
 
 if (globalFilterInput) globalFilterInput.addEventListener('input', processAndRenderAlbums);
 if (globalSortSelect) globalSortSelect.addEventListener('change', processAndRenderAlbums);
 if (globalGenreFilter) globalGenreFilter.addEventListener('change', processAndRenderAlbums);
-if (globalFavFilter) globalFavFilter.addEventListener('change', processAndRenderAlbums);
 
 (async () => {
     await populateGenreFilter();
