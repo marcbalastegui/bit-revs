@@ -2,6 +2,8 @@
 
 let currentAlbum = null;
 let editingTrackIndex = null;
+let reviewBlocks = []; // bloques del editor de review activo
+let reviewTarget = null; // { type: 'track', index: N } o { type: 'album' }
 
 async function loadAlbumDetails() {
     const params = new URLSearchParams(window.location.search);
@@ -13,32 +15,47 @@ async function loadAlbumDetails() {
     if (!currentAlbum.tracks) currentAlbum.tracks = [];
 
     renderAlbumContent();
+    initReviewModal();
 }
 
-// Recalcular la nota media del álbum
+// ── MEDIA ─────────────────────────────────────────────────────────────────
 function recalculateAlbumRating() {
     if (!currentAlbum || !currentAlbum.tracks || currentAlbum.tracks.length === 0) {
         currentAlbum.rating = 0;
         return;
     }
-
     let totalScore = 0;
     let scoredTracksCount = 0;
-
     currentAlbum.tracks.forEach(track => {
         if (!track.isInterlude && !isNaN(parseFloat(track.rating))) {
             totalScore += parseFloat(track.rating);
             scoredTracksCount++;
         }
     });
+    currentAlbum.rating = scoredTracksCount === 0
+        ? 0
+        : (totalScore / scoredTracksCount).toFixed(1);
+}
 
-    if (scoredTracksCount === 0) {
-        currentAlbum.rating = 0;
-    } else {
-        currentAlbum.rating = (totalScore / scoredTracksCount).toFixed(1);
+// ── FAVORITOS ─────────────────────────────────────────────────────────────
+window.toggleAlbumFavorite = async function() {
+    currentAlbum.favorite = !currentAlbum.favorite;
+    await saveAlbumToDB(currentAlbum);
+    const btn = document.getElementById('btn-album-favorite');
+    if (btn) {
+        btn.classList.toggle('active', currentAlbum.favorite);
+        btn.title = currentAlbum.favorite ? 'Quitar de favoritos' : 'Añadir a favoritos';
     }
 }
 
+window.toggleTrackFavorite = async function(index) {
+    currentAlbum.tracks[index].favorite = !currentAlbum.tracks[index].favorite;
+    await saveAlbumToDB(currentAlbum);
+    const btn = document.querySelector(`.track-fav-btn[data-index="${index}"]`);
+    if (btn) btn.classList.toggle('active', currentAlbum.tracks[index].favorite);
+}
+
+// ── BORRAR / EDITAR TRACK ─────────────────────────────────────────────────
 window.deleteTrack = async function(index) {
     if (confirm("¿Borrar esta canción?")) {
         currentAlbum.tracks.splice(index, 1);
@@ -56,7 +73,6 @@ window.editTrack = function(index) {
     document.getElementById('track-artist').value = track.artist || "";
     document.getElementById('track-interlude').checked = track.isInterlude;
     document.getElementById('track-rating').value = track.rating || "";
-
     document.getElementById('rating-container').style.display = track.isInterlude ? 'none' : 'block';
 
     const modalTitle = document.querySelector('#modal-track h2') || document.querySelector('#modal-track .modal-content h2');
@@ -66,7 +82,6 @@ window.editTrack = function(index) {
 }
 
 // ── DRAG & DROP ───────────────────────────────────────────────────────────
-
 let dragSrcIndex = null;
 
 function addDragListeners(item, index) {
@@ -90,39 +105,47 @@ function addDragListeners(item, index) {
         item.classList.add('drag-over');
     });
 
-    item.addEventListener('dragleave', () => {
-        item.classList.remove('drag-over');
-    });
+    item.addEventListener('dragleave', () => item.classList.remove('drag-over'));
 
     item.addEventListener('drop', async (e) => {
         e.preventDefault();
         item.classList.remove('drag-over');
-
         if (dragSrcIndex === null || dragSrcIndex === index) return;
-
-        // Reordenar el array de tracks
         const moved = currentAlbum.tracks.splice(dragSrcIndex, 1)[0];
         currentAlbum.tracks.splice(index, 0, moved);
-
         dragSrcIndex = null;
-
         await saveAlbumToDB(currentAlbum);
         renderAlbumContent();
     });
 }
 
-// ── RENDER ────────────────────────────────────────────────────────────────
+// ── SVG HELPERS ───────────────────────────────────────────────────────────
+function heartSVG() {
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`;
+}
 
+function hasReview(target) {
+    if (target.type === 'album') {
+        return currentAlbum.review && currentAlbum.review.length > 0;
+    }
+    return currentAlbum.tracks[target.index]?.review?.length > 0;
+}
+
+// ── RENDER PRINCIPAL ──────────────────────────────────────────────────────
 function renderAlbumContent() {
     const container = document.getElementById('album-detail-container');
     const badgeColor = getColorByRating(currentAlbum.rating);
     const typeText = currentAlbum.type ? currentAlbum.type : 'Álbum';
+    const isFav = currentAlbum.favorite || false;
+    const albumHasReview = currentAlbum.review && currentAlbum.review.length > 0;
 
     let tracksHtml = '';
     currentAlbum.tracks.forEach((track, index) => {
         const trackColor = track.isInterlude ? '#4D4D4D' : getColorByRating(track.rating);
         const displayRating = track.isInterlude ? 'INTERLUDE' : formatRating(track.rating);
         const badgeClass = track.isInterlude ? 'rating-badge album-tag' : 'rating-badge';
+        const trackFav = track.favorite || false;
+        const trackHasReview = track.review && track.review.length > 0;
 
         tracksHtml += `
             <div class="track-item" data-index="${index}">
@@ -132,6 +155,12 @@ function renderAlbumContent() {
                     <p>${track.artist ? track.artist : currentAlbum.artist}</p>
                 </div>
                 <div class="track-actions">
+                    <button class="track-review-btn${trackHasReview ? ' has-review' : ''}"
+                        onclick="openReview('track', ${index})"
+                        title="${trackHasReview ? 'Ver/editar review' : 'Escribir review'}">
+                        ${trackHasReview ? reviewPenSVG(true) : reviewPenSVG(false)}
+                    </button>
+                    <button class="track-fav-btn${trackFav ? ' active' : ''}" data-index="${index}" onclick="toggleTrackFavorite(${index})" title="${trackFav ? 'Quitar de favoritos' : 'Añadir a favoritos'}">${heartSVG()}</button>
                     <button class="track-btn edit" onclick="editTrack(${index})" title="Editar">✎</button>
                     <button class="track-btn delete" onclick="deleteTrack(${index})" title="Borrar">✖</button>
                 </div>
@@ -141,9 +170,7 @@ function renderAlbumContent() {
     });
 
     let displayAlbumRating = "-";
-    if (currentAlbum.tracks.length > 0) {
-        displayAlbumRating = formatRating(currentAlbum.rating);
-    }
+    if (currentAlbum.tracks.length > 0) displayAlbumRating = formatRating(currentAlbum.rating);
 
     container.innerHTML = `
         <div class="album-header-banner">
@@ -152,7 +179,14 @@ function renderAlbumContent() {
                 <span class="detail-type">${typeText} • ${currentAlbum.year}</span>
                 <h1 class="detail-title">${currentAlbum.title}</h1>
                 <h2 class="detail-artist">${currentAlbum.artist}</h2>
-                <div class="rating-big" style="background-color: ${badgeColor};">${displayAlbumRating}</div>
+                <div style="display:flex; align-items:center; gap:16px; margin-top:auto;">
+                    <div class="rating-big" style="background-color: ${badgeColor};">${displayAlbumRating}</div>
+                    <button id="btn-album-favorite" class="album-fav-btn${isFav ? ' active' : ''}" onclick="toggleAlbumFavorite()" title="${isFav ? 'Quitar de favoritos' : 'Añadir a favoritos'}">${heartSVG()}</button>
+                    <button class="album-review-btn${albumHasReview ? ' has-review' : ''}" onclick="openReview('album')" title="${albumHasReview ? 'Ver/editar review del álbum' : 'Escribir review del álbum'}">
+                        ${albumHasReview ? reviewPenSVG(true) : reviewPenSVG(false)}
+                        ${albumHasReview ? 'Ver review' : 'Escribir review'}
+                    </button>
+                </div>
             </div>
         </div>
         <div class="tracklist-section">
@@ -164,24 +198,144 @@ function renderAlbumContent() {
         </div>
     `;
 
-    // Añadir listeners de drag a cada track
-    document.querySelectorAll('.track-item').forEach((el, index) => {
-        addDragListeners(el, index);
-    });
+    document.querySelectorAll('.track-item').forEach((el, index) => addDragListeners(el, index));
 
     document.getElementById('btn-add-track').addEventListener('click', () => {
         editingTrackIndex = null;
         const modalTitle = document.querySelector('#modal-track h2') || document.querySelector('#modal-track .modal-content h2');
         if (modalTitle) modalTitle.textContent = "Añadir Canción";
-
         document.getElementById('track-form').reset();
         document.getElementById('rating-container').style.display = 'block';
         document.getElementById('modal-track').classList.remove('hidden');
     });
 }
 
-// ── EVENTOS DEL MODAL DE CANCIÓN ──────────────────────────────────────────
+function reviewPenSVG(active) {
+    const color = active ? 'var(--accent-red)' : 'currentColor';
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
+}
 
+// ── REVIEW MODAL ──────────────────────────────────────────────────────────
+
+window.openReview = function(type, index) {
+    if (type === 'album') {
+        reviewTarget = { type: 'album' };
+        reviewBlocks = currentAlbum.review ? JSON.parse(JSON.stringify(currentAlbum.review)) : [];
+        document.getElementById('review-modal-title').textContent = `Review: ${currentAlbum.title}`;
+    } else {
+        reviewTarget = { type: 'track', index };
+        const track = currentAlbum.tracks[index];
+        reviewBlocks = track.review ? JSON.parse(JSON.stringify(track.review)) : [];
+        document.getElementById('review-modal-title').textContent = `Review: ${track.title}`;
+    }
+
+    if (reviewBlocks.length === 0) {
+        reviewBlocks = [{ type: 'text', content: '' }];
+    }
+
+    renderReviewEditor();
+    document.getElementById('modal-review').classList.remove('hidden');
+}
+
+function renderReviewEditor() {
+    const editor = document.getElementById('review-editor');
+    editor.innerHTML = '';
+
+    reviewBlocks.forEach((block, i) => {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'review-block-wrapper';
+
+        // Botón de borrar bloque
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'review-block-delete';
+        deleteBtn.title = 'Eliminar bloque';
+        deleteBtn.innerHTML = '✖';
+        deleteBtn.addEventListener('click', () => {
+            if (reviewBlocks.length === 1) {
+                reviewBlocks[0].content = '';
+                renderReviewEditor();
+                return;
+            }
+            reviewBlocks.splice(i, 1);
+            renderReviewEditor();
+        });
+
+        // Textarea del bloque
+        const textarea = document.createElement('textarea');
+        textarea.className = `review-block review-block-${block.type}`;
+        textarea.placeholder = block.type === 'lyrics'
+            ? 'Pega aquí los lyrics…'
+            : 'Escribe tu análisis, opinión, contexto…';
+        textarea.value = block.content;
+        textarea.addEventListener('input', () => {
+            reviewBlocks[i].content = textarea.value;
+            // Auto-resize
+            textarea.style.height = 'auto';
+            textarea.style.height = textarea.scrollHeight + 'px';
+        });
+
+        // Auto-resize inicial
+        setTimeout(() => {
+            textarea.style.height = 'auto';
+            textarea.style.height = textarea.scrollHeight + 'px';
+        }, 0);
+
+        wrapper.appendChild(deleteBtn);
+        wrapper.appendChild(textarea);
+        editor.appendChild(wrapper);
+
+        // Botones para insertar nuevo bloque debajo
+        const insertBar = document.createElement('div');
+        insertBar.className = 'review-insert-bar';
+        insertBar.innerHTML = `
+            <button class="review-insert-btn" data-type="text" data-after="${i}">+ Texto</button>
+            <button class="review-insert-btn lyrics" data-type="lyrics" data-after="${i}">♪ Lyrics</button>
+        `;
+        insertBar.querySelectorAll('.review-insert-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const after = parseInt(btn.dataset.after);
+                const type  = btn.dataset.type;
+                reviewBlocks.splice(after + 1, 0, { type, content: '' });
+                renderReviewEditor();
+                // Focus en el nuevo bloque
+                setTimeout(() => {
+                    const textareas = document.querySelectorAll('.review-block');
+                    if (textareas[after + 1]) textareas[after + 1].focus();
+                }, 50);
+            });
+        });
+
+        editor.appendChild(insertBar);
+    });
+}
+
+function initReviewModal() {
+    // Cerrar modal
+    document.getElementById('btn-close-review').addEventListener('click', () => {
+        document.getElementById('modal-review').classList.add('hidden');
+    });
+
+    // Guardar review
+    document.getElementById('btn-save-review').addEventListener('click', async () => {
+        // Limpiar bloques vacíos al final
+        const blocksToSave = reviewBlocks.filter((b, i) =>
+            b.content.trim() !== '' || i === 0
+        );
+        const cleaned = blocksToSave.map(b => ({ ...b, content: b.content.trim() }));
+
+        if (reviewTarget.type === 'album') {
+            currentAlbum.review = cleaned;
+        } else {
+            currentAlbum.tracks[reviewTarget.index].review = cleaned;
+        }
+
+        await saveAlbumToDB(currentAlbum);
+        document.getElementById('modal-review').classList.add('hidden');
+        renderAlbumContent();
+    });
+}
+
+// ── EVENTOS DEL MODAL DE CANCIÓN ──────────────────────────────────────────
 document.getElementById('track-interlude').addEventListener('change', (e) => {
     document.getElementById('rating-container').style.display = e.target.checked ? 'none' : 'block';
     if (e.target.checked) {
@@ -214,13 +368,15 @@ document.getElementById('track-form').addEventListener('submit', async function(
     const newTrack = { title, artist, isInterlude, rating };
 
     if (editingTrackIndex !== null) {
+        // Preservar review y favorito al editar
+        newTrack.review   = currentAlbum.tracks[editingTrackIndex].review;
+        newTrack.favorite = currentAlbum.tracks[editingTrackIndex].favorite;
         currentAlbum.tracks[editingTrackIndex] = newTrack;
     } else {
         currentAlbum.tracks.push(newTrack);
     }
 
     recalculateAlbumRating();
-
     await saveAlbumToDB(currentAlbum);
     document.getElementById('modal-track').classList.add('hidden');
     renderAlbumContent();
