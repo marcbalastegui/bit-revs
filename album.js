@@ -160,7 +160,6 @@ function renderAlbumContent() {
                         title="${trackHasReview ? 'Ver/editar review' : 'Escribir review'}">
                         ${trackHasReview ? reviewPenSVG(true) : reviewPenSVG(false)}
                     </button>
-                    <button class="track-fav-btn${trackFav ? ' active' : ''}" data-index="${index}" onclick="toggleTrackFavorite(${index})" title="${trackFav ? 'Quitar de favoritos' : 'Añadir a favoritos'}">${heartSVG()}</button>
                     <button class="track-btn edit" onclick="editTrack(${index})" title="Editar">✎</button>
                     <button class="track-btn delete" onclick="deleteTrack(${index})" title="Borrar">✖</button>
                 </div>
