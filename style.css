@@ -75,22 +75,24 @@ h1 {
 
 /* --- BUSCADOR Y FILTROS --- */
 .controls-bar {
-    display: flex; gap: 15px;
+    display: flex; gap: 15px; align-items: center;
     margin-bottom: 40px;
     padding: 10px; background: var(--bg-secondary);
     border-radius: 15px; border: 1px solid var(--border-color);
 }
 
-.controls-bar input {
+.controls-bar input[type="text"] {
     flex-grow: 1; padding: 12px 20px;
     border: 1px solid transparent; border-radius: 12px;
     font-size: 1rem; box-shadow: var(--shadow-subtle);
+    font-family: 'Inter', sans-serif;
 }
 
 .controls-bar select {
     padding: 0 15px; border-radius: 12px;
     border: 1px solid transparent; background: white;
     font-weight: 600; cursor: pointer; box-shadow: var(--shadow-subtle);
+    height: 44px; font-family: 'Inter', sans-serif;
 }
 
 /* --- GRID Y TARJETAS --- */
@@ -109,7 +111,7 @@ h1 {
 
 .cover-container {
     width: 100%; overflow: hidden;
-    border-radius: 12px 12px 0 0; /* Bordes redondeados solo arriba */
+    border-radius: 12px 12px 0 0;
     background: #f0f0f0; border-bottom: 1px solid var(--border-color);
     aspect-ratio: 1 / 1;
 }
@@ -134,11 +136,10 @@ h1 {
 
 .album-info { padding: 15px; }
 
-/* CORRECCIÓN: PUNTUACIÓN A LA DERECHA */
 .title-row {
     display: flex;
     justify-content: space-between;
-    align-items: flex-start; /* Alinea arriba por si el título es largo */
+    align-items: flex-start;
     gap: 12px;
     margin-bottom: 6px;
 }
@@ -149,18 +150,17 @@ h1 {
 .rating-badge {
     padding: 3px 8px; border-radius: 6px;
     font-weight: 900; font-size: 0.85rem; color: white;
-    flex-shrink: 0; /* Evita que la nota se aplaste si el título es muy largo */
+    flex-shrink: 0;
 }
 
-.album-info p { font-size: 0.85rem; color: var(--text-muted); font-weight: 500; margin: 0;}
+.album-info p { font-size: 0.85rem; color: var(--text-muted); font-weight: 500; margin: 0; }
 
-
-/* --- PERFIL (ESTRUCTURA BLINDADA) --- */
+/* --- PERFIL --- */
 .profile-layout {
     border: 1px solid var(--border-color);
     border-radius: 20px; overflow: hidden;
     margin-bottom: 50px; box-shadow: var(--shadow-subtle);
-    background: white; /* Base siempre blanca */
+    background: white;
 }
 
 .profile-banner-container {
@@ -173,13 +173,12 @@ h1 {
     display: flex; align-items: flex-start;
     padding: 0 40px 30px 40px;
     background: white;
-    /* Eliminado el margin-top negativo de aquí para no romper la caja */
 }
 
 .avatar-container {
     width: 130px; height: 130px; flex-shrink: 0;
     margin-right: 30px;
-    margin-top: -65px; /* MAGIA: Solo la foto sube hacia el banner */
+    margin-top: -65px;
     position: relative; z-index: 2;
 }
 
@@ -191,7 +190,7 @@ h1 {
 
 .profile-info-block {
     flex-grow: 1;
-    margin-top: 15px; /* Empuja el texto un poquito para centrarlo con la mitad inferior de la foto */
+    margin-top: 15px;
     display: flex; flex-direction: column; gap: 5px;
 }
 
@@ -215,18 +214,20 @@ h1 {
 .save-btn {
     background: var(--accent-red); color: white;
     padding: 10px 20px; border-radius: 10px; font-weight: 800;
+    border: none; cursor: pointer; font-family: 'Inter', sans-serif;
 }
-/* --- POP-UPS / MODALES (Formularios flotantes) --- */
+
+/* --- MODALES --- */
 .modal {
     position: fixed;
     top: 0; left: 0;
     width: 100%; height: 100%;
-    background-color: rgba(0, 0, 0, 0.5); /* Fondo oscuro semitransparente */
-    backdrop-filter: blur(5px); /* Efecto cristal / difuminado */
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(5px);
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 1000; /* Para que esté por encima de TODO */
+    z-index: 1000;
 }
 
 .modal-content {
@@ -236,7 +237,9 @@ h1 {
     width: 100%;
     max-width: 450px;
     box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-    animation: modalFadeIn 0.3s ease; /* Pequeña animación al abrir */
+    animation: modalFadeIn 0.3s ease;
+    max-height: 90vh;
+    overflow-y: auto;
 }
 
 @keyframes modalFadeIn {
@@ -276,26 +279,20 @@ h1 {
     display: flex; justify-content: flex-end; gap: 12px;
 }
 
-#btn-cancel {
+#btn-cancel, #btn-cancel-track {
     background-color: var(--bg-secondary);
     color: var(--text-main);
     border: none; padding: 10px 20px; border-radius: 10px;
     font-weight: 700; cursor: pointer; transition: 0.2s;
+    font-family: 'Inter', sans-serif;
 }
-#btn-cancel:hover { background-color: #e0e0e0; }
+#btn-cancel:hover, #btn-cancel-track:hover { background-color: #e0e0e0; }
 
-#btn-cancel-track {
-    background-color: var(--bg-secondary);
-    color: var(--text-main);
-    border: none; padding: 10px 20px; border-radius: 10px;
-    font-weight: 700; cursor: pointer; transition: 0.2s;
-}
-#btn-cancel-track:hover { background-color: #e0e0e0; }
 .hidden { display: none !important; }
 
-/* --- VISTA DETALLADA DEL ÁLBUM (album.html) --- */
+/* --- VISTA DETALLADA DEL ÁLBUM --- */
 .album-detail-container {
-    max-width: 1100px; /* Ancho máximo para que sea fácil de leer */
+    max-width: 1100px;
     margin: 0 auto;
     padding: 20px 0;
 }
@@ -326,12 +323,11 @@ h1 {
     margin-bottom: 30px;
 }
 
-/* La nota gigante */
 .rating-big {
     font-size: 2.5rem; font-weight: 900; padding: 15px 30px;
     border-radius: 16px; color: white;
     box-shadow: 0 8px 20px rgba(0,0,0,0.15);
-    display: inline-block; /* Evita que se estire ocupando toda la pantalla */
+    display: inline-block;
 }
 
 /* --- LISTA DE CANCIONES --- */
@@ -348,10 +344,9 @@ h1 {
 .track-info h4 { font-size: 1.1rem; font-weight: 700; margin-bottom: 4px; }
 .track-info p { font-size: 0.95rem; color: var(--text-muted); font-weight: 500; }
 
-/* Botones de Editar/Borrar canción (Sutiles al hover) */
 .track-actions {
     display: flex; gap: 20px; margin-left: auto; padding-right: 30px;
-    opacity: 0; transition: opacity 0.2s;
+    opacity: 0; transition: opacity 0.2s; align-items: center;
 }
 .track-item:hover .track-actions { opacity: 1; }
 
@@ -362,11 +357,7 @@ h1 {
 .track-btn.edit:hover { color: #007aff; transform: scale(1.1); }
 .track-btn.delete:hover { color: #ff3b30; transform: scale(1.1); }
 
-/* =========================================================
-   === FIX DEFINITIVO DE BOTONES (Añadir y Guardar) ===
-   ========================================================= */
-
-/* 1. Botón "Añadir Canción" (En la vista del álbum) */
+/* --- BOTONES ÁLBUM --- */
 #btn-add-track {
     background-color: var(--bg-secondary) !important;
     color: var(--text-main) !important;
@@ -387,7 +378,6 @@ h1 {
     transform: translateY(-2px) !important;
 }
 
-/* 2. Botón "Guardar Canción" (Dentro del Pop-up) */
 #btn-save-track,
 .modal-actions button[type="submit"] {
     background-color: var(--accent-red) !important;
@@ -408,9 +398,8 @@ h1 {
     background-color: var(--accent-red-hover) !important;
     transform: translateY(-2px) !important;
 }
-/* ── GÉNEROS ── */
 
-/* Chips en el modal de añadir/editar álbum */
+/* ── GÉNEROS ── */
 .genre-chip {
     padding: 6px 14px;
     border-radius: 20px;
@@ -435,7 +424,6 @@ h1 {
     color: white;
 }
 
-/* Tags de género en las cards del grid */
 .card-genres {
     display: flex;
     flex-wrap: wrap;
@@ -452,80 +440,93 @@ h1 {
     font-weight: 600;
     color: var(--text-muted);
 }
+
 /* ── DRAG & DROP TRACKS ── */
 .drag-handle {
     cursor: grab;
     color: var(--text-muted);
     font-size: 1.2rem;
-    padding: 0 18px 0 0;
+    padding: 0 8px 0 0;
     flex-shrink: 0;
     user-select: none;
 }
 
-.drag-handle:active {
-    cursor: grabbing;
-}
+.drag-handle:active { cursor: grabbing; }
 
-.track-item.dragging {
-    opacity: 0.4;
-}
+.track-item.dragging { opacity: 0.4; }
 
 .track-item.drag-over {
     border-top: 2px solid var(--accent-red);
     background-color: var(--bg-secondary);
 }
-/* ── RESEÑA Y TIEMPO EN CARDS ── */
-.card-review {
-    font-size: 0.8rem;
-    color: var(--text-muted);
-    margin-top: 8px;
-    line-height: 1.3;
-    font-style: italic;
-}
 
-.card-time {
-    font-size: 0.7rem;
-    color: var(--text-muted);
-    margin-top: 6px;
-    font-weight: 500;
-}
-/* --- FIX: BOTÓN FAVORITOS EN TARJETAS --- */
+/* ── FAVORITOS ── */
+
+/* Corazón en las cards del grid */
 .card-fav-btn {
     position: absolute;
-    top: 10px;
-    left: 10px; /* Lo ponemos a la izquierda para que no choque con editar/borrar */
-    z-index: 10;
-    background: rgba(0, 0, 0, 0.4);
-    border: none;
-    border-radius: 50%;
-    width: 32px;
-    height: 32px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    color: white;
+    top: 10px; left: 10px;
+    width: 30px; height: 30px;
+    border-radius: 50%; border: none;
+    background: rgba(255,255,255,0.9);
+    display: flex; align-items: center; justify-content: center;
     cursor: pointer;
-    backdrop-filter: blur(4px);
-    transition: all 0.2s ease;
+    opacity: 0; transition: opacity 0.2s, color 0.2s;
+    color: var(--text-muted);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+    z-index: 10;
+}
+.card-fav-btn svg { width: 15px; height: 15px; }
+.album-card:hover .card-fav-btn { opacity: 1; }
+.card-fav-btn.active { opacity: 1; color: var(--accent-red); }
+.card-fav-btn.active svg { fill: var(--accent-red); }
+
+/* Corazón grande en la página del álbum */
+.album-fav-btn {
+    width: 48px; height: 48px;
+    border-radius: 50%; border: 1.5px solid var(--border-color);
+    background: white;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: all 0.2s;
+    color: var(--text-muted);
+    box-shadow: var(--shadow-subtle);
+}
+.album-fav-btn svg { width: 22px; height: 22px; }
+.album-fav-btn:hover { border-color: var(--accent-red); color: var(--accent-red); }
+.album-fav-btn.active { background: var(--accent-red); border-color: var(--accent-red); color: white; }
+.album-fav-btn.active svg { fill: white; }
+
+/* Corazón en las canciones */
+.track-fav-btn {
+    background: none; border: none;
+    cursor: pointer; color: var(--text-muted);
+    display: flex; align-items: center;
+    transition: color 0.2s; padding: 0 4px;
+    opacity: 0;
+}
+.track-fav-btn svg { width: 16px; height: 16px; }
+.track-item:hover .track-fav-btn { opacity: 1; }
+.track-fav-btn.active { opacity: 1; color: var(--accent-red); }
+.track-fav-btn.active svg { fill: var(--accent-red); }
+
+/* Filtro favoritos en controls-bar */
+.fav-filter-label {
+    display: flex; align-items: center; gap: 6px;
+    font-weight: 600; font-size: 0.85rem;
+    color: var(--text-muted); cursor: pointer;
+    white-space: nowrap; padding: 0 8px;
+    user-select: none;
+}
+.fav-filter-label input[type="checkbox"] {
+    width: 16px; height: 16px;
+    cursor: pointer;
+    accent-color: var(--accent-red);
+    flex-shrink: 0;
 }
 
-/* Efecto al pasar el ratón */
-.card-fav-btn:hover {
-    background: rgba(0, 0, 0, 0.7);
-    transform: scale(1.1);
-}
-
-/* Tamaño del icono del corazón */
-.card-fav-btn svg {
-    width: 18px;
-    height: 18px;
-    transition: fill 0.2s, color 0.2s;
-}
-
-/* Cuando le das a favorito (clase active) */
-.card-fav-btn.active {
+/* Icono corazón SVG dentro del label */
+.fav-filter-label svg {
+    width: 14px; height: 14px;
     color: var(--accent-red);
-}
-.card-fav-btn.active svg {
-    fill: var(--accent-red); /* Rellena el corazón de rojo */
+    flex-shrink: 0;
 }
