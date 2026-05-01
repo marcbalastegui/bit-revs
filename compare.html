@@ -7,7 +7,6 @@
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
     <style>
-        /* ── COMPARE PAGE ── */
         .compare-hero {
             text-align: center;
             padding: 60px 20px 40px;
@@ -31,7 +30,6 @@
             margin: 0;
         }
 
-        /* ── SELECTORS ── */
         .compare-selectors {
             display: grid;
             grid-template-columns: 1fr auto 1fr;
@@ -85,7 +83,6 @@
             outline: none;
         }
 
-        /* Preview mini del álbum seleccionado */
         .album-preview {
             display: none;
             align-items: center;
@@ -120,202 +117,21 @@
             color: var(--text-muted);
         }
 
-        /* ── COMPARE RESULTS ── */
         #compare-results {
             max-width: 1100px;
             margin: 0 auto;
             padding: 0 20px 60px;
         }
 
-        .compare-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 24px;
-            margin-bottom: 32px;
-        }
-
-        /* Header de cada álbum */
-        .compare-album-header {
-            background: white;
-            border: 1px solid var(--border-color);
-            border-radius: 20px;
-            padding: 28px;
-            box-shadow: var(--shadow-subtle);
-            display: flex;
-            gap: 20px;
-            align-items: center;
-            animation: fadeUp 0.4s ease both;
-        }
-
-        @keyframes fadeUp {
-            from { opacity: 0; transform: translateY(16px); }
-            to   { opacity: 1; transform: translateY(0); }
-        }
-
-        .compare-cover {
-            width: 100px; height: 100px;
-            border-radius: 10px;
-            object-fit: cover;
-            border: 1px solid var(--border-color);
-            flex-shrink: 0;
-        }
-
-        .compare-album-info { min-width: 0; }
-
-        .compare-album-title {
-            font-size: 1.2rem;
-            font-weight: 900;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            margin-bottom: 4px;
-        }
-
-        .compare-album-meta {
-            font-size: 0.85rem;
-            color: var(--text-muted);
-            margin-bottom: 10px;
-        }
-
-        .compare-rating-badge {
-            display: inline-block;
-            padding: 4px 14px;
-            border-radius: 8px;
-            font-size: 1.3rem;
-            font-weight: 900;
-            color: white;
-        }
-
-        /* Sección de comparativa */
-        .compare-section {
-            margin-bottom: 24px;
-            animation: fadeUp 0.4s ease both;
-        }
-
-        .compare-section-title {
-            font-size: 0.75rem;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            color: var(--text-muted);
-            margin-bottom: 16px;
-            padding-bottom: 8px;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .compare-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 16px;
-        }
-
-        .compare-cell {
-            background: white;
-            border: 1px solid var(--border-color);
-            border-radius: 14px;
-            padding: 20px;
-            box-shadow: var(--shadow-subtle);
-        }
-
-        /* Ganador destacado */
-        .compare-cell.winner {
-            border-color: var(--accent-red);
-            box-shadow: 0 0 0 2px rgba(230, 57, 70, 0.12);
-        }
-
-        .compare-cell.winner::before {
-            content: '▲ Mejor';
-            display: block;
-            font-size: 0.65rem;
-            font-weight: 800;
-            color: var(--accent-red);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 6px;
-        }
-
-        .compare-stat-label {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            font-weight: 600;
-            margin-bottom: 6px;
-        }
-
-        .compare-stat-value {
-            font-size: 1.8rem;
-            font-weight: 900;
-            letter-spacing: -1px;
-            color: var(--text-main);
-        }
-
-        .compare-stat-value.accent { color: var(--accent-red); }
-
-        /* Tracks destacados */
-        .compare-track-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 8px 0;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .compare-track-item:last-child { border-bottom: none; }
-
-        .compare-track-info { flex: 1; min-width: 0; }
-
-        .compare-track-title {
-            font-size: 0.88rem;
-            font-weight: 700;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .compare-track-badge {
-            padding: 2px 8px;
-            border-radius: 6px;
-            font-size: 0.8rem;
-            font-weight: 900;
-            color: white;
-            flex-shrink: 0;
-        }
-
-        /* Géneros */
-        .compare-genres {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-        }
-
-        .compare-genre-tag {
-            padding: 4px 10px;
-            border-radius: 14px;
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-color);
-            font-size: 0.75rem;
-            font-weight: 600;
-            color: var(--text-muted);
-        }
-
-        .compare-genre-tag.shared {
-            background: rgba(230, 57, 70, 0.08);
-            border-color: rgba(230, 57, 70, 0.3);
-            color: var(--accent-red);
-        }
-
-        /* Estado vacío */
         .compare-empty {
             text-align: center;
             padding: 60px 20px;
             color: var(--text-muted);
         }
 
-        /* Responsive */
         @media (max-width: 700px) {
             .compare-selectors { grid-template-columns: 1fr; }
             .compare-vs { display: none; }
-            .compare-grid { grid-template-columns: 1fr; }
-            .compare-row  { grid-template-columns: 1fr; }
             .compare-hero h1 { font-size: 2.5rem; }
         }
     </style>
