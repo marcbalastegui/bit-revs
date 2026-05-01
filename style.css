@@ -719,3 +719,42 @@ h1 {
     height: 16px !important;
     flex-shrink: 0;
 }
+/* ── COMPARE WINNER BADGE ── */
+.compare-winner-badge {
+    display: inline-block;
+    font-size: 0.65rem;
+    font-weight: 800;
+    color: var(--accent-red);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+}
+
+/* ── COMPARE SECTION TITLE SPACING ── */
+.compare-section-title {
+    font-size: 0.75rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--text-muted);
+    margin: 28px 0 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+/* ── COMPARE CELL SPACING ── */
+.compare-cell {
+    background: white;
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    padding: 20px;
+    box-shadow: var(--shadow-subtle);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.compare-cell.winner {
+    border-color: var(--accent-red);
+    box-shadow: 0 0 0 2px rgba(230, 57, 70, 0.12);
+}
