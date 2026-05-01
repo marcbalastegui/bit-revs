@@ -205,11 +205,11 @@ function renderComparison(a, b) {
         ${statCell('Nota del álbum', formatRating(ratingB), ratingB > ratingA)}
     </div>`;
 
-    html += sectionTitle('Canciones');
-    html += `<div class="compare-row">
-        ${statCell('Total canciones puntuadas', tracksA.length, tracksA.length > tracksB.length)}
-        ${statCell('Total canciones puntuadas', tracksB.length, tracksB.length > tracksA.length)}
-    </div>`;
+html += sectionTitle('Canciones');
+html += `<div class="compare-row">
+    ${infoCell('Total canciones puntuadas', tracksA.length)}
+    ${infoCell('Total canciones puntuadas', tracksB.length)}
+</div>`;
 
     if (bestA || bestB) {
         const bestRatingA = bestA ? parseFloat(bestA.rating) : -1;
