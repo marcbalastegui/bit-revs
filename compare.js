@@ -1,70 +1,155 @@
-// compare.js - Lógica de comparación de álbumes
+// compare.js - Lógica de comparación de álbumes con buscador
 
 let allAlbums = [];
+let selectedA = null;
+let selectedB = null;
 
 // ── INIT ──────────────────────────────────────────────────────────────────
 async function initCompare() {
     allAlbums = await getAllAlbumsFromDB();
-    const sorted = [...allAlbums].sort((a, b) => (a.title || "").localeCompare(b.title || ""));
-    populateSelect('select-album-a', sorted);
-    populateSelect('select-album-b', sorted);
-    document.getElementById('select-album-a').addEventListener('change', onSelectionChange);
-    document.getElementById('select-album-b').addEventListener('change', onSelectionChange);
+
+    initSearchSide('a');
+    initSearchSide('b');
 }
 
-function populateSelect(selectId, albums) {
-    const select = document.getElementById(selectId);
-    select.innerHTML = '<option value="">Selecciona un álbum…</option>';
-    albums.forEach(album => {
-        const opt = document.createElement('option');
-        opt.value = album.id;
-        opt.textContent = `${album.title} — ${album.artist}`;
-        select.appendChild(opt);
+// ── BUSCADOR POR LADO ─────────────────────────────────────────────────────
+function initSearchSide(side) {
+    const input    = document.getElementById(`search-${side}`);
+    const dropdown = document.getElementById(`dropdown-${side}`);
+    const clearBtn = document.getElementById(`clear-${side}`);
+
+    // Mostrar dropdown al escribir
+    input.addEventListener('input', () => {
+        const query = input.value.toLowerCase().trim();
+        renderDropdown(side, query);
+    });
+
+    // Abrir dropdown al hacer focus
+    input.addEventListener('focus', () => {
+        const query = input.value.toLowerCase().trim();
+        renderDropdown(side, query);
+    });
+
+    // Cerrar dropdown al hacer click fuera
+    document.addEventListener('click', (e) => {
+        if (!document.getElementById(`selector-${side}`).contains(e.target)) {
+            dropdown.classList.remove('open');
+        }
+    });
+
+    // Botón de limpiar selección
+    clearBtn.addEventListener('click', () => {
+        clearSelection(side);
     });
 }
 
-function onSelectionChange() {
-    const idA = document.getElementById('select-album-a').value;
-    const idB = document.getElementById('select-album-b').value;
-    updatePreview('a', idA);
-    updatePreview('b', idB);
+function renderDropdown(side, query) {
+    const dropdown = document.getElementById(`dropdown-${side}`);
+    const otherSelected = side === 'a' ? selectedB : selectedA;
 
-    if (idA && idB) {
-        if (idA === idB) {
-            document.getElementById('compare-results').innerHTML = `
-                <div class="compare-empty"><p>Selecciona dos álbumes distintos para compararlos.</p></div>`;
-            return;
-        }
-        const albumA = allAlbums.find(a => a.id == idA);
-        const albumB = allAlbums.find(a => a.id == idB);
-        renderComparison(albumA, albumB);
-    } else {
-        document.getElementById('compare-results').innerHTML = `
-            <div class="compare-empty">
-                <p style="font-size:1.5rem;">🎵</p>
-                <p>Selecciona dos álbumes para compararlos</p>
-            </div>`;
+    // Filtrar álbumes
+    let results = allAlbums.filter(album => {
+        const matchesQuery = query === '' ||
+            (album.title && album.title.toLowerCase().includes(query)) ||
+            (album.artist && album.artist.toLowerCase().includes(query));
+        // Excluir el álbum ya seleccionado en el otro lado
+        const notOther = !otherSelected || album.id !== otherSelected.id;
+        return matchesQuery && notOther;
+    });
+
+    // Ordenar alfabéticamente
+    results.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
+
+    if (results.length === 0) {
+        dropdown.innerHTML = `<div class="dropdown-empty">No se encontraron álbumes</div>`;
+        dropdown.classList.add('open');
+        return;
     }
+
+    dropdown.innerHTML = results.map(album => {
+        const isSelected = (side === 'a' ? selectedA : selectedB)?.id === album.id;
+        let artistDisplay = album.artist || '';
+        if (album.featuredArtists && album.featuredArtists.length > 0) {
+            artistDisplay += ' ft. ' + album.featuredArtists.join(', ');
+        }
+        return `
+            <div class="dropdown-item${isSelected ? ' selected' : ''}" data-id="${album.id}">
+                <img src="${album.coverBase64}" alt="${album.title}">
+                <div class="dropdown-item-info">
+                    <div class="dropdown-item-title">${album.title}</div>
+                    <div class="dropdown-item-meta">${artistDisplay} · ${album.year}</div>
+                </div>
+            </div>`;
+    }).join('');
+
+    // Eventos de click en cada item
+    dropdown.querySelectorAll('.dropdown-item').forEach(item => {
+        item.addEventListener('click', () => {
+            const id = parseInt(item.dataset.id);
+            const album = allAlbums.find(a => a.id === id);
+            selectAlbum(side, album);
+        });
+    });
+
+    dropdown.classList.add('open');
 }
 
-function updatePreview(side, id) {
+function selectAlbum(side, album) {
+    const input    = document.getElementById(`search-${side}`);
+    const dropdown = document.getElementById(`dropdown-${side}`);
+
+    if (side === 'a') selectedA = album;
+    else              selectedB = album;
+
+    // Actualizar input y cerrar dropdown
+    input.value = album.title;
+    dropdown.classList.remove('open');
+
+    // Mostrar preview
+    updatePreview(side, album);
+
+    // Renderizar comparativa si ambos están seleccionados
+    tryRenderComparison();
+}
+
+function clearSelection(side) {
+    if (side === 'a') selectedA = null;
+    else              selectedB = null;
+
+    document.getElementById(`search-${side}`).value = '';
+    document.getElementById(`preview-${side}`).classList.remove('visible');
+    document.getElementById(`compare-results`).innerHTML = `
+        <div class="compare-empty">
+            <p style="font-size:1.5rem;">🎵</p>
+            <p>Selecciona dos álbumes para compararlos</p>
+        </div>`;
+}
+
+function updatePreview(side, album) {
     const preview = document.getElementById(`preview-${side}`);
     const cover   = document.getElementById(`preview-${side}-cover`);
     const title   = document.getElementById(`preview-${side}-title`);
     const meta    = document.getElementById(`preview-${side}-meta`);
 
-    if (!id) { preview.classList.remove('visible'); return; }
-    const album = allAlbums.find(a => a.id == id);
-    if (!album) return;
-
     cover.src = album.coverBase64;
     title.textContent = album.title;
+
     let artistDisplay = album.artist;
     if (album.featuredArtists && album.featuredArtists.length > 0) {
         artistDisplay += ' ft. ' + album.featuredArtists.join(', ');
     }
     meta.textContent = `${artistDisplay} · ${album.year}`;
     preview.classList.add('visible');
+}
+
+function tryRenderComparison() {
+    if (!selectedA || !selectedB) return;
+    if (selectedA.id === selectedB.id) {
+        document.getElementById('compare-results').innerHTML = `
+            <div class="compare-empty"><p>Selecciona dos álbumes distintos para compararlos.</p></div>`;
+        return;
+    }
+    renderComparison(selectedA, selectedB);
 }
 
 // ── HELPERS ───────────────────────────────────────────────────────────────
@@ -84,7 +169,7 @@ function stdDev(tracks) {
     return Math.sqrt(variance);
 }
 
-// ── RENDER ────────────────────────────────────────────────────────────────
+// ── RENDER COMPARATIVA ────────────────────────────────────────────────────
 function renderComparison(a, b) {
     const ratingA = parseFloat(a.rating) || 0;
     const ratingB = parseFloat(b.rating) || 0;
@@ -112,17 +197,14 @@ function renderComparison(a, b) {
 
     let html = '';
 
-    // Headers
     html += `<div class="compare-grid">${albumHeader(a)}${albumHeader(b)}</div>`;
 
-    // Notas
     html += sectionTitle('Notas');
     html += `<div class="compare-row">
         ${statCell('Nota del álbum', formatRating(ratingA), ratingA > ratingB)}
         ${statCell('Nota del álbum', formatRating(ratingB), ratingB > ratingA)}
     </div>`;
 
-    // Canciones
     html += sectionTitle('Canciones');
     html += `<div class="compare-row">
         ${statCell('Total canciones puntuadas', tracksA.length, tracksA.length > tracksB.length)}
@@ -147,7 +229,6 @@ function renderComparison(a, b) {
         </div>`;
     }
 
-    // Calidad
     html += sectionTitle('Calidad');
     html += `<div class="compare-row">
         ${statCell(`Canciones ≥ 7 (${above7A} de ${tracksA.length})`, `${pctA}%`, pctA > pctB)}
@@ -163,18 +244,16 @@ function renderComparison(a, b) {
         ${statCell('Racha máxima ≥ 7', `${streakB} canciones`, streakB > streakA)}
     </div>`;
 
-    // Info
     html += sectionTitle('Info');
     html += `<div class="compare-row">
-        ${infoCell('Año', a.year, b.year)}
-        ${infoCell('Año', b.year, a.year)}
+        ${infoCell('Año', a.year)}
+        ${infoCell('Año', b.year)}
     </div>`;
     html += `<div class="compare-row" style="margin-top:12px;">
         ${artistCell(a)}
         ${artistCell(b)}
     </div>`;
 
-    // Géneros
     if (genresA.size > 0 || genresB.size > 0) {
         html += sectionTitle(`Géneros${sharedGenres.length > 0 ? ` · ${sharedGenres.length} en común` : ''}`);
         html += `<div class="compare-row">
@@ -187,7 +266,6 @@ function renderComparison(a, b) {
 }
 
 // ── HELPERS DE RENDER ─────────────────────────────────────────────────────
-
 function albumHeader(album) {
     const badgeColor = getColorByRating(album.rating);
     let artistDisplay = album.artist || '';
@@ -209,11 +287,8 @@ function sectionTitle(text) {
     return `<div class="compare-section-title">${text}</div>`;
 }
 
-// Una sola insignia de ganador, sin elemento invisible para el perdedor
 function winnerBadgeHtml(isWinner) {
-    return isWinner
-        ? `<span class="compare-winner-badge">▲ Mejor</span>`
-        : '';
+    return isWinner ? `<span class="compare-winner-badge">▲ Mejor</span>` : '';
 }
 
 function statCell(label, value, isWinner) {
@@ -225,11 +300,9 @@ function statCell(label, value, isWinner) {
         </div>`;
 }
 
-function infoCell(label, value, other) {
-    const isWinner = value > other;
+function infoCell(label, value) {
     return `
-        <div class="compare-cell${isWinner ? ' winner' : ''}">
-            ${winnerBadgeHtml(isWinner)}
+        <div class="compare-cell">
             <div class="compare-stat-label">${label}</div>
             <div class="compare-stat-value">${value || '—'}</div>
         </div>`;

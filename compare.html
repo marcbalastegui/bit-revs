@@ -24,17 +24,13 @@
             background-clip: text;
         }
 
-        .compare-hero p {
-            color: var(--text-muted);
-            font-size: 1rem;
-            margin: 0;
-        }
+        .compare-hero p { color: var(--text-muted); font-size: 1rem; margin: 0; }
 
         .compare-selectors {
             display: grid;
             grid-template-columns: 1fr auto 1fr;
             gap: 20px;
-            align-items: center;
+            align-items: start;
             max-width: 900px;
             margin: 0 auto 40px;
             padding: 0 20px;
@@ -45,6 +41,7 @@
             font-weight: 900;
             color: var(--text-muted);
             text-align: center;
+            padding-top: 40px;
         }
 
         .album-selector {
@@ -53,9 +50,10 @@
             border-radius: 16px;
             padding: 16px;
             box-shadow: var(--shadow-subtle);
+            position: relative;
         }
 
-        .album-selector label {
+        .album-selector-label {
             display: block;
             font-size: 0.75rem;
             font-weight: 800;
@@ -65,7 +63,8 @@
             margin-bottom: 10px;
         }
 
-        .album-selector select {
+        /* ── SEARCH INPUT ── */
+        .album-search-input {
             width: 100%;
             padding: 10px 14px;
             border-radius: 10px;
@@ -75,14 +74,78 @@
             font-weight: 600;
             color: var(--text-main);
             font-family: 'Inter', sans-serif;
-            cursor: pointer;
+            transition: border-color 0.2s;
         }
 
-        .album-selector select:focus {
+        .album-search-input:focus {
             border-color: var(--accent-red);
             outline: none;
+            background: white;
         }
 
+        /* ── DROPDOWN DE RESULTADOS ── */
+        .album-search-dropdown {
+            position: absolute;
+            top: calc(100% - 8px);
+            left: 0; right: 0;
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+            z-index: 200;
+            max-height: 260px;
+            overflow-y: auto;
+            display: none;
+        }
+
+        .album-search-dropdown.open { display: block; }
+
+        .dropdown-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            cursor: pointer;
+            transition: background 0.15s;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .dropdown-item:last-child { border-bottom: none; }
+        .dropdown-item:first-child { border-radius: 12px 12px 0 0; }
+        .dropdown-item:last-child  { border-radius: 0 0 12px 12px; }
+        .dropdown-item:only-child  { border-radius: 12px; }
+
+        .dropdown-item:hover { background: var(--bg-secondary); }
+        .dropdown-item.selected { background: rgba(230,57,70,0.06); }
+
+        .dropdown-item img {
+            width: 36px; height: 36px;
+            border-radius: 4px; object-fit: cover; flex-shrink: 0;
+        }
+
+        .dropdown-item-info { min-width: 0; }
+
+        .dropdown-item-title {
+            font-size: 0.88rem;
+            font-weight: 700;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .dropdown-item-meta {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+        }
+
+        .dropdown-empty {
+            padding: 16px 14px;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            text-align: center;
+        }
+
+        /* ── PREVIEW DEL ÁLBUM SELECCIONADO ── */
         .album-preview {
             display: none;
             align-items: center;
@@ -97,26 +160,26 @@
 
         .album-preview img {
             width: 44px; height: 44px;
-            border-radius: 6px;
-            object-fit: cover;
-            flex-shrink: 0;
+            border-radius: 6px; object-fit: cover; flex-shrink: 0;
         }
 
-        .album-preview-info { min-width: 0; }
+        .album-preview-info { min-width: 0; flex: 1; }
 
         .album-preview-title {
-            font-size: 0.88rem;
-            font-weight: 700;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            font-size: 0.88rem; font-weight: 700;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         }
 
-        .album-preview-meta {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-        }
+        .album-preview-meta { font-size: 0.75rem; color: var(--text-muted); }
 
+        .album-preview-clear {
+            background: none; border: none; cursor: pointer;
+            color: var(--text-muted); font-size: 1rem;
+            padding: 4px; transition: color 0.2s; flex-shrink: 0;
+        }
+        .album-preview-clear:hover { color: var(--accent-red); }
+
+        /* ── RESULTS ── */
         #compare-results {
             max-width: 1100px;
             margin: 0 auto;
@@ -161,33 +224,35 @@
     </div>
 
     <div class="compare-selectors">
-        <div class="album-selector">
-            <label>Álbum A</label>
-            <select id="select-album-a">
-                <option value="">Selecciona un álbum…</option>
-            </select>
+        <!-- Álbum A -->
+        <div class="album-selector" id="selector-a">
+            <span class="album-selector-label">Álbum A</span>
+            <input type="text" class="album-search-input" id="search-a" placeholder="Buscar álbum…" autocomplete="off">
+            <div class="album-search-dropdown" id="dropdown-a"></div>
             <div class="album-preview" id="preview-a">
                 <img id="preview-a-cover" src="" alt="">
                 <div class="album-preview-info">
                     <div class="album-preview-title" id="preview-a-title"></div>
                     <div class="album-preview-meta" id="preview-a-meta"></div>
                 </div>
+                <button class="album-preview-clear" id="clear-a" title="Quitar selección">✕</button>
             </div>
         </div>
 
         <div class="compare-vs">VS</div>
 
-        <div class="album-selector">
-            <label>Álbum B</label>
-            <select id="select-album-b">
-                <option value="">Selecciona un álbum…</option>
-            </select>
+        <!-- Álbum B -->
+        <div class="album-selector" id="selector-b">
+            <span class="album-selector-label">Álbum B</span>
+            <input type="text" class="album-search-input" id="search-b" placeholder="Buscar álbum…" autocomplete="off">
+            <div class="album-search-dropdown" id="dropdown-b"></div>
             <div class="album-preview" id="preview-b">
                 <img id="preview-b-cover" src="" alt="">
                 <div class="album-preview-info">
                     <div class="album-preview-title" id="preview-b-title"></div>
                     <div class="album-preview-meta" id="preview-b-meta"></div>
                 </div>
+                <button class="album-preview-clear" id="clear-b" title="Quitar selección">✕</button>
             </div>
         </div>
     </div>
