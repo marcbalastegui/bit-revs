@@ -2,6 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BitRevs - Series</title>
     <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="/manifest.json">
@@ -11,59 +12,110 @@
     <div class="header-left">
         <a href="index.html" class="logo">BitRevs</a>
     </div>
-<nav>
-    <a href="movies.html">Películas</a>
-    <a href="series.html" class="active">Series</a>
-    <a href="index.html">Álbumes</a>
-    <a href="top.html">Top Canciones</a>
-    <a href="wrapped.html">Wrapped</a>
-</nav>
+    <nav>
+        <a href="movies.html">Películas</a>
+        <a href="series.html" class="active">Series</a>
+        <a href="index.html">Álbumes</a>
+        <a href="top.html">Top Canciones</a>
+        <a href="wrapped.html">Wrapped</a>
+    </nav>
     <div class="header-right">
         <button id="btn-add-media" class="save-btn">+ Añadir Serie</button>
         <a href="profile.html" class="header-avatar" id="global-header-avatar" title="Mi Perfil">U</a>
-   <form action="search.html" method="get" style="display:flex; align-items:center;">
-    <input type="search" name="q" placeholder="Buscar…" style="padding:8px 16px; border-radius:20px; border:1px solid var(--border-color); width:180px;">
-</form>
     </div>
 </header>
+
 <main>
     <h1>Todas las Series</h1>
-
     <div class="controls-bar">
-        <input type="text" id="filter-input" placeholder="Filtrar por título o año...">
+        <input type="text" id="filter-input" placeholder="Filtrar por título, creador o año...">
         <select id="sort-select">
             <option value="default">Orden por defecto</option>
             <option value="rating-desc">Nota (Mayor a Menor)</option>
             <option value="rating-asc">Nota (Menor a Mayor)</option>
             <option value="year-desc">Año (Más reciente)</option>
             <option value="year-asc">Año (Más antiguo)</option>
+            <option value="title-asc">Título (A-Z)</option>
         </select>
     </div>
-
     <div class="album-grid" id="media-grid"></div>
 </main>
 
-    <div id="modal-add" class="modal hidden">
-        <div class="modal-content">
-            <h2>Nueva Reseña</h2>
-            <form id="media-form">
-                <label>Póster:</label><input type="file" id="cover" accept="image/*" required>
-                <label>Título:</label><input type="text" id="title" required>
-                <label>Año:</label><input type="number" id="year" required>
-                <label>Puntuación (0-10):</label><input type="text" id="rating" required>
-                <div class="modal-actions">
-                    <button type="button" id="btn-cancel">Cancelar</button>
-                    <button type="submit" class="save-btn">Guardar</button>
-                </div>
-            </form>
-        </div>
+<!-- ── MODAL AÑADIR/EDITAR SERIE ── -->
+<div id="modal-add" class="modal hidden">
+    <div class="modal-content">
+        <h2>Nueva Serie</h2>
+        <form id="media-form">
+            <label>Póster:</label>
+            <input type="file" id="cover" accept="image/*" required>
+
+            <label>Título:</label>
+            <input type="text" id="title" required placeholder="Ej: Breaking Bad">
+
+            <label>Creador:</label>
+            <input type="text" id="creator" placeholder="Ej: Vince Gilligan">
+
+            <label>Año de inicio:</label>
+            <input type="number" id="year" required placeholder="Ej: 2008">
+
+            <label>Duración por episodio (minutos):</label>
+            <input type="number" id="duration" placeholder="Ej: 47">
+
+            <label>Género:</label>
+            <input type="text" id="genre" placeholder="Ej: Drama, Thriller">
+
+            <label>Puntuación (0-10):</label>
+            <input type="text" id="rating" required placeholder="Ej: 9.5">
+
+            <div class="modal-actions">
+                <button type="button" id="btn-cancel">Cancelar</button>
+                <button type="submit" class="save-btn">Guardar</button>
+            </div>
+        </form>
     </div>
-    <script src="db.js"></script>
-    <script src="media.js"></script>
+</div>
+
+<!-- ── MODAL MÁS DETALLES SERIE ── -->
+<div id="modal-details" class="modal hidden">
+    <div class="modal-content" style="max-width:520px;">
+        <h2 id="details-title">Más detalles</h2>
+        <form id="details-form">
+            <label>Número de temporadas:</label>
+            <input type="number" id="details-seasons" placeholder="Ej: 5">
+
+            <label>Temporada favorita:</label>
+            <input type="number" id="details-fav-season" placeholder="Ej: 3">
+
+            <label>Fecha en que la empezaste:</label>
+            <input type="date" id="details-start-date">
+
+            <label>Fecha en que la terminaste:</label>
+            <input type="date" id="details-end-date">
+
+            <label>Frase memorable:</label>
+            <textarea id="details-quote" rows="3"
+                style="width:100%; padding:12px; border-radius:10px; border:1px solid var(--border-color); background:#1a1a1a; color:#f0f0f0; font-family:'Georgia',serif; font-size:1rem; font-style:italic; resize:vertical; border-left:4px solid var(--accent-red); border-radius:0 10px 10px 0;"
+                placeholder="«Una frase que recuerdes de la serie…»"></textarea>
+
+            <label>Review:</label>
+            <textarea id="details-review" rows="5"
+                style="width:100%; padding:12px; border-radius:10px; border:1px solid var(--border-color); background:var(--bg-secondary); font-family:'Inter',sans-serif; font-size:0.95rem; resize:vertical; color:var(--text-main);"
+                placeholder="Escribe tu opinión sobre la serie…"></textarea>
+
+            <div class="modal-actions">
+                <button type="button" id="btn-cancel-details">Cancelar</button>
+                <button type="submit" class="save-btn">Guardar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="db.js"></script>
+<script src="series.js"></script>
 <script>
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/service-worker.js');
-  }
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/service-worker.js');
+    }
 </script>
 </body>
 </html>
