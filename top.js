@@ -15,11 +15,13 @@ function loadSnapshot() {
     } catch { return null; }
 }
 
-// El snapshot solo se guarda UNA vez por sesión, al cargar la página
-// No se llama al cambiar criterios de orden
-function saveSnapshotOnce(rankedTracks) {
-    const snapshot = rankedTracks.map((t, i) => ({ uid: t._uid, rank: i + 1 }));
-    try { localStorage.setItem(SNAPSHOT_KEY, JSON.stringify(snapshot)); } catch {}
+// Solo se guarda si NO existe uno previo — nunca se sobreescribe al reordenar
+function saveSnapshotIfEmpty(rankedTracks) {
+    try {
+        if (localStorage.getItem(SNAPSHOT_KEY)) return;
+        const snapshot = rankedTracks.map((t, i) => ({ uid: t._uid, rank: i + 1 }));
+        localStorage.setItem(SNAPSHOT_KEY, JSON.stringify(snapshot));
+    } catch {}
 }
 
 function buildUid(albumId, trackTitle) {
@@ -199,7 +201,7 @@ function updateDirButton() {
 async function reorder() {
     const filterInput = document.getElementById('top-filter');
     fullRanking = await buildRanking(currentMode, currentTiebreaker, tiebreakerDir);
-    // NO llamamos saveSnapshotOnce aquí — solo al cargar la página
+    // NO llamamos saveSnapshotIfEmpty aquí — solo al cargar la página
     renderRanking(fullRanking, filterInput?.value || '');
 }
 
@@ -216,7 +218,7 @@ async function initTop() {
     fullRanking = await buildRanking(currentMode, currentTiebreaker, tiebreakerDir);
 
     // Guardar snapshot UNA sola vez — al cargar la página
-    saveSnapshotOnce(fullRanking);
+    saveSnapshotIfEmpty(fullRanking);
 
     updateDirButton();
     renderRanking(fullRanking, '');
