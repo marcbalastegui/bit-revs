@@ -24,16 +24,22 @@ async function buildRanking() {
 
     albums.forEach(album => {
         if (!album.tracks) return;
+        const albumRating = parseFloat(album.rating) || 0;
+
         album.tracks.forEach(track => {
             if (track.isInterlude) return;
             const r = parseFloat(track.rating);
             if (isNaN(r) || r <= 0) return;
 
-            // Si la canción tiene artista invitado, mostramos "Artista Principal ft. Invitado"
-            // Si no, solo el artista del álbum
+            // Artista: album.artist principal + invitados sin duplicar el principal
             let artistDisplay = album.artist || '';
             if (track.artist && track.artist.trim() !== '') {
-                artistDisplay = `${album.artist} ft. ${track.artist}`;
+                const featured = track.artist.split(',')
+                    .map(a => a.trim())
+                    .filter(a => a !== '' && a.toLowerCase() !== (album.artist || '').toLowerCase());
+                if (featured.length > 0) {
+                    artistDisplay = `${album.artist} ft. ${featured.join(', ')}`;
+                }
             }
 
             allTracks.push({
@@ -42,6 +48,7 @@ async function buildRanking() {
                 artist:      artistDisplay,
                 albumTitle:  album.title,
                 albumYear:   album.year,
+                albumRating: albumRating,
                 cover:       album.coverBase64,
                 albumId:     album.id,
                 rating:      r
@@ -49,12 +56,13 @@ async function buildRanking() {
         });
     });
 
-    // Ordenar: mayor nota primero; empate → álbum con mejor nota
+    // Ordenar: mayor nota primero
+    // Empate → álbum con mejor nota primero
+    // Doble empate → título de canción alfabético
     allTracks.sort((a, b) => {
         if (b.rating !== a.rating) return b.rating - a.rating;
-        const albumA = allTracks.find(t => t.albumId === a.albumId);
-        const albumB = allTracks.find(t => t.albumId === b.albumId);
-        return (parseFloat(albumB?.albumRating) || 0) - (parseFloat(albumA?.albumRating) || 0);
+        if (b.albumRating !== a.albumRating) return b.albumRating - a.albumRating;
+        return a.title.localeCompare(b.title);
     });
 
     return allTracks.slice(0, 100);
@@ -106,19 +114,15 @@ function renderRanking(tracks, snapshotMap, filterQuery) {
         if (movement === 'new')  arrowHtml = '<span class="top-arrow new">NEW</span>';
 
         const badgeColor = typeof getColorByRating === 'function'
-            ? getColorByRating(track.rating)
-            : '#666';
+            ? getColorByRating(track.rating) : '#666';
 
         const displayRating = typeof formatRating === 'function'
-            ? formatRating(track.rating)
-            : track.rating;
+            ? formatRating(track.rating) : track.rating;
 
         const row = document.createElement('div');
         row.className = 'top-row';
         row.style.cursor = 'pointer';
         row.title = `Ir a ${track.albumTitle}`;
-
-        // Click lleva al álbum
         row.addEventListener('click', () => {
             window.location.href = `album.html?id=${track.albumId}`;
         });

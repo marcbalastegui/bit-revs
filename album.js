@@ -2,8 +2,8 @@
 
 let currentAlbum = null;
 let editingTrackIndex = null;
-let reviewBlocks = []; // bloques del editor de review activo
-let reviewTarget = null; // { type: 'track', index: N } o { type: 'album' }
+let reviewBlocks = [];
+let reviewTarget = null;
 
 async function loadAlbumDetails() {
     const params = new URLSearchParams(window.location.search);
@@ -48,13 +48,6 @@ window.toggleAlbumFavorite = async function() {
     }
 }
 
-window.toggleTrackFavorite = async function(index) {
-    currentAlbum.tracks[index].favorite = !currentAlbum.tracks[index].favorite;
-    await saveAlbumToDB(currentAlbum);
-    const btn = document.querySelector(`.track-fav-btn[data-index="${index}"]`);
-    if (btn) btn.classList.toggle('active', currentAlbum.tracks[index].favorite);
-}
-
 // ── BORRAR / EDITAR TRACK ─────────────────────────────────────────────────
 window.deleteTrack = async function(index) {
     if (confirm("¿Borrar esta canción?")) {
@@ -70,6 +63,7 @@ window.editTrack = function(index) {
     const track = currentAlbum.tracks[index];
 
     document.getElementById('track-title').value = track.title;
+    // track.artist guarda solo los invitados — mostramos solo eso en el campo
     document.getElementById('track-artist').value = track.artist || "";
     document.getElementById('track-interlude').checked = track.isInterlude;
     document.getElementById('track-rating').value = track.rating || "";
@@ -124,11 +118,24 @@ function heartSVG() {
     return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`;
 }
 
-function hasReview(target) {
-    if (target.type === 'album') {
-        return currentAlbum.review && currentAlbum.review.length > 0;
+function reviewPenSVG(active) {
+    const color = active ? 'var(--accent-red)' : 'currentColor';
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
+}
+
+// ── CONSTRUIR DISPLAY DE ARTISTA DE CANCIÓN ───────────────────────────────
+// track.artist contiene SOLO los invitados (no el principal)
+function buildTrackArtistDisplay(track) {
+    if (!track.artist || track.artist.trim() === '') {
+        return currentAlbum.artist;
     }
-    return currentAlbum.tracks[target.index]?.review?.length > 0;
+    // Filtrar el artista principal por si acaso está duplicado
+    const guests = track.artist.split(',')
+        .map(a => a.trim())
+        .filter(a => a !== '' && a.toLowerCase() !== currentAlbum.artist.toLowerCase());
+
+    if (guests.length === 0) return currentAlbum.artist;
+    return `${currentAlbum.artist} ft. ${guests.join(', ')}`;
 }
 
 // ── RENDER PRINCIPAL ──────────────────────────────────────────────────────
@@ -144,15 +151,17 @@ function renderAlbumContent() {
         const trackColor = track.isInterlude ? '#4D4D4D' : getColorByRating(track.rating);
         const displayRating = track.isInterlude ? 'INTERLUDE' : formatRating(track.rating);
         const badgeClass = track.isInterlude ? 'rating-badge album-tag' : 'rating-badge';
-        const trackFav = track.favorite || false;
         const trackHasReview = track.review && track.review.length > 0;
+
+        // Mostrar artista correcto: principal + invitados sin duplicar
+        const artistDisplay = buildTrackArtistDisplay(track);
 
         tracksHtml += `
             <div class="track-item" data-index="${index}">
                 <span class="drag-handle" title="Arrastra para reordenar">⠿</span>
                 <div class="track-info">
                     <h4>${track.title}</h4>
-                    <p>${track.artist ? track.artist : currentAlbum.artist}</p>
+                    <p>${artistDisplay}</p>
                 </div>
                 <div class="track-actions">
                     <button class="track-review-btn${trackHasReview ? ' has-review' : ''}"
@@ -209,13 +218,7 @@ function renderAlbumContent() {
     });
 }
 
-function reviewPenSVG(active) {
-    const color = active ? 'var(--accent-red)' : 'currentColor';
-    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
-}
-
 // ── REVIEW MODAL ──────────────────────────────────────────────────────────
-
 window.openReview = function(type, index) {
     if (type === 'album') {
         reviewTarget = { type: 'album' };
@@ -244,7 +247,6 @@ function renderReviewEditor() {
         const wrapper = document.createElement('div');
         wrapper.className = 'review-block-wrapper';
 
-        // Botón de borrar bloque
         const deleteBtn = document.createElement('button');
         deleteBtn.className = 'review-block-delete';
         deleteBtn.title = 'Eliminar bloque';
@@ -259,7 +261,6 @@ function renderReviewEditor() {
             renderReviewEditor();
         });
 
-        // Textarea del bloque
         const textarea = document.createElement('textarea');
         textarea.className = `review-block review-block-${block.type}`;
         textarea.placeholder = block.type === 'lyrics'
@@ -268,12 +269,10 @@ function renderReviewEditor() {
         textarea.value = block.content;
         textarea.addEventListener('input', () => {
             reviewBlocks[i].content = textarea.value;
-            // Auto-resize
             textarea.style.height = 'auto';
             textarea.style.height = textarea.scrollHeight + 'px';
         });
 
-        // Auto-resize inicial
         setTimeout(() => {
             textarea.style.height = 'auto';
             textarea.style.height = textarea.scrollHeight + 'px';
@@ -283,7 +282,6 @@ function renderReviewEditor() {
         wrapper.appendChild(textarea);
         editor.appendChild(wrapper);
 
-        // Botones para insertar nuevo bloque debajo
         const insertBar = document.createElement('div');
         insertBar.className = 'review-insert-bar';
         insertBar.innerHTML = `
@@ -296,7 +294,6 @@ function renderReviewEditor() {
                 const type  = btn.dataset.type;
                 reviewBlocks.splice(after + 1, 0, { type, content: '' });
                 renderReviewEditor();
-                // Focus en el nuevo bloque
                 setTimeout(() => {
                     const textareas = document.querySelectorAll('.review-block');
                     if (textareas[after + 1]) textareas[after + 1].focus();
@@ -309,17 +306,12 @@ function renderReviewEditor() {
 }
 
 function initReviewModal() {
-    // Cerrar modal
     document.getElementById('btn-close-review').addEventListener('click', () => {
         document.getElementById('modal-review').classList.add('hidden');
     });
 
-    // Guardar review
     document.getElementById('btn-save-review').addEventListener('click', async () => {
-        // Limpiar bloques vacíos al final
-        const blocksToSave = reviewBlocks.filter((b, i) =>
-            b.content.trim() !== '' || i === 0
-        );
+        const blocksToSave = reviewBlocks.filter((b, i) => b.content.trim() !== '' || i === 0);
         const cleaned = blocksToSave.map(b => ({ ...b, content: b.content.trim() }));
 
         if (reviewTarget.type === 'album') {
@@ -351,6 +343,7 @@ document.getElementById('btn-cancel-track').addEventListener('click', () => {
 document.getElementById('track-form').addEventListener('submit', async function(e) {
     e.preventDefault();
     const title = document.getElementById('track-title').value;
+    // track-artist guarda SOLO los invitados
     const artist = document.getElementById('track-artist').value;
     const isInterlude = document.getElementById('track-interlude').checked;
 
@@ -367,7 +360,6 @@ document.getElementById('track-form').addEventListener('submit', async function(
     const newTrack = { title, artist, isInterlude, rating };
 
     if (editingTrackIndex !== null) {
-        // Preservar review y favorito al editar
         newTrack.review   = currentAlbum.tracks[editingTrackIndex].review;
         newTrack.favorite = currentAlbum.tracks[editingTrackIndex].favorite;
         currentAlbum.tracks[editingTrackIndex] = newTrack;
