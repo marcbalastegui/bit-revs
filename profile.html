@@ -5,39 +5,226 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BitRevs - Mi Perfil</title>
     <link rel="stylesheet" href="style.css">
-    <link rel="manifest" href="/manifest.json">
+    <style>
+        /* ── PROFILE PAGE OVERRIDES ── */
+        .profile-layout {
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            overflow: visible;
+            margin-bottom: 50px;
+            box-shadow: var(--shadow-subtle);
+            background: white;
+        }
+
+        .profile-banner-container {
+            height: 200px;
+            background: var(--bg-secondary);
+            background-size: cover;
+            background-position: center;
+            border-radius: 20px 20px 0 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .profile-header-content {
+            display: flex;
+            align-items: flex-end;
+            padding: 0 40px 32px 40px;
+            background: white;
+            border-radius: 0 0 20px 20px;
+            gap: 24px;
+        }
+
+        .avatar-container {
+            width: 110px;
+            height: 110px;
+            flex-shrink: 0;
+            margin-top: -55px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .profile-avatar {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 4px solid white;
+            background: var(--accent-red);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.12);
+            background-size: cover;
+            background-position: center;
+        }
+
+        .avatar-overlay {
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 0.7rem;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .avatar-container:hover .avatar-overlay { opacity: 1; }
+
+        .banner-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 0.85rem;
+            font-weight: 700;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .profile-banner-container:hover .banner-overlay { opacity: 1; }
+
+        .profile-info-block {
+            flex: 1;
+            padding-top: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            min-width: 0;
+        }
+
+        .profile-header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+        }
+
+        #profile-name-view {
+            font-size: 1.8rem;
+            font-weight: 900;
+            letter-spacing: -0.5px;
+            margin: 0;
+        }
+
+        #profile-name-edit {
+            font-size: 1.8rem;
+            font-weight: 900;
+            letter-spacing: -0.5px;
+            border: none;
+            border-bottom: 2px solid var(--accent-red);
+            outline: none;
+            background: none;
+            width: 100%;
+            font-family: 'Inter', sans-serif;
+            color: var(--text-main);
+            padding: 4px 0;
+        }
+
+        .profile-stats {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+        }
+
+        .profile-stat-pill {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            background: var(--bg-secondary);
+            border-radius: 20px;
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            border: 1px solid var(--border-color);
+        }
+
+        .profile-stat-pill span.highlight {
+            color: var(--accent-red);
+            font-weight: 900;
+        }
+
+        .edit-btn {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.82rem;
+            cursor: pointer;
+            font-weight: 700;
+            color: var(--text-muted);
+            font-family: 'Inter', sans-serif;
+            transition: all 0.2s;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .edit-btn:hover { background: var(--text-main); color: white; }
+
+        .edit-actions-bar {
+            display: flex;
+            gap: 12px;
+            padding: 16px 40px;
+            border-top: 1px solid var(--border-color);
+            justify-content: flex-end;
+        }
+
+        .edit-actions-bar button {
+            padding: 8px 20px;
+            border-radius: 10px;
+            font-weight: 700;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem;
+            border: none;
+        }
+
+        #btn-cancel-edit {
+            background: var(--bg-secondary);
+            color: var(--text-main);
+            border: 1px solid var(--border-color) !important;
+        }
+    </style>
 </head>
 <body>
     <header>
         <div class="header-left">
             <a href="index.html" class="logo">BitRevs</a>
         </div>
-<nav>
-    <a href="movies.html">Películas</a>
-    <a href="series.html">Series</a>
-    <a href="index.html">Álbumes</a>
-    <a href="top.html">Top Canciones</a>
-    <a href="wrapped.html">Wrapped</a>
-</nav>
+        <nav>
+            <a href="movies.html">Películas</a>
+            <a href="series.html">Series</a>
+            <a href="index.html">Álbumes</a>
+            <a href="top.html">Top Canciones</a>
+            <a href="wrapped.html">Wrapped</a>
+        </nav>
         <div class="header-right">
-            <button id="btn-add-album" class="save-btn">+ Añadir Álbum</button>
+            <button id="btn-add-album" class="save-btn" style="visibility:hidden;">+</button>
             <a href="profile.html" class="header-avatar" id="global-header-avatar" style="border-color: var(--accent-red);" title="Mi Perfil">U</a>
         </div>
     </header>
 
     <main>
         <div class="profile-layout">
-
+            <!-- Banner -->
             <div class="profile-banner-container" id="profile-banner-view">
                 <div class="banner-overlay hidden" id="banner-edit-overlay">
                     <span>Cambiar Banner</span>
                 </div>
             </div>
 
+            <!-- Header con avatar + info -->
             <div class="profile-header-content">
                 <div class="avatar-container" id="profile-avatar-view">
                     <div class="profile-avatar" id="avatar-circle">
-                        <span id="avatar-fallback-char">U</span>
+                        <span id="avatar-fallback-char" style="display:flex; align-items:center; justify-content:center; width:100%; height:100%; font-size:2.5rem; font-weight:900; color:white; border-radius:50%;">U</span>
                     </div>
                     <div class="avatar-overlay hidden" id="avatar-edit-overlay">
                         <span>EDITAR</span>
@@ -46,30 +233,28 @@
 
                 <div class="profile-info-block">
                     <div class="profile-header-top">
-                        <div class="editable-name-container">
+                        <div style="flex:1; min-width:0;">
                             <h1 id="profile-name-view">Mi Perfil</h1>
-                            <input type="text" id="profile-name-edit" class="hidden" placeholder="Ej: Tu Nombre">
+                            <input type="text" id="profile-name-edit" class="hidden" placeholder="Tu nombre">
                         </div>
                         <button id="btn-edit-profile" class="edit-btn">Editar Perfil</button>
                     </div>
 
-                    <div class="profile-stats">
-                        <span id="stat-avg-rating"><span class="star-icon">★</span> 0.0 Media</span>
-                        <span>•</span>
-                        <span id="stat-total-reviews">0 Valoraciones</span>
+                    <div class="profile-stats" id="profile-stats-row">
+                        <!-- Se rellena desde JS -->
                     </div>
                 </div>
+            </div>
+
+            <!-- Barra de acciones de edición -->
+            <div id="edit-actions" class="edit-actions-bar hidden">
+                <button id="btn-cancel-edit">Cancelar</button>
+                <button id="btn-save-edit" class="save-btn">Guardar Cambios</button>
             </div>
         </div>
 
         <input type="file" id="input-avatar" accept="image/*" class="hidden">
         <input type="file" id="input-banner" accept="image/*" class="hidden">
-
-        <div id="edit-actions" class="edit-actions-bar hidden">
-            <button id="btn-cancel-edit">Cancelar</button>
-            <button id="btn-save-edit" class="save-btn">Guardar Cambios</button>
-        </div>
-
 
         <h2 class="section-title">Mis Mejores Álbumes</h2>
         <div class="album-grid" id="top-albums-grid"></div>
@@ -81,22 +266,24 @@
         <div class="album-grid" id="top-series-grid"></div>
 
         <hr style="margin: 40px 0; border: none; border-top: 1px solid var(--border-color);">
-<!-- SECCIÓN BACKUP -->
-<h2 class="section-title">Datos y Backup</h2>
-<div style="display:flex; flex-direction:column; gap:12px; max-width:420px;">
-    <p style="color:var(--text-muted); font-size:0.9rem;">
-        Exporta tus datos para hacer una copia de seguridad, o importa un backup anterior.
-    </p>
-    <div style="display:flex; gap:12px;">
-        <button id="btn-export" class="save-btn">⬇ Exportar backup</button>
-        <button id="btn-import" style="background:var(--bg-secondary); border:1px solid var(--border-color); padding:10px 20px; border-radius:10px; font-weight:700; cursor:pointer;">⬆ Importar backup</button>
-    </div>
-    <p id="backup-message" style="font-size:0.85rem; font-weight:600; transition: opacity 0.5s;"></p>
-</div>
-<input type="file" id="input-import" accept=".json" class="hidden">
+
+        <h2 class="section-title">Datos y Backup</h2>
+        <div style="display:flex; flex-direction:column; gap:12px; max-width:420px;">
+            <p style="color:var(--text-muted); font-size:0.9rem;">
+                Exporta tus datos para hacer una copia de seguridad, o importa un backup anterior.
+            </p>
+            <div style="display:flex; gap:12px;">
+                <button id="btn-export" class="save-btn">⬇ Exportar backup</button>
+                <button id="btn-import" style="background:var(--bg-secondary); border:1px solid var(--border-color); padding:10px 20px; border-radius:10px; font-weight:700; cursor:pointer; font-family:'Inter',sans-serif;">⬆ Importar backup</button>
+            </div>
+            <p id="backup-message" style="font-size:0.85rem; font-weight:600; transition: opacity 0.5s;"></p>
+        </div>
+        <input type="file" id="input-import" accept=".json" class="hidden">
+
+        <hr style="margin: 40px 0; border: none; border-top: 1px solid var(--border-color);">
+
         <h2 class="section-title">Valoraciones recientes</h2>
         <div class="album-grid" id="recent-albums-grid"></div>
-
     </main>
 
     <script src="db.js"></script>
