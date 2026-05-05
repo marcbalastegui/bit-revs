@@ -1,39 +1,23 @@
 // top.js - Lógica del Top 100 Canciones
 
-const SNAPSHOT_KEY = 'bitrevs_top_snapshot'; // clave en localStorage
+const SNAPSHOT_KEY = 'bitrevs_top_snapshot';
 
-// ── UTILIDAD: lee el snapshot anterior (puede no existir) ──────────────────
 function loadSnapshot() {
     try {
         const raw = localStorage.getItem(SNAPSHOT_KEY);
         return raw ? JSON.parse(raw) : null;
-    } catch {
-        return null;
-    }
+    } catch { return null; }
 }
 
-// ── UTILIDAD: guarda el ranking actual como snapshot ──────────────────────
 function saveSnapshot(rankedTracks) {
-    // Guardamos solo el id único de cada canción y su posición
-    const snapshot = rankedTracks.map((t, i) => ({
-        uid: t._uid,
-        rank: i + 1
-    }));
-    try {
-        localStorage.setItem(SNAPSHOT_KEY, JSON.stringify(snapshot));
-    } catch {
-        // si localStorage está lleno no rompemos nada
-    }
+    const snapshot = rankedTracks.map((t, i) => ({ uid: t._uid, rank: i + 1 }));
+    try { localStorage.setItem(SNAPSHOT_KEY, JSON.stringify(snapshot)); } catch {}
 }
 
-// ── CONSTRUYE UN UID ESTABLE POR CANCIÓN ──────────────────────────────────
-// Usamos albumId + título de la canción (en minúsculas) para identificar
-// de forma única cada canción entre sesiones.
 function buildUid(albumId, trackTitle) {
     return `${albumId}__${trackTitle.toLowerCase().trim()}`;
 }
 
-// ── EXTRAE Y ORDENA TODAS LAS CANCIONES PUNTUADAS ────────────────────────
 async function buildRanking() {
     const albums = await getAllAlbumsFromDB();
     const allTracks = [];
@@ -41,18 +25,21 @@ async function buildRanking() {
     albums.forEach(album => {
         if (!album.tracks) return;
         album.tracks.forEach(track => {
-            // Ignoramos interludes y canciones sin nota válida
             if (track.isInterlude) return;
             const r = parseFloat(track.rating);
             if (isNaN(r) || r <= 0) return;
 
+            // Si la canción tiene artista invitado, mostramos "Artista Principal ft. Invitado"
+            // Si no, solo el artista del álbum
+            let artistDisplay = album.artist || '';
+            if (track.artist && track.artist.trim() !== '') {
+                artistDisplay = `${album.artist} ft. ${track.artist}`;
+            }
+
             allTracks.push({
                 _uid:        buildUid(album.id, track.title),
                 title:       track.title,
-                // Si la canción tiene artista invitado, lo mostramos; si no, usamos el del álbum
-                artist:      track.artist && track.artist.trim() !== ''
-                                 ? `${album.artist} ft. ${track.artist}`
-                                 : album.artist,
+                artist:      artistDisplay,
                 albumTitle:  album.title,
                 albumYear:   album.year,
                 cover:       album.coverBase64,
@@ -62,49 +49,31 @@ async function buildRanking() {
         });
     });
 
-    // Construir un mapa rápido albumId → rating del álbum
-    const albumRatingMap = {};
-    albums.forEach(album => {
-        albumRatingMap[album.id] = parseFloat(album.rating) || 0;
-    });
-
-    // Ordenar: mayor nota primero; empate → mayor nota del álbum primero;
-    // si aún hay empate → orden alfabético de título
+    // Ordenar: mayor nota primero; empate → álbum con mejor nota
     allTracks.sort((a, b) => {
         if (b.rating !== a.rating) return b.rating - a.rating;
-
-        // Desempate por nota del álbum
-        const albumRatingA = albumRatingMap[a.albumId] || 0;
-        const albumRatingB = albumRatingMap[b.albumId] || 0;
-        if (albumRatingB !== albumRatingA) return albumRatingB - albumRatingA;
-
-        // Si también empatan en nota del álbum, orden alfabético
-        return a.title.localeCompare(b.title);
+        const albumA = allTracks.find(t => t.albumId === a.albumId);
+        const albumB = allTracks.find(t => t.albumId === b.albumId);
+        return (parseFloat(albumB?.albumRating) || 0) - (parseFloat(albumA?.albumRating) || 0);
     });
 
-    // Máximo top 100
     return allTracks.slice(0, 100);
 }
 
-// ── CALCULA EL MOVIMIENTO DE CADA CANCIÓN ─────────────────────────────────
-// Devuelve 'up', 'down', 'new' o null (sin cambio)
 function calcMovement(uid, currentRank, snapshotMap) {
-    if (!snapshotMap) return null; // primera carga, no hay referencia
-    if (!(uid in snapshotMap)) return 'new'; // canción nueva en el top
-
+    if (!snapshotMap) return null;
+    if (!(uid in snapshotMap)) return 'new';
     const prev = snapshotMap[uid];
     if (currentRank < prev) return 'up';
     if (currentRank > prev) return 'down';
-    return null; // misma posición
+    return null;
 }
 
-// ── RENDERIZA EL RANKING ──────────────────────────────────────────────────
 function renderRanking(tracks, snapshotMap, filterQuery) {
-    const list      = document.getElementById('top-list');
-    const subtitle  = document.getElementById('top-subtitle');
-    list.innerHTML  = '';
+    const list     = document.getElementById('top-list');
+    const subtitle = document.getElementById('top-subtitle');
+    list.innerHTML = '';
 
-    // Aplicar filtro por artista o álbum
     let filtered = tracks;
     if (filterQuery && filterQuery.trim() !== '') {
         const q = filterQuery.toLowerCase().trim();
@@ -120,7 +89,6 @@ function renderRanking(tracks, snapshotMap, filterQuery) {
         return;
     }
 
-    // El subtítulo refleja si hay filtro activo
     const totalSinFiltro = tracks.length;
     if (filterQuery && filterQuery.trim() !== '') {
         subtitle.textContent = `Mostrando ${filtered.length} canción${filtered.length !== 1 ? 'es' : ''} filtradas de ${totalSinFiltro} en el ranking.`;
@@ -128,14 +96,10 @@ function renderRanking(tracks, snapshotMap, filterQuery) {
         subtitle.textContent = `Top ${totalSinFiltro} canción${totalSinFiltro !== 1 ? 'es' : ''} mejor puntuadas.`;
     }
 
-    // Al filtrar, mantenemos el número de posición REAL del ranking global
-    // (no renumeramos del 1 al filtrar)
     filtered.forEach((track) => {
-        // Posición real en el ranking global (tracks sin filtrar, ordenados)
         const realRank = tracks.indexOf(track) + 1;
         const movement = calcMovement(track._uid, realRank, snapshotMap);
 
-        // HTML de la flecha
         let arrowHtml = '<span class="top-arrow"></span>';
         if (movement === 'up')   arrowHtml = '<span class="top-arrow up">▲</span>';
         if (movement === 'down') arrowHtml = '<span class="top-arrow down">▼</span>';
@@ -151,6 +115,14 @@ function renderRanking(tracks, snapshotMap, filterQuery) {
 
         const row = document.createElement('div');
         row.className = 'top-row';
+        row.style.cursor = 'pointer';
+        row.title = `Ir a ${track.albumTitle}`;
+
+        // Click lleva al álbum
+        row.addEventListener('click', () => {
+            window.location.href = `album.html?id=${track.albumId}`;
+        });
+
         row.innerHTML = `
             <span class="top-rank">${realRank}</span>
             ${arrowHtml}
@@ -165,27 +137,19 @@ function renderRanking(tracks, snapshotMap, filterQuery) {
     });
 }
 
-// ── INIT ──────────────────────────────────────────────────────────────────
 async function initTop() {
     const rankedTracks = await buildRanking();
 
-    // Cargamos snapshot ANTES de guardar el nuevo
     const prevSnapshot = loadSnapshot();
     let snapshotMap = null;
     if (prevSnapshot) {
-        // Convertimos array [{uid, rank}] → objeto {uid: rank}
         snapshotMap = {};
         prevSnapshot.forEach(entry => { snapshotMap[entry.uid] = entry.rank; });
     }
 
-    // Guardamos el ranking actual como nuevo snapshot
-    // (la próxima vez que se cargue, éste será la referencia)
     saveSnapshot(rankedTracks);
-
-    // Renderizado inicial sin filtro
     renderRanking(rankedTracks, snapshotMap, '');
 
-    // Buscador en tiempo real
     const filterInput = document.getElementById('top-filter');
     if (filterInput) {
         filterInput.addEventListener('input', () => {
