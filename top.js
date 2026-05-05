@@ -1,9 +1,11 @@
 // top.js - Lógica del Top 100 Canciones
 
-const SNAPSHOT_KEY = 'bitrevs_top_snapshot';
-let currentMode       = 'best';   // 'best' | 'worst'
-let currentTiebreaker = 'album-rating';
-let fullRanking       = [];       // ranking completo sin filtrar
+const SNAPSHOT_KEY    = 'bitrevs_top_snapshot';
+let currentMode       = 'best';         // 'best' | 'worst'
+let currentTiebreaker = 'album-rating'; // 'album-rating' | 'alphabetical' | 'added'
+let tiebreakerDir     = 'asc';          // 'asc' | 'desc' (solo aplica a alphabetical y added)
+let fullRanking       = [];
+let snapshotMap       = null;           // se carga UNA vez al inicio y no cambia
 
 // ── SNAPSHOT ──────────────────────────────────────────────────────────────
 function loadSnapshot() {
@@ -13,7 +15,9 @@ function loadSnapshot() {
     } catch { return null; }
 }
 
-function saveSnapshot(rankedTracks) {
+// El snapshot solo se guarda UNA vez por sesión, al cargar la página
+// No se llama al cambiar criterios de orden
+function saveSnapshotOnce(rankedTracks) {
     const snapshot = rankedTracks.map((t, i) => ({ uid: t._uid, rank: i + 1 }));
     try { localStorage.setItem(SNAPSHOT_KEY, JSON.stringify(snapshot)); } catch {}
 }
@@ -23,7 +27,7 @@ function buildUid(albumId, trackTitle) {
 }
 
 // ── BUILD RANKING ─────────────────────────────────────────────────────────
-async function buildRanking(mode, tiebreaker) {
+async function buildRanking(mode, tiebreaker, dir) {
     const albums = await getAllAlbumsFromDB();
     const allTracks = [];
 
@@ -47,46 +51,44 @@ async function buildRanking(mode, tiebreaker) {
             }
 
             allTracks.push({
-                _uid:         buildUid(album.id, track.title),
-                _addedIndex:  albumIndex, // para desempate por orden de añadido
-                title:        track.title,
-                artist:       artistDisplay,
-                albumTitle:   album.title,
-                albumYear:    album.year,
-                albumRating:  albumRating,
-                cover:        album.coverBase64,
-                albumId:      album.id,
-                rating:       r
+                _uid:        buildUid(album.id, track.title),
+                _addedIndex: albumIndex,
+                title:       track.title,
+                artist:      artistDisplay,
+                albumTitle:  album.title,
+                albumYear:   album.year,
+                albumRating: albumRating,
+                cover:       album.coverBase64,
+                albumId:     album.id,
+                rating:      r
             });
         });
     });
 
-    // Ordenar según modo y criterio de desempate
     allTracks.sort((a, b) => {
-        // Primero por nota: mejores arriba si 'best', peores arriba si 'worst'
+        // Orden principal: nota de canción
         const primaryDiff = mode === 'best'
             ? b.rating - a.rating
             : a.rating - b.rating;
 
         if (primaryDiff !== 0) return primaryDiff;
 
-        // Desempate
+        // Desempate según criterio y dirección
         if (tiebreaker === 'album-rating') {
-            const albumDiff = mode === 'best'
-                ? b.albumRating - a.albumRating
-                : a.albumRating - b.albumRating;
-            if (albumDiff !== 0) return albumDiff;
+            // Nota del álbum: siempre el mejor álbum primero (no tiene dir)
+            return b.albumRating - a.albumRating;
         }
 
         if (tiebreaker === 'alphabetical') {
-            return a.title.localeCompare(b.title);
+            const cmp = a.title.localeCompare(b.title);
+            return dir === 'asc' ? cmp : -cmp;
         }
 
         if (tiebreaker === 'added') {
-            return a._addedIndex - b._addedIndex;
+            const cmp = a._addedIndex - b._addedIndex;
+            return dir === 'asc' ? cmp : -cmp;
         }
 
-        // Fallback alfabético
         return a.title.localeCompare(b.title);
     });
 
@@ -94,7 +96,7 @@ async function buildRanking(mode, tiebreaker) {
 }
 
 // ── MOVIMIENTO ────────────────────────────────────────────────────────────
-function calcMovement(uid, currentRank, snapshotMap) {
+function calcMovement(uid, currentRank) {
     if (!snapshotMap) return null;
     if (!(uid in snapshotMap)) return 'new';
     const prev = snapshotMap[uid];
@@ -104,7 +106,7 @@ function calcMovement(uid, currentRank, snapshotMap) {
 }
 
 // ── RENDER ────────────────────────────────────────────────────────────────
-function renderRanking(tracks, snapshotMap, filterQuery) {
+function renderRanking(tracks, filterQuery) {
     const list     = document.getElementById('top-list');
     const subtitle = document.getElementById('top-subtitle');
     list.innerHTML = '';
@@ -131,16 +133,16 @@ function renderRanking(tracks, snapshotMap, filterQuery) {
     }
 
     const modeLabel = currentMode === 'best' ? 'mejores' : 'peores';
-    if (isFiltered) {
-        subtitle.textContent = `${filtered.length} canción${filtered.length !== 1 ? 'es' : ''} filtradas · posición global entre paréntesis`;
-    } else {
-        subtitle.textContent = `Top ${tracks.length} canciones ${modeLabel} puntuadas`;
-    }
+    subtitle.textContent = isFiltered
+        ? `${filtered.length} canción${filtered.length !== 1 ? 'es' : ''} filtradas · posición global entre paréntesis`
+        : `Top ${tracks.length} canciones ${modeLabel} puntuadas`;
 
     filtered.forEach((track, filteredIndex) => {
         const globalRank   = tracks.indexOf(track) + 1;
         const filteredRank = filteredIndex + 1;
-        const movement     = calcMovement(track._uid, globalRank, snapshotMap);
+
+        // Las flechas usan el snapshotMap cargado al inicio — no cambia con el orden
+        const movement = calcMovement(track._uid, globalRank);
 
         let arrowHtml = '<span class="top-arrow"></span>';
         if (movement === 'up')   arrowHtml = '<span class="top-arrow up">▲</span>';
@@ -150,17 +152,12 @@ function renderRanking(tracks, snapshotMap, filterQuery) {
         const badgeColor    = typeof getColorByRating === 'function' ? getColorByRating(track.rating) : '#666';
         const displayRating = typeof formatRating === 'function' ? formatRating(track.rating) : track.rating;
 
-        // Ranking: si hay filtro activo, mostrar posición filtrada + global
-        let rankHtml = '';
-        if (isFiltered) {
-            rankHtml = `
-                <div class="top-rank-dual">
+        const rankHtml = isFiltered
+            ? `<div class="top-rank-dual">
                     <span class="top-rank-global">${filteredRank}</span>
                     <span class="top-rank-filtered">#${globalRank} global</span>
-                </div>`;
-        } else {
-            rankHtml = `<span class="top-rank">${globalRank}</span>`;
-        }
+               </div>`
+            : `<span class="top-rank">${globalRank}</span>`;
 
         const row = document.createElement('div');
         row.className = 'top-row';
@@ -183,35 +180,61 @@ function renderRanking(tracks, snapshotMap, filterQuery) {
     });
 }
 
+// ── ACTUALIZAR DIRECCIÓN DEL BOTÓN ────────────────────────────────────────
+function updateDirButton() {
+    const btn = document.getElementById('btn-tiebreaker-dir');
+    const tiebreaker = currentTiebreaker;
+
+    // El botón solo tiene sentido para alphabetical y added
+    if (tiebreaker === 'album-rating') {
+        btn.style.visibility = 'hidden';
+    } else {
+        btn.style.visibility = 'visible';
+        btn.textContent = tiebreakerDir === 'asc' ? '↓' : '↑';
+        btn.title = tiebreakerDir === 'asc' ? 'Orden ascendente (A→Z / primero→último)' : 'Orden descendente (Z→A / último→primero)';
+    }
+}
+
+// ── REORDENAR SIN GUARDAR SNAPSHOT ───────────────────────────────────────
+async function reorder() {
+    const filterInput = document.getElementById('top-filter');
+    fullRanking = await buildRanking(currentMode, currentTiebreaker, tiebreakerDir);
+    // NO llamamos saveSnapshotOnce aquí — solo al cargar la página
+    renderRanking(fullRanking, filterInput?.value || '');
+}
+
 // ── INIT ──────────────────────────────────────────────────────────────────
 async function initTop() {
+    // Cargar snapshot ANTES de construir el ranking
     const prevSnapshot = loadSnapshot();
-    let snapshotMap = null;
     if (prevSnapshot) {
         snapshotMap = {};
         prevSnapshot.forEach(entry => { snapshotMap[entry.uid] = entry.rank; });
     }
 
     // Construir ranking inicial
-    fullRanking = await buildRanking(currentMode, currentTiebreaker);
-    saveSnapshot(fullRanking);
-    renderRanking(fullRanking, snapshotMap, '');
+    fullRanking = await buildRanking(currentMode, currentTiebreaker, tiebreakerDir);
+
+    // Guardar snapshot UNA sola vez — al cargar la página
+    saveSnapshotOnce(fullRanking);
+
+    updateDirButton();
+    renderRanking(fullRanking, '');
+
+    const filterInput = document.getElementById('top-filter');
 
     // Buscador
-    const filterInput = document.getElementById('top-filter');
     filterInput?.addEventListener('input', () => {
-        renderRanking(fullRanking, snapshotMap, filterInput.value);
+        renderRanking(fullRanking, filterInput.value);
     });
 
-    // Cambio de modo (mejor/peor)
+    // Modo mejor/peor
     document.getElementById('btn-mode-best')?.addEventListener('click', async () => {
         if (currentMode === 'best') return;
         currentMode = 'best';
         document.getElementById('btn-mode-best').classList.add('active');
         document.getElementById('btn-mode-worst').classList.remove('active');
-        fullRanking = await buildRanking(currentMode, currentTiebreaker);
-        saveSnapshot(fullRanking);
-        renderRanking(fullRanking, snapshotMap, filterInput?.value || '');
+        await reorder();
     });
 
     document.getElementById('btn-mode-worst')?.addEventListener('click', async () => {
@@ -219,17 +242,21 @@ async function initTop() {
         currentMode = 'worst';
         document.getElementById('btn-mode-worst').classList.add('active');
         document.getElementById('btn-mode-best').classList.remove('active');
-        fullRanking = await buildRanking(currentMode, currentTiebreaker);
-        saveSnapshot(fullRanking);
-        renderRanking(fullRanking, snapshotMap, filterInput?.value || '');
+        await reorder();
     });
 
-    // Cambio de criterio de desempate
+    // Criterio de desempate
     document.getElementById('top-tiebreaker')?.addEventListener('change', async (e) => {
         currentTiebreaker = e.target.value;
-        fullRanking = await buildRanking(currentMode, currentTiebreaker);
-        saveSnapshot(fullRanking);
-        renderRanking(fullRanking, snapshotMap, filterInput?.value || '');
+        updateDirButton();
+        await reorder();
+    });
+
+    // Dirección asc/desc
+    document.getElementById('btn-tiebreaker-dir')?.addEventListener('click', async () => {
+        tiebreakerDir = tiebreakerDir === 'asc' ? 'desc' : 'asc';
+        updateDirButton();
+        await reorder();
     });
 }
 
