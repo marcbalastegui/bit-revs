@@ -11,7 +11,6 @@
             text-align: center;
             padding: 60px 20px 40px;
         }
-
         .compare-hero h1 {
             font-family: 'Playfair Display', Georgia, serif;
             font-size: 3.5rem;
@@ -23,7 +22,6 @@
             -webkit-text-fill-color: transparent;
             background-clip: text;
         }
-
         .compare-hero p { color: var(--text-muted); font-size: 1rem; margin: 0; }
 
         .compare-selectors {
@@ -35,7 +33,6 @@
             margin: 0 auto 40px;
             padding: 0 20px;
         }
-
         .compare-vs {
             font-size: 1.5rem;
             font-weight: 900;
@@ -43,7 +40,6 @@
             text-align: center;
             padding-top: 40px;
         }
-
         .album-selector {
             background: white;
             border: 1px solid var(--border-color);
@@ -52,7 +48,6 @@
             box-shadow: var(--shadow-subtle);
             position: relative;
         }
-
         .album-selector-label {
             display: block;
             font-size: 0.75rem;
@@ -62,8 +57,6 @@
             color: var(--text-muted);
             margin-bottom: 10px;
         }
-
-        /* ── SEARCH INPUT ── */
         .album-search-input {
             width: 100%;
             padding: 10px 14px;
@@ -76,14 +69,11 @@
             font-family: 'Inter', sans-serif;
             transition: border-color 0.2s;
         }
-
         .album-search-input:focus {
             border-color: var(--accent-red);
             outline: none;
             background: white;
         }
-
-        /* ── DROPDOWN DE RESULTADOS ── */
         .album-search-dropdown {
             position: absolute;
             top: calc(100% - 8px);
@@ -97,9 +87,7 @@
             overflow-y: auto;
             display: none;
         }
-
         .album-search-dropdown.open { display: block; }
-
         .dropdown-item {
             display: flex;
             align-items: center;
@@ -109,43 +97,21 @@
             transition: background 0.15s;
             border-bottom: 1px solid var(--border-color);
         }
-
         .dropdown-item:last-child { border-bottom: none; }
-        .dropdown-item:first-child { border-radius: 12px 12px 0 0; }
-        .dropdown-item:last-child  { border-radius: 0 0 12px 12px; }
-        .dropdown-item:only-child  { border-radius: 12px; }
-
         .dropdown-item:hover { background: var(--bg-secondary); }
         .dropdown-item.selected { background: rgba(230,57,70,0.06); }
-
         .dropdown-item img {
             width: 36px; height: 36px;
             border-radius: 4px; object-fit: cover; flex-shrink: 0;
         }
-
         .dropdown-item-info { min-width: 0; }
-
         .dropdown-item-title {
-            font-size: 0.88rem;
-            font-weight: 700;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            font-size: 0.88rem; font-weight: 700;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         }
+        .dropdown-item-meta { font-size: 0.72rem; color: var(--text-muted); }
+        .dropdown-empty { padding: 16px 14px; color: var(--text-muted); font-size: 0.85rem; text-align: center; }
 
-        .dropdown-item-meta {
-            font-size: 0.72rem;
-            color: var(--text-muted);
-        }
-
-        .dropdown-empty {
-            padding: 16px 14px;
-            color: var(--text-muted);
-            font-size: 0.85rem;
-            text-align: center;
-        }
-
-        /* ── PREVIEW DEL ÁLBUM SELECCIONADO ── */
         .album-preview {
             display: none;
             align-items: center;
@@ -155,42 +121,23 @@
             background: var(--bg-secondary);
             border-radius: 10px;
         }
-
         .album-preview.visible { display: flex; }
-
         .album-preview img {
             width: 44px; height: 44px;
             border-radius: 6px; object-fit: cover; flex-shrink: 0;
         }
-
         .album-preview-info { min-width: 0; flex: 1; }
-
-        .album-preview-title {
-            font-size: 0.88rem; font-weight: 700;
-            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-        }
-
+        .album-preview-title { font-size: 0.88rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .album-preview-meta { font-size: 0.75rem; color: var(--text-muted); }
-
         .album-preview-clear {
             background: none; border: none; cursor: pointer;
-            color: var(--text-muted); font-size: 1rem;
-            padding: 4px; transition: color 0.2s; flex-shrink: 0;
+            color: var(--text-muted); font-size: 1rem; padding: 4px;
+            transition: color 0.2s; flex-shrink: 0;
         }
         .album-preview-clear:hover { color: var(--accent-red); }
 
-        /* ── RESULTS ── */
-        #compare-results {
-            max-width: 1100px;
-            margin: 0 auto;
-            padding: 0 20px 60px;
-        }
-
-        .compare-empty {
-            text-align: center;
-            padding: 60px 20px;
-            color: var(--text-muted);
-        }
+        #compare-results { max-width: 1100px; margin: 0 auto; padding: 0 20px 60px; }
+        .compare-empty { text-align: center; padding: 60px 20px; color: var(--text-muted); }
 
         @media (max-width: 700px) {
             .compare-selectors { grid-template-columns: 1fr; }
@@ -224,7 +171,6 @@
     </div>
 
     <div class="compare-selectors">
-        <!-- Álbum A -->
         <div class="album-selector" id="selector-a">
             <span class="album-selector-label">Álbum A</span>
             <input type="text" class="album-search-input" id="search-a" placeholder="Buscar álbum…" autocomplete="off">
@@ -241,7 +187,6 @@
 
         <div class="compare-vs">VS</div>
 
-        <!-- Álbum B -->
         <div class="album-selector" id="selector-b">
             <span class="album-selector-label">Álbum B</span>
             <input type="text" class="album-search-input" id="search-b" placeholder="Buscar álbum…" autocomplete="off">

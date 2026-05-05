@@ -6,57 +6,105 @@ let selectedB = null;
 
 async function initCompare() {
     allAlbums = await getAllAlbumsFromDB();
-    const sorted = [...allAlbums].sort((a, b) => (a.title || "").localeCompare(b.title || ""));
-    populateSelect('select-album-a', sorted);
-    populateSelect('select-album-b', sorted);
-    document.getElementById('select-album-a').addEventListener('change', onSelectionChange);
-    document.getElementById('select-album-b').addEventListener('change', onSelectionChange);
+    initSearchSide('a');
+    initSearchSide('b');
 }
 
-function populateSelect(selectId, albums) {
-    const select = document.getElementById(selectId);
-    select.innerHTML = '<option value="">Selecciona un álbum…</option>';
-    albums.forEach(album => {
-        const opt = document.createElement('option');
-        opt.value = album.id;
-        opt.textContent = `${album.title} — ${album.artist}`;
-        select.appendChild(opt);
-    });
-}
+function initSearchSide(side) {
+    const input    = document.getElementById(`search-${side}`);
+    const dropdown = document.getElementById(`dropdown-${side}`);
+    const clearBtn = document.getElementById(`clear-${side}`);
 
-function onSelectionChange() {
-    const idA = document.getElementById('select-album-a').value;
-    const idB = document.getElementById('select-album-b').value;
-    updatePreview('a', idA);
-    updatePreview('b', idB);
+    input.addEventListener('input', () => renderDropdown(side, input.value.toLowerCase().trim()));
+    input.addEventListener('focus', () => renderDropdown(side, input.value.toLowerCase().trim()));
 
-    if (idA && idB) {
-        if (idA === idB) {
-            document.getElementById('compare-results').innerHTML = `
-                <div class="compare-empty"><p>Selecciona dos álbumes distintos para compararlos.</p></div>`;
-            return;
+    document.addEventListener('click', (e) => {
+        if (!document.getElementById(`selector-${side}`).contains(e.target)) {
+            dropdown.classList.remove('open');
         }
-        const albumA = allAlbums.find(a => a.id == idA);
-        const albumB = allAlbums.find(a => a.id == idB);
-        renderComparison(albumA, albumB);
-    } else {
-        document.getElementById('compare-results').innerHTML = `
-            <div class="compare-empty">
-                <p style="font-size:1.5rem;">🎵</p>
-                <p>Selecciona dos álbumes para compararlos</p>
-            </div>`;
-    }
+    });
+
+    clearBtn.addEventListener('click', () => clearSelection(side));
 }
 
-function updatePreview(side, id) {
+function renderDropdown(side, query) {
+    const dropdown    = document.getElementById(`dropdown-${side}`);
+    const otherSelected = side === 'a' ? selectedB : selectedA;
+
+    let results = allAlbums.filter(album => {
+        const matchesQuery = query === '' ||
+            (album.title  && album.title.toLowerCase().includes(query)) ||
+            (album.artist && album.artist.toLowerCase().includes(query));
+        const notOther = !otherSelected || album.id !== otherSelected.id;
+        return matchesQuery && notOther;
+    });
+
+    results.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
+
+    if (results.length === 0) {
+        dropdown.innerHTML = `<div class="dropdown-empty">No se encontraron álbumes</div>`;
+        dropdown.classList.add('open');
+        return;
+    }
+
+    dropdown.innerHTML = results.map(album => {
+        const isSelected = (side === 'a' ? selectedA : selectedB)?.id === album.id;
+        let artistDisplay = album.artist || '';
+        if (album.featuredArtists && album.featuredArtists.length > 0) {
+            artistDisplay += ' ft. ' + album.featuredArtists.join(', ');
+        }
+        return `
+            <div class="dropdown-item${isSelected ? ' selected' : ''}" data-id="${album.id}">
+                <img src="${album.coverBase64}" alt="${album.title}">
+                <div class="dropdown-item-info">
+                    <div class="dropdown-item-title">${album.title}</div>
+                    <div class="dropdown-item-meta">${artistDisplay} · ${album.year}</div>
+                </div>
+            </div>`;
+    }).join('');
+
+    dropdown.querySelectorAll('.dropdown-item').forEach(item => {
+        item.addEventListener('click', () => {
+            const id = parseInt(item.dataset.id);
+            const album = allAlbums.find(a => a.id === id);
+            selectAlbum(side, album);
+        });
+    });
+
+    dropdown.classList.add('open');
+}
+
+function selectAlbum(side, album) {
+    const input    = document.getElementById(`search-${side}`);
+    const dropdown = document.getElementById(`dropdown-${side}`);
+
+    if (side === 'a') selectedA = album;
+    else              selectedB = album;
+
+    input.value = album.title;
+    dropdown.classList.remove('open');
+    updatePreview(side, album);
+    tryRenderComparison();
+}
+
+function clearSelection(side) {
+    if (side === 'a') selectedA = null;
+    else              selectedB = null;
+
+    document.getElementById(`search-${side}`).value = '';
+    document.getElementById(`preview-${side}`).classList.remove('visible');
+    document.getElementById('compare-results').innerHTML = `
+        <div class="compare-empty">
+            <p style="font-size:1.5rem;">🎵</p>
+            <p>Selecciona dos álbumes para compararlos</p>
+        </div>`;
+}
+
+function updatePreview(side, album) {
     const preview = document.getElementById(`preview-${side}`);
     const cover   = document.getElementById(`preview-${side}-cover`);
     const title   = document.getElementById(`preview-${side}-title`);
     const meta    = document.getElementById(`preview-${side}-meta`);
-
-    if (!id) { preview.classList.remove('visible'); return; }
-    const album = allAlbums.find(a => a.id == id);
-    if (!album) return;
 
     cover.src = album.coverBase64;
     title.textContent = album.title;
@@ -68,9 +116,17 @@ function updatePreview(side, id) {
     preview.classList.add('visible');
 }
 
-// ── HELPERS ───────────────────────────────────────────────────────────────
+function tryRenderComparison() {
+    if (!selectedA || !selectedB) return;
+    if (selectedA.id === selectedB.id) {
+        document.getElementById('compare-results').innerHTML = `
+            <div class="compare-empty"><p>Selecciona dos álbumes distintos para compararlos.</p></div>`;
+        return;
+    }
+    renderComparison(selectedA, selectedB);
+}
 
-// Racha máxima como % del total de canciones
+// ── HELPERS ───────────────────────────────────────────────────────────────
 function maxStreakPct(tracks, threshold) {
     let max = 0, current = 0;
     tracks.forEach(t => {
@@ -87,7 +143,7 @@ function stdDev(tracks) {
     return Math.sqrt(variance);
 }
 
-// ── RENDER ────────────────────────────────────────────────────────────────
+// ── RENDER COMPARATIVA ────────────────────────────────────────────────────
 function renderComparison(a, b) {
     const ratingA = parseFloat(a.rating) || 0;
     const ratingB = parseFloat(b.rating) || 0;
@@ -95,15 +151,13 @@ function renderComparison(a, b) {
     const tracksA = (a.tracks || []).filter(t => !t.isInterlude && parseFloat(t.rating) > 0);
     const tracksB = (b.tracks || []).filter(t => !t.isInterlude && parseFloat(t.rating) > 0);
 
-    // Mejor canción — todas las empatadas en primer lugar
-    const sortedByBestA = [...tracksA].sort((x, y) => parseFloat(y.rating) - parseFloat(x.rating));
-    const sortedByBestB = [...tracksB].sort((x, y) => parseFloat(y.rating) - parseFloat(x.rating));
+    const sortedByBestA  = [...tracksA].sort((x, y) => parseFloat(y.rating) - parseFloat(x.rating));
+    const sortedByBestB  = [...tracksB].sort((x, y) => parseFloat(y.rating) - parseFloat(x.rating));
     const bestA = sortedByBestA[0];
     const bestB = sortedByBestB[0];
     const bestTiesA = bestA ? sortedByBestA.filter(t => parseFloat(t.rating) === parseFloat(bestA.rating)) : [];
     const bestTiesB = bestB ? sortedByBestB.filter(t => parseFloat(t.rating) === parseFloat(bestB.rating)) : [];
 
-    // Peor canción — todas las empatadas en último lugar
     const sortedByWorstA = [...tracksA].sort((x, y) => parseFloat(x.rating) - parseFloat(y.rating));
     const sortedByWorstB = [...tracksB].sort((x, y) => parseFloat(x.rating) - parseFloat(y.rating));
     const worstA = sortedByWorstA[0];
@@ -111,7 +165,6 @@ function renderComparison(a, b) {
     const worstTiesA = worstA ? sortedByWorstA.filter(t => parseFloat(t.rating) === parseFloat(worstA.rating)) : [];
     const worstTiesB = worstB ? sortedByWorstB.filter(t => parseFloat(t.rating) === parseFloat(worstB.rating)) : [];
 
-    // Canciones perfectas (10)
     const perfectA = tracksA.filter(t => parseFloat(t.rating) === 10).length;
     const perfectB = tracksB.filter(t => parseFloat(t.rating) === 10).length;
 
@@ -122,7 +175,6 @@ function renderComparison(a, b) {
 
     const devA     = stdDev(tracksA);
     const devB     = stdDev(tracksB);
-
     const streakA  = maxStreakPct(tracksA, 7);
     const streakB  = maxStreakPct(tracksB, 7);
 
@@ -132,42 +184,32 @@ function renderComparison(a, b) {
 
     let html = '';
 
-    // Headers
     html += `<div class="compare-grid">${albumHeader(a)}${albumHeader(b)}</div>`;
 
-    // Notas
     html += sectionTitle('Notas');
     html += `<div class="compare-row">
         ${statCell('Nota del álbum', formatRating(ratingA), ratingA > ratingB)}
         ${statCell('Nota del álbum', formatRating(ratingB), ratingB > ratingA)}
     </div>`;
 
-    // Canciones
     html += sectionTitle('Canciones');
     html += `<div class="compare-row">
         ${infoCell('Total canciones puntuadas', tracksA.length)}
         ${infoCell('Total canciones puntuadas', tracksB.length)}
     </div>`;
-
-    // Canciones perfectas
     html += `<div class="compare-row" style="margin-top:12px;">
         ${statCell('Canciones perfectas (10)', perfectA, perfectA > perfectB)}
         ${statCell('Canciones perfectas (10)', perfectB, perfectB > perfectA)}
     </div>`;
-
-    // Mejor canción con "Más" si hay empate
     html += `<div class="compare-row" style="margin-top:12px;">
         ${trackHighlightCell('Mejor canción', bestA, bestTiesA, parseFloat(bestA?.rating || -1) > parseFloat(bestB?.rating || -1))}
         ${trackHighlightCell('Mejor canción', bestB, bestTiesB, parseFloat(bestB?.rating || -1) > parseFloat(bestA?.rating || -1))}
     </div>`;
-
-    // Peor canción con "Más" si hay empate
     html += `<div class="compare-row" style="margin-top:12px;">
         ${trackHighlightCell('Peor canción', worstA, worstTiesA, parseFloat(worstA?.rating || -1) > parseFloat(worstB?.rating || -1))}
         ${trackHighlightCell('Peor canción', worstB, worstTiesB, parseFloat(worstB?.rating || -1) > parseFloat(worstA?.rating || -1))}
     </div>`;
 
-    // Calidad
     html += sectionTitle('Calidad');
     html += `<div class="compare-row">
         ${statCell(`Canciones ≥ 7 (${above7A} de ${tracksA.length})`, `${pctA}%`, pctA > pctB)}
@@ -183,7 +225,6 @@ function renderComparison(a, b) {
         ${statCell('Racha máxima ≥ 7', `${streakB}%`, streakB > streakA)}
     </div>`;
 
-    // Info
     html += sectionTitle('Info');
     html += `<div class="compare-row">
         ${infoCell('Año', a.year)}
@@ -194,7 +235,6 @@ function renderComparison(a, b) {
         ${artistCell(b)}
     </div>`;
 
-    // Géneros
     if (genresA.size > 0 || genresB.size > 0) {
         html += sectionTitle(`Géneros${sharedGenres.length > 0 ? ` · ${sharedGenres.length} en común` : ''}`);
         html += `<div class="compare-row">
@@ -205,7 +245,7 @@ function renderComparison(a, b) {
 
     document.getElementById('compare-results').innerHTML = html;
 
-    // Añadir eventos a los botones "Más"
+    // Eventos botones "Más"
     document.querySelectorAll('.compare-more-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -284,12 +324,14 @@ function trackHighlightCell(label, track, allTied, isWinner) {
     }
 
     const badgeColor = getColorByRating(parseFloat(track.rating));
-    const extraTies = allTied.slice(1); // las demás empatadas (sin la primera)
+    const extraTies  = allTied.slice(1);
 
-    // Lista de canciones empatadas (oculta por defecto)
     const tiesListHtml = extraTies.length > 0 ? `
-        <button class="compare-more-btn" data-count="${extraTies.length}" style="margin-top:8px; background:none; border:1px solid var(--border-color); border-radius:8px; padding:3px 10px; font-size:0.72rem; font-weight:700; color:var(--text-muted); cursor:pointer; font-family:'Inter',sans-serif;">+${extraTies.length} más</button>
-        <div style="display:none; margin-top:6px; display:none;">
+        <button class="compare-more-btn" data-count="${extraTies.length}"
+            style="margin-top:8px; background:none; border:1px solid var(--border-color); border-radius:8px; padding:3px 10px; font-size:0.72rem; font-weight:700; color:var(--text-muted); cursor:pointer; font-family:'Inter',sans-serif;">
+            +${extraTies.length} más
+        </button>
+        <div style="display:none; margin-top:6px;">
             ${extraTies.map(t => `
                 <div class="compare-track-item" style="padding:6px 0;">
                     <div class="compare-track-info">
