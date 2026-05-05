@@ -159,7 +159,8 @@ function maxStreak(tracks, threshold) {
         if (parseFloat(t.rating) >= threshold) { current++; max = Math.max(max, current); }
         else { current = 0; }
     });
-    return max;
+    // Devolver porcentaje respecto al total
+    return tracks.length > 0 ? Math.round((max / tracks.length) * 100) : 0;
 }
 
 function stdDev(tracks) {
@@ -239,10 +240,10 @@ html += `<div class="compare-row">
         ${statCell('Consistencia (desviación)', formatRating(devB), devB < devA && devA !== devB)}
     </div>`;
     html += `<p style="font-size:0.75rem; color:var(--text-muted); margin-top:6px; margin-bottom:12px;">▲ Mejor = menor desviación (notas más consistentes entre canciones)</p>`;
-    html += `<div class="compare-row" style="margin-top:6px;">
-        ${statCell('Racha máxima ≥ 7', `${streakA} canciones`, streakA > streakB)}
-        ${statCell('Racha máxima ≥ 7', `${streakB} canciones`, streakB > streakA)}
-    </div>`;
+html += `<div class="compare-row" style="margin-top:6px;">
+    ${statCell('Racha máxima ≥ 7', `${streakA}%`, streakA > streakB)}
+    ${statCell('Racha máxima ≥ 7', `${streakB}%`, streakB > streakA)}
+</div>`;
 
     html += sectionTitle('Info');
     html += `<div class="compare-row">
