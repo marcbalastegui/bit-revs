@@ -1,4 +1,4 @@
-// script.js - Lógica principal de Álbumes (Edición + Cálculo automático de notas)
+// script.js - Lógica principal de Álbumes
 
 const btnAddAlbum = document.getElementById('btn-add-album');
 const modalAdd = document.getElementById('modal-add');
@@ -16,7 +16,6 @@ function renderGenreSelector(selectedGenres = []) {
     const container = document.getElementById('genre-chips');
     if (!container) return;
     container.innerHTML = '';
-
     GENRES_PREDEFINED.forEach(genre => {
         const chip = document.createElement('button');
         chip.type = 'button';
@@ -31,7 +30,6 @@ function renderGenreSelector(selectedGenres = []) {
 function getSelectedGenres() {
     const chips = document.querySelectorAll('.genre-chip.selected');
     const selected = Array.from(chips).map(c => c.dataset.genre);
-
     const customInput = document.getElementById('genre-custom');
     if (customInput && customInput.value.trim() !== '') {
         const customs = customInput.value.split(',').map(g => g.trim()).filter(g => g !== '');
@@ -40,24 +38,20 @@ function getSelectedGenres() {
     return selected;
 }
 
-// ── SVG CORAZÓN ───────────────────────────────────────────────────────────
 function heartSVG() {
     return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`;
 }
 
-// ── FAVORITO EN CARD ──────────────────────────────────────────────────────
 window.toggleAlbumFavoriteCard = async function(event, id) {
     event.stopPropagation();
     const album = await getAlbumByIdFromDB(id);
     if (!album) return;
     album.favorite = !album.favorite;
     await saveAlbumToDB(album);
-
     const btn = document.querySelector(`.card-fav-btn[data-id="${id}"]`);
     if (btn) btn.classList.toggle('active', album.favorite);
 }
 
-// ── BORRAR / EDITAR ───────────────────────────────────────────────────────
 window.deleteAlbum = async function(event, id) {
     event.stopPropagation();
     if (confirm("¿Estás seguro de que quieres borrar este álbum?")) {
@@ -89,7 +83,6 @@ window.editAlbum = async function(event, id) {
     modalAdd.classList.remove('hidden');
 };
 
-// ── MODAL NUEVO ───────────────────────────────────────────────────────────
 if (btnAddAlbum && modalAdd) {
     btnAddAlbum.addEventListener('click', () => {
         editingAlbumId = null;
@@ -110,12 +103,10 @@ if (btnCancel && modalAdd) {
     });
 }
 
-// ── GUARDAR ───────────────────────────────────────────────────────────────
 if (albumForm) {
     albumForm.addEventListener('submit', async function(e) {
         e.preventDefault();
 
-        // Leer TODOS los valores ANTES de cualquier reset
         const title = document.getElementById('title').value.trim();
         const artist = document.getElementById('artist').value.trim();
         const featuredArtistsRaw = document.getElementById('featured-artists').value.trim();
@@ -129,7 +120,6 @@ if (albumForm) {
         const fileInput = document.getElementById('cover');
         const file = fileInput.files[0];
 
-        // Construir objeto a guardar
         let albumToSave = null;
         if (editingAlbumId) {
             albumToSave = await getAlbumByIdFromDB(editingAlbumId);
@@ -168,7 +158,6 @@ async function finalizeSave(album) {
     }
 }
 
-// ── CONSTRUIR ARTISTAS PARA MOSTRAR ───────────────────────────────────────
 function getArtistLinks(album) {
     const allArtists = [album.artist, ...(album.featuredArtists || [])].filter(a => a);
     return allArtists.map(artist =>
@@ -176,7 +165,6 @@ function getArtistLinks(album) {
     ).join(' ft. ');
 }
 
-// ── FILTRAR Y DIBUJAR ─────────────────────────────────────────────────────
 async function processAndRenderAlbums() {
     try {
         const grid = document.getElementById('album-grid');
@@ -187,7 +175,6 @@ async function processAndRenderAlbums() {
 
         let filteredAlbums = [...currentAlbums];
 
-        // Filtro por texto (incluye artistas colaboradores)
         const filterInput = document.getElementById('filter-input');
         if (filterInput && filterInput.value) {
             const query = filterInput.value.toLowerCase().trim();
@@ -202,7 +189,6 @@ async function processAndRenderAlbums() {
             }
         }
 
-        // Filtro por género
         const genreFilter = document.getElementById('genre-filter');
         if (genreFilter && genreFilter.value !== '') {
             filteredAlbums = filteredAlbums.filter(a =>
@@ -210,8 +196,6 @@ async function processAndRenderAlbums() {
             );
         }
 
-
-        // Ordenación
         const sortSelect = document.getElementById('sort-select');
         if (sortSelect && sortSelect.value && sortSelect.value !== 'default') {
             const sortMethod = sortSelect.value;
@@ -224,6 +208,9 @@ async function processAndRenderAlbums() {
                 if (sortMethod === 'artist-asc') return (a.artist || "").localeCompare(b.artist || "");
                 return 0;
             });
+        } else {
+            // Orden por defecto: más recientes primero (mayor id = más reciente)
+            filteredAlbums.sort((a, b) => b.id - a.id);
         }
 
         renderAlbums(filteredAlbums, grid);
@@ -282,15 +269,12 @@ function renderAlbums(albumsToRender, gridElement) {
     });
 }
 
-// Poblar el select de filtro por género
 async function populateGenreFilter() {
     const genreFilter = document.getElementById('genre-filter');
     if (!genreFilter) return;
-
     const albums = await getAllAlbumsFromDB();
     const allGenres = new Set();
     albums.forEach(a => { if (a.genres) a.genres.forEach(g => allGenres.add(g)); });
-
     genreFilter.innerHTML = '<option value="">Todos los géneros</option>';
     [...allGenres].sort().forEach(genre => {
         const opt = document.createElement('option');
@@ -300,7 +284,6 @@ async function populateGenreFilter() {
     });
 }
 
-// ── EVENTOS ───────────────────────────────────────────────────────────────
 const globalFilterInput = document.getElementById('filter-input');
 const globalSortSelect = document.getElementById('sort-select');
 const globalGenreFilter = document.getElementById('genre-filter');
