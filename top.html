@@ -7,33 +7,45 @@
     <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="/manifest.json">
     <style>
-        /* ── TOP PAGE SPECIFIC STYLES ── */
-        .top-page-header {
-            margin-bottom: 32px;
+        .top-page-header { margin-bottom: 32px; }
+        .top-page-header h1 { margin-bottom: 8px; }
+        .top-page-header p { color: var(--text-muted); font-size: 0.9rem; margin: 0; }
+
+        .top-search-input { flex: 1; min-width: 180px; }
+
+        /* Selector de modo (mejor/peor) */
+        .top-mode-toggle {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 24px;
         }
 
-        .top-page-header h1 {
-            margin-bottom: 8px;
-        }
-
-        .top-page-header p {
+        .top-mode-btn {
+            padding: 8px 20px;
+            border-radius: 20px;
+            border: 1.5px solid var(--border-color);
+            background: white;
+            font-size: 0.85rem;
+            font-weight: 700;
             color: var(--text-muted);
-            font-size: 0.9rem;
-            margin: 0;
+            cursor: pointer;
+            transition: all 0.15s;
+            font-family: 'Inter', sans-serif;
         }
 
-        /* Controls bar reutiliza el estilo de index.html */
-        .top-search-input {
-            flex: 1;
-            min-width: 180px;
+        .top-mode-btn.active {
+            background: var(--text-main);
+            border-color: var(--text-main);
+            color: white;
+        }
+
+        .top-mode-btn:hover:not(.active) {
+            border-color: var(--text-main);
+            color: var(--text-main);
         }
 
         /* ── RANKING LIST ── */
-        #top-list {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
+        #top-list { display: flex; flex-direction: column; gap: 6px; }
 
         .top-row {
             display: flex;
@@ -41,26 +53,42 @@
             gap: 16px;
             padding: 10px 14px;
             border-radius: 8px;
-            background: var(--bg-secondary, #181818);
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
             transition: background 0.15s;
-            cursor: default;
+            cursor: pointer;
         }
+        .top-row:hover { background: var(--bg-secondary); }
 
-        .top-row:hover {
-            background: var(--bg-hover, #282828);
-        }
-
-        /* Número de posición */
         .top-rank {
             font-size: 1rem;
             font-weight: 700;
-            color: var(--text-muted, #b3b3b3);
+            color: var(--text-muted);
             min-width: 36px;
             text-align: right;
             flex-shrink: 0;
         }
 
-        /* Flecha de movimiento */
+        /* Ranking dual: posición global + posición filtrada */
+        .top-rank-dual {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            min-width: 44px;
+            flex-shrink: 0;
+            gap: 2px;
+        }
+        .top-rank-global {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+        .top-rank-filtered {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--accent-red);
+        }
+
         .top-arrow {
             font-size: 0.75rem;
             font-weight: 700;
@@ -68,63 +96,36 @@
             text-align: center;
             flex-shrink: 0;
         }
+        .top-arrow.up   { color: #1DB954; }
+        .top-arrow.down { color: #E53935; }
+        .top-arrow.new  { color: var(--text-muted); font-size: 0.6rem; letter-spacing: 0.03em; }
 
-        .top-arrow.up   { color: #1DB954; } /* verde */
-        .top-arrow.down { color: #E53935; } /* rojo */
-        .top-arrow.new  { color: #FFD700; font-size: 0.6rem; letter-spacing: 0.03em; }
-
-        /* Portada miniatura */
         .top-cover {
-            width: 44px;
-            height: 44px;
-            object-fit: cover;
-            border-radius: 4px;
-            flex-shrink: 0;
+            width: 44px; height: 44px;
+            object-fit: cover; border-radius: 4px; flex-shrink: 0;
         }
 
-        /* Info textual */
-        .top-info {
-            flex: 1;
-            min-width: 0;
-            overflow: hidden;
-        }
+        .top-info { flex: 1; min-width: 0; overflow: hidden; }
 
         .top-track-title {
-            font-size: 0.95rem;
-            font-weight: 600;
-            color: var(--text-main, #fff);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            font-size: 0.95rem; font-weight: 600; color: var(--text-main);
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         }
 
         .top-track-meta {
-            font-size: 0.78rem;
-            color: var(--text-muted, #b3b3b3);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            font-size: 0.78rem; color: var(--text-muted);
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
             margin-top: 2px;
         }
 
-        /* Badge de nota */
         .top-badge {
             flex-shrink: 0;
-            padding: 3px 10px;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            font-weight: 700;
-            color: #fff;
-            min-width: 42px;
-            text-align: center;
+            padding: 3px 10px; border-radius: 20px;
+            font-size: 0.85rem; font-weight: 700; color: #fff;
+            min-width: 42px; text-align: center;
         }
 
-        /* Empty / loading states */
-        .top-empty {
-            color: var(--text-muted);
-            margin-top: 40px;
-            text-align: center;
-        }
+        .top-empty { color: var(--text-muted); margin-top: 40px; text-align: center; }
 
         @media (max-width: 540px) {
             .top-cover { width: 36px; height: 36px; }
@@ -147,7 +148,6 @@
         <a href="wrapped.html">Wrapped</a>
     </nav>
     <div class="header-right">
-        <!-- botón invisible para mantener alineación del header -->
         <button style="visibility:hidden;" class="save-btn">+</button>
         <a href="profile.html" class="header-avatar" id="global-header-avatar" title="Mi Perfil">U</a>
     </div>
@@ -159,13 +159,19 @@
         <p id="top-subtitle">Cargando ranking…</p>
     </div>
 
+    <!-- Modo: mejores / peores -->
+    <div class="top-mode-toggle">
+        <button class="top-mode-btn active" id="btn-mode-best">Top 100 mejores</button>
+        <button class="top-mode-btn" id="btn-mode-worst">Top 100 peores</button>
+    </div>
+
     <div class="controls-bar" style="margin-bottom: 24px;">
-        <input
-            type="text"
-            id="top-filter"
-            class="top-search-input"
-            placeholder="Filtrar por artista o álbum…"
-        >
+        <input type="text" id="top-filter" class="top-search-input" placeholder="Filtrar por artista o álbum…">
+        <select id="top-tiebreaker">
+            <option value="album-rating">Desempate: nota del álbum</option>
+            <option value="alphabetical">Desempate: alfabético</option>
+            <option value="added">Desempate: orden de añadido</option>
+        </select>
     </div>
 
     <div id="top-list"></div>
