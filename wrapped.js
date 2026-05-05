@@ -143,7 +143,7 @@ async function loadWrapped() {
     // Artista más escuchado
     if (topListenedArtist) {
         html += `
-            <div class="stat-card col-6">
+            <div class="stat-card col-6" style="cursor:pointer;" onclick="window.location.href='artist.html?name='+encodeURIComponent('${topListenedArtist[0]}')">
                 <div class="stat-label">Artista más escuchado</div>
                 <div class="artist-card">
                     <div class="artist-initials">${topListenedArtist[0].charAt(0).toUpperCase()}</div>
@@ -159,7 +159,7 @@ async function loadWrapped() {
     if (topAlbum) {
         const badgeColor = getColorByRating(topAlbum.rating);
         html += `
-            <div class="stat-card col-6">
+            <div class="stat-card col-6" style="cursor:pointer;" onclick="window.location.href='album.html?id=${topAlbum.id}'">
                 <div class="stat-label">Álbum mejor puntuado</div>
                 <div class="highlight-card">
                     <img class="highlight-cover square" src="${topAlbum.coverBase64}" alt="${topAlbum.title}">
@@ -175,7 +175,7 @@ async function loadWrapped() {
     // Canción mejor puntuada con "Más"
     if (topTrack) {
         html += `
-            <div class="stat-card col-6">
+            <div class="stat-card col-6" style="cursor:pointer;" onclick="window.location.href='album.html?id=${topTrack.albumId}'">
                 <div class="stat-label">Canción mejor puntuada</div>
                 ${trackHighlightHtml(topTrack, bestTies)}
             </div>`;
@@ -184,7 +184,7 @@ async function loadWrapped() {
     // Canción peor puntuada con "Más"
     if (worstTrack) {
         html += `
-            <div class="stat-card col-6">
+            <div class="stat-card col-6" style="cursor:pointer;" onclick="window.location.href='album.html?id=${worstTrack.albumId}'">
                 <div class="stat-label">Canción peor puntuada</div>
                 ${trackHighlightHtml(worstTrack, worstTies)}
             </div>`;
@@ -193,7 +193,7 @@ async function loadWrapped() {
     // Artista mejor puntuado (media ≥3 canciones)
     if (bestArtist) {
         html += `
-            <div class="stat-card col-6">
+            <div class="stat-card col-6" style="cursor:pointer;" onclick="window.location.href='artist.html?name='+encodeURIComponent('${bestArtist.name}')">
                 <div class="stat-label">Artista mejor puntuado</div>
                 <div class="artist-card">
                     <div class="artist-initials" style="background:${getColorByRating(bestArtist.avg)}">
@@ -210,7 +210,7 @@ async function loadWrapped() {
     // Artista peor puntuado
     if (worstArtist && worstArtist.name !== bestArtist?.name) {
         html += `
-            <div class="stat-card col-6">
+            <div class="stat-card col-6" style="cursor:pointer;" onclick="window.location.href='artist.html?name='+encodeURIComponent('${worstArtist.name}')">
                 <div class="stat-label">Artista peor puntuado</div>
                 <div class="artist-card">
                     <div class="artist-initials" style="background:${getColorByRating(worstArtist.avg)}">
