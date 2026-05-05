@@ -2,10 +2,8 @@
 
 async function loadWrapped() {
     const grid = document.getElementById('wrapped-grid');
-
     const albums = await getAllAlbumsFromDB();
 
-    // Extraer todas las canciones puntuadas
     const allTracks = [];
     albums.forEach(album => {
         if (!album.tracks) return;
@@ -21,7 +19,7 @@ async function loadWrapped() {
     if (scoredAlbums.length === 0 && allTracks.length === 0) {
         grid.innerHTML = `
             <div class="stat-card col-12 wrapped-empty">
-                <p style="font-size:2rem;">🎵</p>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="var(--border-color)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:48px;height:48px;margin-bottom:16px;"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
                 <p>Todavía no tienes suficientes valoraciones.<br>Añade álbumes y puntúa canciones para ver tu Wrapped.</p>
             </div>`;
         return;
@@ -29,15 +27,12 @@ async function loadWrapped() {
 
     // ── CALCULAR ESTADÍSTICAS ─────────────────────────────────────────────
 
-    // 1. Media global de canciones
     const globalAvg = allTracks.length > 0
         ? allTracks.reduce((sum, t) => sum + parseFloat(t.rating), 0) / allTracks.length
         : 0;
 
-    // 2. Total canciones puntuadas
     const totalTracks = allTracks.length;
 
-    // 3. Artista más puntuado (más álbumes)
     const artistCount = {};
     albums.forEach(a => {
         if (!a.artist) return;
@@ -45,10 +40,8 @@ async function loadWrapped() {
     });
     const topArtist = Object.entries(artistCount).sort((a, b) => b[1] - a[1])[0];
 
-    // 4. Álbum mejor puntuado
     const topAlbum = [...scoredAlbums].sort((a, b) => parseFloat(b.rating) - parseFloat(a.rating))[0];
 
-    // 5. Canción mejor puntuada (en caso de empate, la del álbum mejor puntuado)
     const topTrack = [...allTracks].sort((a, b) => {
         const diff = parseFloat(b.rating) - parseFloat(a.rating);
         if (diff !== 0) return diff;
@@ -57,7 +50,6 @@ async function loadWrapped() {
         return parseFloat(albumB?.rating || 0) - parseFloat(albumA?.rating || 0);
     })[0];
 
-    // 6. Género más frecuente
     const genreCount = {};
     albums.forEach(a => {
         if (!a.genres) return;
@@ -65,7 +57,6 @@ async function loadWrapped() {
     });
     const topGenre = Object.entries(genreCount).sort((a, b) => b[1] - a[1])[0];
 
-    // 7. Distribución de notas (0-2, 2-4, 4-5, 5-6, 6-7, 7-8, 8-9, 9-10)
     const ranges = [
         { label: '0-2', min: 0,  max: 2  },
         { label: '2-4', min: 2,  max: 4  },
@@ -88,10 +79,8 @@ async function loadWrapped() {
     const maxCount = Math.max(...distribution.map(d => d.count), 1);
 
     // ── CONSTRUIR HTML ────────────────────────────────────────────────────
-
     let html = '';
 
-    // Media global
     html += `
         <div class="stat-card col-4">
             <div class="stat-label">Media global</div>
@@ -99,7 +88,6 @@ async function loadWrapped() {
             <div class="stat-value-sub">sobre 10 puntos</div>
         </div>`;
 
-    // Total canciones
     html += `
         <div class="stat-card col-4">
             <div class="stat-label">Canciones puntuadas</div>
@@ -107,7 +95,6 @@ async function loadWrapped() {
             <div class="stat-value-sub">en ${scoredAlbums.length} álbum${scoredAlbums.length !== 1 ? 'es' : ''}</div>
         </div>`;
 
-    // Género favorito
     if (topGenre) {
         html += `
             <div class="stat-card col-4">
@@ -123,7 +110,6 @@ async function loadWrapped() {
             </div>`;
     }
 
-    // Artista más escuchado
     if (topArtist) {
         html += `
             <div class="stat-card col-6">
@@ -138,7 +124,6 @@ async function loadWrapped() {
             </div>`;
     }
 
-    // Álbum mejor puntuado
     if (topAlbum) {
         const badgeColor = getColorByRating(topAlbum.rating);
         html += `
@@ -155,7 +140,6 @@ async function loadWrapped() {
             </div>`;
     }
 
-    // Canción mejor puntuada
     if (topTrack) {
         const badgeColor = getColorByRating(topTrack.rating);
         html += `
@@ -172,7 +156,6 @@ async function loadWrapped() {
             </div>`;
     }
 
-    // Gráfico de distribución de notas
     const barsHtml = distribution.map(d => {
         const heightPct = maxCount > 0 ? Math.round((d.count / maxCount) * 100) : 0;
         const barColor = d.label === '9-10' ? '#B533FF'

@@ -2,10 +2,10 @@
 
 let currentProfileData = null;
 
-const profileNameView   = document.getElementById('profile-name-view');
-const avatarCircle      = document.getElementById('avatar-circle');
+const profileNameView    = document.getElementById('profile-name-view');
+const avatarCircle       = document.getElementById('avatar-circle');
 const avatarFallbackChar = document.getElementById('avatar-fallback-char');
-const bannerView        = document.getElementById('profile-banner-view');
+const bannerView         = document.getElementById('profile-banner-view');
 
 const btnEditProfile    = document.getElementById('btn-edit-profile');
 const editActionsBar    = document.getElementById('edit-actions');
@@ -20,6 +20,15 @@ const inputBanner       = document.getElementById('input-banner');
 let tempAvatarData = null;
 let tempBannerData = null;
 
+// SVG helpers
+function discSVG() {
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;flex-shrink:0;"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>`;
+}
+
+function tagSVG() {
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;flex-shrink:0;"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>`;
+}
+
 // ── CARGA INICIAL ─────────────────────────────────────────────────────────
 async function loadProfilePage() {
     currentProfileData = await getUserProfileFromDB();
@@ -29,7 +38,7 @@ async function loadProfilePage() {
     const allMovies = await getAllItemsFromDB('movies');
     const allSeries = await getAllItemsFromDB('series');
 
-    // Stats: género más escuchado y total álbumes
+    // Stats: total álbumes y género más escuchado
     const genreCount = {};
     allAlbums.forEach(a => {
         if (a.genres) a.genres.forEach(g => { genreCount[g] = (genreCount[g] || 0) + 1; });
@@ -40,10 +49,10 @@ async function loadProfilePage() {
     if (statsRow) {
         const totalAlbums = allAlbums.length;
         const genrePill = topGenre
-            ? `<div class="profile-stat-pill">🎵 <span class="highlight">${topGenre[0]}</span></div>`
+            ? `<div class="profile-stat-pill">${tagSVG()} <span class="highlight">${topGenre[0]}</span></div>`
             : '';
         statsRow.innerHTML = `
-            <div class="profile-stat-pill">📀 <span class="highlight">${totalAlbums}</span> álbum${totalAlbums !== 1 ? 'es' : ''}</div>
+            <div class="profile-stat-pill">${discSVG()} <span class="highlight">${totalAlbums}</span> álbum${totalAlbums !== 1 ? 'es' : ''}</div>
             ${genrePill}
         `;
     }
@@ -217,29 +226,24 @@ async function exportData() {
         const series  = await getAllItemsFromDB('series');
         const profile = await getUserProfileFromDB();
 
-        const backup = {
-            _version: 1,
-            _exportedAt: new Date().toISOString(),
-            albums, movies, series, profile
-        };
-
-        const json = JSON.stringify(backup, null, 2);
-        const blob = new Blob([json], { type: 'application/json' });
-        const url  = URL.createObjectURL(blob);
-        const a = document.createElement('a');
+        const backup = { _version: 1, _exportedAt: new Date().toISOString(), albums, movies, series, profile };
+        const json   = JSON.stringify(backup, null, 2);
+        const blob   = new Blob([json], { type: 'application/json' });
+        const url    = URL.createObjectURL(blob);
+        const a      = document.createElement('a');
         a.href = url;
         a.download = `bitrevs_backup_${new Date().toISOString().slice(0,10)}.json`;
         a.click();
         URL.revokeObjectURL(url);
-        showBackupMessage('✓ Backup exportado correctamente', 'success');
+        showBackupMessage('Backup exportado correctamente', 'success');
     } catch (err) {
-        showBackupMessage('✗ Error al exportar los datos', 'error');
+        showBackupMessage('Error al exportar los datos', 'error');
     }
 }
 
 async function importData(file) {
     if (!file) return;
-    const confirmed = confirm("⚠️ ATENCIÓN: Importar un backup SOBREESCRIBIRÁ todos tus datos actuales.\n\n¿Estás seguro?");
+    const confirmed = confirm("ATENCIÓN: Importar un backup sobreescribirá todos tus datos actuales.\n\n¿Estás seguro?");
     if (!confirmed) { document.getElementById('input-import').value = ''; return; }
 
     try {
@@ -252,10 +256,10 @@ async function importData(file) {
         for (const serie of backup.series) await saveItemToDB('series', serie);
         if (backup.profile) await saveUserProfileToDB(backup.profile);
 
-        showBackupMessage('✓ Backup importado correctamente. Recargando…', 'success');
+        showBackupMessage('Backup importado correctamente. Recargando…', 'success');
         setTimeout(() => window.location.reload(), 1500);
     } catch (err) {
-        showBackupMessage('✗ Error: ' + err.message, 'error');
+        showBackupMessage('Error: ' + err.message, 'error');
     }
     document.getElementById('input-import').value = '';
 }
