@@ -1,7 +1,7 @@
 // db.js - Gestión de Base de Datos para Álbumes, Películas, Series y Perfil
 
 const DB_NAME = 'BitRevsDB';
-const DB_VERSION = 5;
+const DB_VERSION = 6;
 const STORE_ALBUMS = 'albums';
 const STORE_MOVIES = 'movies';
 const STORE_SERIES = 'series';
@@ -17,6 +17,7 @@ function openDB() {
             if (!db.objectStoreNames.contains(STORE_MOVIES)) db.createObjectStore(STORE_MOVIES, { keyPath: 'id' });
             if (!db.objectStoreNames.contains(STORE_SERIES)) db.createObjectStore(STORE_SERIES, { keyPath: 'id' });
             if (!db.objectStoreNames.contains(STORE_PROFILE)) db.createObjectStore(STORE_PROFILE, { keyPath: 'key' });
+            if (!db.objectStoreNames.contains('artists')) db.createObjectStore('artists', { keyPath: 'name' });
         };
 
         request.onsuccess = (event) => resolve(event.target.result);
@@ -115,7 +116,31 @@ function getColorByRating(rating) {
     if (r >= 2) return '#996600';
     return '#4D4D4D';
 }
+// ── ARTISTAS ──
+const STORE_ARTISTS = 'artists';
 
+// Asegúrate de añadir esto en onupgradeneeded:
+// if (!db.objectStoreNames.contains(STORE_ARTISTS)) db.createObjectStore(STORE_ARTISTS, { keyPath: 'name' });
+
+async function getArtistFromDB(name) {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction(STORE_ARTISTS, 'readonly');
+        const request = transaction.objectStore(STORE_ARTISTS).get(name);
+        request.onsuccess = () => resolve(request.result || null);
+        request.onerror = (e) => reject(e.target.error);
+    });
+}
+
+async function saveArtistToDB(artistData) {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction(STORE_ARTISTS, 'readwrite');
+        const request = transaction.objectStore(STORE_ARTISTS).put(artistData);
+        request.onsuccess = () => resolve(true);
+        request.onerror = (e) => reject(e.target.error);
+    });
+}
 // --- CARGA DE AVATAR GLOBAL EN CABECERA ---
 document.addEventListener('DOMContentLoaded', async () => {
     const headerAvatar = document.getElementById('global-header-avatar');
