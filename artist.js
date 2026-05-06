@@ -33,6 +33,30 @@ async function loadArtistStats() {
     document.getElementById('artist-name').textContent = artistName;
     document.getElementById('artist-initial').textContent = artistName.charAt(0).toUpperCase();
 
+    // Cargar foto del artista si existe
+    const artistData = await getArtistFromDB(artistName);
+    if (artistData && artistData.photo) {
+        applyArtistPhoto(artistData.photo);
+    }
+
+    // Click en avatar → subir foto
+    const avatarContainer = document.getElementById('artist-avatar-container');
+    const inputPhoto      = document.getElementById('input-artist-photo');
+    if (avatarContainer && inputPhoto) {
+        avatarContainer.addEventListener('click', () => inputPhoto.click());
+        inputPhoto.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file || !file.type.startsWith('image/')) return;
+            const reader = new FileReader();
+            reader.onload = async (ev) => {
+                const photoData = ev.target.result;
+                await saveArtistToDB({ name: artistName, photo: photoData });
+                applyArtistPhoto(photoData);
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
     // ── EXTRAER DATOS ─────────────────────────────────────────────────────
 
     // Todas las canciones del artista (de sus álbumes como principal)
@@ -252,3 +276,14 @@ async function loadArtistStats() {
 }
 
 loadArtistStats();
+
+
+// ── HELPER: aplicar foto al avatar ───────────────────────────────────────
+function applyArtistPhoto(photoData) {
+    const initial   = document.getElementById('artist-initial');
+    const photoEl   = document.getElementById('artist-photo');
+    const container = document.getElementById('artist-avatar-container');
+    if (initial)   initial.style.display = 'none';
+    if (photoEl)   { photoEl.src = photoData; photoEl.style.display = 'block'; }
+    if (container) container.style.background = 'transparent';
+}

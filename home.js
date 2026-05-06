@@ -102,7 +102,17 @@ async function loadHome() {
         .sort((a, b) => b.avg - a.avg)
         .slice(0, 10);
 
-    renderScrollGrid('grid-artists', topArtists, (artist) => artistCard(artist));
+    // Artists need async card generation
+    const artistGrid = document.getElementById('grid-artists');
+    if (artistGrid) {
+        artistGrid.innerHTML = '';
+        for (const artist of topArtists) {
+            const html = await artistCard(artist);
+            const el = document.createElement('div');
+            el.innerHTML = html;
+            if (el.firstElementChild) artistGrid.appendChild(el.firstElementChild);
+        }
+    }
 
     // ── ALEATORIO ─────────────────────────────────────────────────────────
     renderRandom(albums);
@@ -174,11 +184,16 @@ function flashbackCard(item) {
         </div>`;
 }
 
-function artistCard(artist) {
+async function artistCard(artist) {
     const badgeColor = getColorByRating(artist.avg);
+    const artistData = await getArtistFromDB(artist.name);
+    const hasPhoto   = artistData && artistData.photo;
+    const avatarHtml = hasPhoto
+        ? `<img src="${artistData.photo}" style="width:60px;height:60px;border-radius:50%;object-fit:cover;margin:0 auto 10px;">`
+        : `<div class="home-artist-avatar" style="background:${badgeColor}">${artist.name.charAt(0).toUpperCase()}</div>`;
     return `
         <div class="home-artist-card" onclick="window.location.href='artist.html?name=${encodeURIComponent(artist.name)}'">
-            <div class="home-artist-avatar" style="background:${badgeColor}">${artist.name.charAt(0).toUpperCase()}</div>
+            ${avatarHtml}
             <div class="home-artist-name">${artist.name}</div>
             <div class="home-artist-meta">${formatRating(artist.avg)} · ${artist.count} canciones</div>
         </div>`;
