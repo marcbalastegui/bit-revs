@@ -147,7 +147,7 @@ btnCancelEdit.addEventListener('click', () => {
 
 btnSaveEdit.addEventListener('click', async () => {
     const newName = profileNameEdit.value.trim();
-    if (!newName) { alert("El nombre no puede estar vacío."); return; }
+    if (!newName) { await brAlert("El nombre de usuario no puede estar vacío.", "Campo requerido"); return; }
 
     const updatedProfile = {
         key: 'config',
@@ -243,7 +243,7 @@ async function exportData() {
 
 async function importData(file) {
     if (!file) return;
-    const confirmed = confirm("ATENCIÓN: Importar un backup sobreescribirá todos tus datos actuales.\n\n¿Estás seguro?");
+    const confirmed = await brConfirm("Importar un backup sobreescribirá todos tus datos actuales. Esta acción no se puede deshacer.", "Importar backup");
     if (!confirmed) { document.getElementById('input-import').value = ''; return; }
 
     try {

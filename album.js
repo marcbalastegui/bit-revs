@@ -40,7 +40,7 @@ window.toggleAlbumFavorite = async function() {
 
 // ── BORRAR / EDITAR TRACK ─────────────────────────────────────────────────
 window.deleteTrack = async function(index) {
-    if (confirm("¿Borrar esta canción?")) {
+    if (await brConfirm("¿Borrar esta canción?", "Borrar canción")) {
         currentAlbum.tracks.splice(index, 1);
         recalculateAlbumRating();
         await saveAlbumToDB(currentAlbum);
@@ -338,7 +338,7 @@ document.getElementById('track-form').addEventListener('submit', async function(
     let rating = "";
     if (!isInterlude) {
         rating = document.getElementById('track-rating').value.replace(',', '.');
-        if (isNaN(rating) || rating < 0 || rating > 10 || rating.trim() === "") { alert("Introduce una nota válida entre 0 y 10."); return; }
+        if (isNaN(rating) || rating < 0 || rating > 10 || rating.trim() === "") { await brAlert("Introduce una nota válida entre 0 y 10.", "Nota inválida"); return; }
         rating = parseFloat(rating).toFixed(1);
     }
     const newTrack = { title, artist, isInterlude, rating };

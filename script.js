@@ -56,7 +56,7 @@ window.toggleAlbumFavoriteCard = async function(event, id) {
 // ── BORRAR / EDITAR ───────────────────────────────────────────────────────
 window.deleteAlbum = async function(event, id) {
     event.stopPropagation();
-    if (confirm("¿Estás seguro de que quieres borrar este álbum?")) {
+    if (await brConfirm("Esta acción no se puede deshacer.", "¿Borrar álbum?")) {
         await deleteAlbumFromDB(id);
         processAndRenderAlbums();
     }
@@ -161,7 +161,7 @@ async function finalizeSave(album) {
         modalAdd.classList.add('hidden');
         await processAndRenderAlbums();
     } catch (error) {
-        alert("Error al guardar: " + error);
+        await brAlert("Error al guardar: " + error, "Error");
     }
 }
 
