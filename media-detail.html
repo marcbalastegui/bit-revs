@@ -304,6 +304,30 @@
             to   { opacity: 1; transform: translateY(0); }
         }
 
+        /* Grid size buttons */
+        .grid-size-btn {
+            padding: 6px 10px;
+            border-radius: 8px;
+            border: 1.5px solid var(--border-color);
+            background: white;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.15s;
+            letter-spacing: 1px;
+        }
+        .grid-size-btn:hover {
+            border-color: var(--text-main);
+            color: var(--text-main);
+        }
+        .grid-size-btn.active {
+            background: var(--text-main);
+            border-color: var(--text-main);
+            color: white;
+        }
+
         @media (max-width: 700px) {
             .media-header-banner { flex-direction: column; gap: 20px; }
             .media-detail-cover  { width: 100%; max-width: 200px; }
@@ -403,7 +427,7 @@
         </div>
 
         <div class="modal-actions" style="margin-top:24px;">
-            <button type="button" id="btn-cancel-scene">Cancelar</button>
+            <button type="button" id="btn-cancel-scene" style="background:var(--bg-secondary); color:var(--text-main); border:1px solid var(--border-color); padding:10px 20px; border-radius:10px; font-weight:700; cursor:pointer; font-family:'Inter',sans-serif; font-size:0.95rem; transition:background 0.2s;">Cancelar</button>
             <button type="button" id="btn-save-scene" class="save-btn">Guardar Escena</button>
         </div>
     </div>

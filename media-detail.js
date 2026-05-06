@@ -65,6 +65,15 @@ function renderDetail() {
     const scenesHtml = renderScenes();
 
     container.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:center; max-width:1100px; margin:0 auto 24px;">
+            <button class="album-review-btn" onclick="goBack()">← Volver</button>
+            <div class="scenes-grid-selector" style="display:flex; gap:8px; align-items:center;">
+                <span style="font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:var(--text-muted);">Columnas</span>
+                <button class="grid-size-btn active" data-cols="3" onclick="setGridCols(3)" title="3 columnas">▣▣▣</button>
+                <button class="grid-size-btn" data-cols="2" onclick="setGridCols(2)" title="2 columnas">▣▣</button>
+                <button class="grid-size-btn" data-cols="1" onclick="setGridCols(1)" title="1 columna">▣</button>
+            </div>
+        </div>
         <div class="media-header-banner">
             <img src="${currentItem.coverBase64}" alt="${currentItem.title}" class="media-detail-cover"
                 style="height:${isMovie ? '330px' : '280px'};">
@@ -76,7 +85,6 @@ function renderDetail() {
                 ${quoteHtml}
                 <div class="media-detail-actions">
                     <span class="rating-big" style="background:${badgeColor};">${formatRating(currentItem.rating)}</span>
-                    <button class="album-review-btn" onclick="goBack()">← Volver</button>
                 </div>
             </div>
         </div>
@@ -108,8 +116,8 @@ function renderScenes() {
             return `
                 <div class="scene-card">
                     <div class="scene-card-actions">
-                        <button class="action-btn btn-edit" onclick="editScene(${index})" title="Editar">✎</button>
-                        <button class="action-btn btn-delete" onclick="deleteScene(${index})" title="Borrar">✖</button>
+                        <button class="action-btn btn-edit" onclick="event.stopPropagation(); editScene(${index})" title="Editar">✎</button>
+                        <button class="action-btn btn-delete" onclick="event.stopPropagation(); deleteScene(${index})" title="Borrar">✖</button>
                     </div>
                     <div class="scene-quote" style="background:white;">
                         <div class="scene-quote-text" style="font-family:'${scene.font || 'Playfair Display'}', serif;">${scene.text}</div>
@@ -120,8 +128,8 @@ function renderScenes() {
             return `
                 <div class="scene-card">
                     <div class="scene-card-actions">
-                        <button class="action-btn btn-edit" onclick="editScene(${index})" title="Editar">✎</button>
-                        <button class="action-btn btn-delete" onclick="deleteScene(${index})" title="Borrar">✖</button>
+                        <button class="action-btn btn-edit" onclick="event.stopPropagation(); editScene(${index})" title="Editar">✎</button>
+                        <button class="action-btn btn-delete" onclick="event.stopPropagation(); deleteScene(${index})" title="Borrar">✖</button>
                     </div>
                     <div class="scene-frame">
                         <img src="${scene.image}" alt="Escena">
@@ -284,3 +292,20 @@ function formatDate(dateStr) {
 function goBack() { history.back(); }
 
 loadDetail();
+
+
+// ── GRID SIZE ─────────────────────────────────────────────────────────────
+let currentCols = 3;
+
+window.setGridCols = function(cols) {
+    currentCols = cols;
+    const grid = document.getElementById('scenes-grid');
+    if (!grid) return;
+
+    const colMap = { 1: '1fr', 2: '1fr 1fr', 3: 'repeat(auto-fill, minmax(300px, 1fr))' };
+    grid.style.gridTemplateColumns = colMap[cols] || colMap[3];
+
+    document.querySelectorAll('.grid-size-btn').forEach(btn => {
+        btn.classList.toggle('active', parseInt(btn.dataset.cols) === cols);
+    });
+};
