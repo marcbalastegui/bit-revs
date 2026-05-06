@@ -98,9 +98,12 @@ async function loadWrapped() {
     const MONTH_NAMES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
 
     albumsWithDate.forEach(a => {
-        const d = new Date(a.reviewDate);
-        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-        if (!monthMap[key]) monthMap[key] = { label: `${MONTH_NAMES[d.getMonth()]} ${d.getFullYear()}`, count: 0 };
+        // Parsear la fecha como local (YYYY-MM-DD) para evitar problemas de timezone
+        const parts = a.reviewDate.split('-');
+        const year  = parseInt(parts[0]);
+        const month = parseInt(parts[1]) - 1; // 0-indexed
+        const key   = `${year}-${String(month + 1).padStart(2, '0')}`;
+        if (!monthMap[key]) monthMap[key] = { label: `${MONTH_NAMES[month]} ${year}`, count: 0 };
         monthMap[key].count++;
     });
 
@@ -258,7 +261,7 @@ async function loadWrapped() {
         `).join('');
 
         html += `
-            <div class="stat-card col-12">
+            <div class="stat-card col-6">
                 <div class="stat-label">Álbumes puntuados por mes</div>
                 <svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;margin-top:12px;">
                     <!-- Área rellena -->
