@@ -131,7 +131,7 @@ function renderAlbumContent() {
                 </div>
                 <div class="track-actions">
                     <button class="track-review-btn${trackHasReview ? ' has-review' : ''}" onclick="openReview('track', ${index})" title="${trackHasReview ? 'Ver review' : 'Escribir review'}">${reviewPenSVG(trackHasReview)}</button>
-                    <button class="track-review-btn" onclick="openCredits('track', ${index})" title="Créditos" style="opacity:0;" class="track-credits-btn">${creditsSVG(false)}</button>
+                    <button class="track-review-btn" onclick="openCredits('track', ${index})" title="Créditos">${creditsSVG(false)}</button>
                     <button class="track-btn edit"   onclick="editTrack(${index})"   title="Editar">✎</button>
                     <button class="track-btn delete" onclick="deleteTrack(${index})" title="Borrar">✖</button>
                 </div>
