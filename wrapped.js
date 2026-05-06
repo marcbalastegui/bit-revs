@@ -1,340 +1,342 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BitRevs - Estadísticas del Artista</title>
-    <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
-    <style>
-        /* ── ARTIST PAGE ── */
-        .artist-hero {
-            text-align: center;
-            padding: 60px 20px 40px;
-            position: relative;
-        }
+// wrapped.js - Estadísticas globales de BitRevs
 
-        .artist-hero-content {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 20px;
-        }
+async function loadWrapped() {
+    const grid   = document.getElementById('wrapped-grid');
+    const albums = await getAllAlbumsFromDB();
 
-        .artist-avatar-large {
-            width: 140px; height: 140px;
-            border-radius: 50%;
-            background: var(--accent-red);
-            color: white;
-            font-size: 3.5rem;
-            font-weight: 900;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 8px 30px rgba(230, 57, 70, 0.2);
-        }
+    const allTracks = [];
+    albums.forEach(album => {
+        if (!album.tracks) return;
+        album.tracks.forEach(track => {
+            if (!track.isInterlude && parseFloat(track.rating) > 0) {
+                allTracks.push({
+                    ...track,
+                    albumTitle:  album.title,
+                    albumCover:  album.coverBase64,
+                    albumId:     album.id,
+                    albumRating: parseFloat(album.rating) || 0,
+                    albumArtist: album.artist
+                });
+            }
+        });
+    });
 
-        .artist-hero h1 {
-            font-family: 'Playfair Display', Georgia, serif;
-            font-size: 3.5rem;
-            font-weight: 900;
-            letter-spacing: -2px;
-            margin: 0;
-            color: var(--text-main);
-        }
+    const scoredAlbums = albums.filter(a => a.tracks && a.tracks.length > 0 && parseFloat(a.rating) > 0);
 
-        .artist-hero p {
-            color: var(--text-muted);
-            font-size: 1rem;
-            margin: 0;
-        }
-
-        /* ── GRID DE STATS ── */
-        .artist-grid {
-            display: grid;
-            grid-template-columns: repeat(12, 1fr);
-            gap: 20px;
-            max-width: 1100px;
-            margin: 0 auto;
-            padding: 0 20px 60px;
-        }
-
-        .stat-card {
-            background: white;
-            border: 1px solid var(--border-color);
-            border-radius: 20px;
-            padding: 28px;
-            box-shadow: var(--shadow-subtle);
-            animation: fadeUp 0.5s ease both;
-        }
-
-        @keyframes fadeUp {
-            from { opacity: 0; transform: translateY(20px); }
-            to   { opacity: 1; transform: translateY(0); }
-        }
-
-        .col-4  { grid-column: span 4; }
-        .col-6  { grid-column: span 6; }
-        .col-8  { grid-column: span 8; }
-        .col-12 { grid-column: span 12; }
-
-        .stat-card:nth-child(1) { animation-delay: 0.05s; }
-        .stat-card:nth-child(2) { animation-delay: 0.10s; }
-        .stat-card:nth-child(3) { animation-delay: 0.15s; }
-        .stat-card:nth-child(4) { animation-delay: 0.20s; }
-        .stat-card:nth-child(5) { animation-delay: 0.25s; }
-        .stat-card:nth-child(6) { animation-delay: 0.30s; }
-
-        .stat-label {
-            font-size: 0.75rem;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            color: var(--text-muted);
-            margin-bottom: 14px;
-        }
-
-        .stat-value-big {
-            font-size: 3.5rem;
-            font-weight: 900;
-            letter-spacing: -2px;
-            color: var(--accent-red);
-            line-height: 1;
-        }
-
-        .stat-value-sub {
-            font-size: 0.9rem;
-            color: var(--text-muted);
-            margin-top: 6px;
-            font-weight: 500;
-        }
-
-        /* ── HIGHLIGHT CARD ── */
-        .highlight-card {
-            display: flex;
-            gap: 20px;
-            align-items: center;
-        }
-
-        .highlight-cover {
-            width: 80px; height: 80px;
-            border-radius: 10px;
-            object-fit: cover;
-            flex-shrink: 0;
-            border: 1px solid var(--border-color);
-        }
-
-        .highlight-info { min-width: 0; }
-
-        .highlight-title {
-            font-size: 1.15rem;
-            font-weight: 800;
-            color: var(--text-main);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            margin-bottom: 4px;
-        }
-
-        .highlight-meta {
-            font-size: 0.82rem;
-            color: var(--text-muted);
-            font-weight: 500;
-        }
-
-        .highlight-badge {
-            display: inline-block;
-            margin-top: 8px;
-            padding: 3px 10px;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            font-weight: 900;
-            color: white;
-        }
-
-        /* ── GENRE PILLS ── */
-        .genres-list {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-top: 12px;
-        }
-
-        .genre-pill {
-            padding: 6px 14px;
-            border-radius: 20px;
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-color);
-            font-size: 0.85rem;
-            font-weight: 600;
-            color: var(--text-muted);
-        }
-
-        /* ── CHART ── */
-        .chart-container {
-            display: flex;
-            align-items: flex-end;
-            gap: 8px;
-            height: 120px;
-            margin-top: 16px;
-        }
-
-        .chart-bar-wrap {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 6px;
-            height: 100%;
-            justify-content: flex-end;
-        }
-
-        .chart-bar {
-            width: 100%;
-            border-radius: 6px 6px 0 0;
-            background: var(--accent-red);
-            transition: height 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
-            min-height: 4px;
-            position: relative;
-        }
-
-        .chart-bar-count {
-            position: absolute;
-            top: -20px;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 0.65rem;
-            font-weight: 700;
-            color: var(--text-muted);
-        }
-
-        .chart-label {
-            font-size: 0.65rem;
-            font-weight: 700;
-            color: var(--text-muted);
-        }
-
-        /* ── ALBUMS LIST ── */
-        .albums-list {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            margin-top: 16px;
-        }
-
-        .album-row {
-            display: flex;
-            gap: 12px;
-            align-items: center;
-            padding: 12px;
-            border-radius: 10px;
-            border: 1px solid var(--border-color);
-            transition: background 0.2s;
-        }
-
-        .album-row:hover { background: var(--bg-secondary); }
-
-        .album-row-cover {
-            width: 50px; height: 50px;
-            border-radius: 6px;
-            object-fit: cover;
-            flex-shrink: 0;
-        }
-
-        .album-row-info {
-            flex: 1;
-            min-width: 0;
-        }
-
-        .album-row-title {
-            font-size: 0.95rem;
-            font-weight: 700;
-            color: var(--text-main);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .album-row-meta {
-            font-size: 0.8rem;
-            color: var(--text-muted);
-        }
-
-        .album-row-badge {
-            padding: 2px 8px;
-            border-radius: 6px;
-            font-size: 0.8rem;
-            font-weight: 900;
-            color: white;
-            flex-shrink: 0;
-        }
-
-        /* ── RESPONSIVE ── */
-        @media (max-width: 900px) {
-            .col-4  { grid-column: span 6; }
-            .col-8  { grid-column: span 12; }
-        }
-
-        @media (max-width: 600px) {
-            .artist-hero h1 { font-size: 2.5rem; }
-            .artist-avatar-large { width: 100px; height: 100px; font-size: 2.5rem; }
-            .col-4, .col-6, .col-8 { grid-column: span 12; }
-            .stat-value-big { font-size: 2.5rem; }
-        }
-    </style>
-</head>
-<body>
-<header>
-    <div class="header-left">
-        <a href="index.html" class="logo">BitRevs</a>
-    </div>
-    <nav>
-        <a href="movies.html">Películas</a>
-        <a href="series.html">Series</a>
-        <a href="index.html">Álbumes</a>
-        <a href="top.html">Top Canciones</a>
-        <a href="wrapped.html">Wrapped</a>
-    </nav>
-    <div class="header-right">
-        <button style="visibility:hidden;" class="save-btn">+</button>
-        <a href="profile.html" class="header-avatar" id="global-header-avatar" title="Mi Perfil">U</a>
-    </div>
-</header>
-
-<main>
-    <div class="artist-hero">
-        <div class="artist-hero-content">
-            <div class="artist-avatar-large" id="artist-avatar-container" title="Click para cambiar foto" style="cursor:pointer; position:relative; overflow:hidden;">
-                <span id="artist-initial">A</span>
-                <img id="artist-photo" src="" alt="" style="display:none; width:100%; height:100%; object-fit:cover; position:absolute; inset:0; border-radius:50%;">
-                <div id="artist-avatar-overlay" style="position:absolute; inset:0; border-radius:50%; background:rgba(0,0,0,0.45); display:flex; align-items:center; justify-content:center; opacity:0; transition:opacity 0.2s; font-size:0.7rem; font-weight:800; color:white; letter-spacing:0.5px;">EDITAR</div>
-            </div>
-            <input type="file" id="input-artist-photo" accept="image/*" style="display:none;">
-            <div>
-                <h1 id="artist-name">Cargando…</h1>
-                <p id="artist-subtitle">Estadísticas personalizadas</p>
-            </div>
-        </div>
-    </div>
-
-    <div class="artist-grid" id="artist-grid">
-        <div class="stat-card col-12">
-            <p style="color: var(--text-muted); text-align: center;">Cargando…</p>
-        </div>
-    </div>
-</main>
-
-<script src="bitrevs-ui.js"></script>
-<script src="db.js"></script>
-<script src="artist.js"></script>
-<script>
-    // Hover overlay on artist avatar
-    const avatarContainer = document.getElementById('artist-avatar-container');
-    const overlay = document.getElementById('artist-avatar-overlay');
-    if (avatarContainer && overlay) {
-        avatarContainer.addEventListener('mouseover', () => overlay.style.opacity = '1');
-        avatarContainer.addEventListener('mouseout',  () => overlay.style.opacity = '0');
+    if (scoredAlbums.length === 0 && allTracks.length === 0) {
+        grid.innerHTML = `
+            <div class="stat-card col-12 wrapped-empty">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="var(--border-color)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:48px;height:48px;margin-bottom:16px;"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+                <p>Todavía no tienes suficientes valoraciones.<br>Añade álbumes y puntúa canciones para ver tu Wrapped.</p>
+            </div>`;
+        return;
     }
-</script>
-</body>
-</html>
+
+    // ── ESTADÍSTICAS ──────────────────────────────────────────────────────
+
+    const globalAvg = allTracks.length > 0
+        ? allTracks.reduce((sum, t) => sum + parseFloat(t.rating), 0) / allTracks.length : 0;
+    const totalTracks = allTracks.length;
+
+    const genreCount = {};
+    albums.forEach(a => { if (!a.genres) return; a.genres.forEach(g => { genreCount[g] = (genreCount[g] || 0) + 1; }); });
+    const topGenre = Object.entries(genreCount).sort((a, b) => b[1] - a[1])[0];
+
+    const topAlbum = [...scoredAlbums].sort((a, b) => parseFloat(b.rating) - parseFloat(a.rating))[0];
+
+    const sortedBest = [...allTracks].sort((a, b) => {
+        const diff = parseFloat(b.rating) - parseFloat(a.rating);
+        return diff !== 0 ? diff : b.albumRating - a.albumRating;
+    });
+    const sortedWorst = [...allTracks].sort((a, b) => {
+        const diff = parseFloat(a.rating) - parseFloat(b.rating);
+        return diff !== 0 ? diff : a.albumRating - b.albumRating;
+    });
+
+    const topTrack   = sortedBest[0];
+    const worstTrack = sortedWorst[0];
+    const bestRating  = topTrack   ? parseFloat(topTrack.rating)   : -1;
+    const worstRating = worstTrack ? parseFloat(worstTrack.rating) : -1;
+    const bestTies    = sortedBest.filter(t  => parseFloat(t.rating) === bestRating);
+    const worstTies   = sortedWorst.filter(t => parseFloat(t.rating) === worstRating);
+
+    const artistStats = {};
+    allTracks.forEach(t => {
+        const artist = t.albumArtist || 'Desconocido';
+        if (!artistStats[artist]) artistStats[artist] = { total: 0, count: 0 };
+        artistStats[artist].total += parseFloat(t.rating);
+        artistStats[artist].count++;
+    });
+    const artistEntries = Object.entries(artistStats)
+        .filter(([, s]) => s.count >= 3)
+        .map(([name, s]) => ({ name, avg: s.total / s.count, count: s.count }))
+        .sort((a, b) => b.avg - a.avg);
+    const bestArtist  = artistEntries[0];
+    const worstArtist = artistEntries[artistEntries.length - 1];
+
+    const artistAlbumCount = {};
+    albums.forEach(a => { if (!a.artist) return; artistAlbumCount[a.artist] = (artistAlbumCount[a.artist] || 0) + 1; });
+    const topListenedArtist = Object.entries(artistAlbumCount).sort((a, b) => b[1] - a[1])[0];
+
+    // Distribución de notas
+    const ranges = [
+        { label: '0-2', min: 0, max: 2 }, { label: '2-4', min: 2, max: 4 },
+        { label: '4-5', min: 4, max: 5 }, { label: '5-6', min: 5, max: 6 },
+        { label: '6-7', min: 6, max: 7 }, { label: '7-8', min: 7, max: 8 },
+        { label: '8-9', min: 8, max: 9 }, { label: '9-10', min: 9, max: 10.1 },
+    ];
+    const distribution = ranges.map(r => ({
+        label: r.label,
+        count: allTracks.filter(t => { const v = parseFloat(t.rating); return v >= r.min && v < r.max; }).length
+    }));
+    const maxCount = Math.max(...distribution.map(d => d.count), 1);
+
+    // ── GRÁFICA DE ÁLBUMES POR MES ─────────────────────────────────────────
+    // Solo álbumes que tienen reviewDate
+    const albumsWithDate = albums.filter(a => a.reviewDate);
+    const monthMap = {};
+    const MONTH_NAMES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+
+    albumsWithDate.forEach(a => {
+        // Parsear la fecha como local (YYYY-MM-DD) para evitar problemas de timezone
+        const parts = a.reviewDate.split('-');
+        const year  = parseInt(parts[0]);
+        const month = parseInt(parts[1]) - 1; // 0-indexed
+        const key   = `${year}-${String(month + 1).padStart(2, '0')}`;
+        if (!monthMap[key]) monthMap[key] = { label: `${MONTH_NAMES[month]} ${year}`, count: 0 };
+        monthMap[key].count++;
+    });
+
+    const monthEntries = Object.entries(monthMap).sort(([a], [b]) => a.localeCompare(b));
+    const maxMonthCount = Math.max(...monthEntries.map(([, v]) => v.count), 1);
+
+    // ── HTML ──────────────────────────────────────────────────────────────
+    let html = '';
+
+    html += `
+        <div class="stat-card col-4">
+            <div class="stat-label">Media global</div>
+            <div class="stat-value-big">${formatRating(globalAvg)}</div>
+            <div class="stat-value-sub">sobre 10 puntos</div>
+        </div>`;
+
+    html += `
+        <div class="stat-card col-4">
+            <div class="stat-label">Canciones puntuadas</div>
+            <div class="stat-value-big">${totalTracks}</div>
+            <div class="stat-value-sub">en ${scoredAlbums.length} álbum${scoredAlbums.length !== 1 ? 'es' : ''}</div>
+        </div>`;
+
+    html += topGenre ? `
+        <div class="stat-card col-4">
+            <div class="stat-label">Género más escuchado</div>
+            <span class="genre-pill">${topGenre[0]}</span>
+            <div class="stat-value-sub" style="margin-top:10px;">${topGenre[1]} álbum${topGenre[1] !== 1 ? 'es' : ''}</div>
+        </div>` : '';
+
+    if (topListenedArtist) {
+        const topListenedData  = await getArtistFromDB(topListenedArtist[0]);
+        const topListenedPhoto = topListenedData?.photo;
+        const topListenedAvatar = topListenedPhoto
+            ? `<img src="${topListenedPhoto}" style="width:70px;height:70px;border-radius:50%;object-fit:cover;flex-shrink:0;">`
+            : `<div class="artist-initials">${topListenedArtist[0].charAt(0).toUpperCase()}</div>`;
+        html += `
+            <div class="stat-card col-6" style="cursor:pointer;" onclick="window.location.href='artist.html?name='+encodeURIComponent('${topListenedArtist[0]}')">
+                <div class="stat-label">Artista más escuchado</div>
+                <div class="artist-card">
+                    ${topListenedAvatar}
+                    <div>
+                        <div class="artist-name">${topListenedArtist[0]}</div>
+                        <div class="artist-count">${topListenedArtist[1]} álbum${topListenedArtist[1] !== 1 ? 'es' : ''} en tu colección</div>
+                    </div>
+                </div>
+            </div>`;
+    }
+
+    if (topAlbum) {
+        const badgeColor = getColorByRating(topAlbum.rating);
+        html += `
+            <div class="stat-card col-6" style="cursor:pointer;" onclick="window.location.href='album.html?id=${topAlbum.id}'">
+                <div class="stat-label">Álbum mejor puntuado</div>
+                <div class="highlight-card">
+                    <img class="highlight-cover square" src="${topAlbum.coverBase64}" alt="${topAlbum.title}">
+                    <div class="highlight-info">
+                        <div class="highlight-title">${topAlbum.title}</div>
+                        <div class="highlight-meta">${topAlbum.artist} · ${topAlbum.year}</div>
+                        <span class="highlight-badge" style="background:${badgeColor}">${formatRating(topAlbum.rating)}</span>
+                    </div>
+                </div>
+            </div>`;
+    }
+
+    if (topTrack) {
+        html += `
+            <div class="stat-card col-6" style="cursor:pointer;" onclick="window.location.href='album.html?id=${topTrack.albumId}'">
+                <div class="stat-label">Canción mejor puntuada</div>
+                ${trackHighlightHtml(topTrack, bestTies)}
+            </div>`;
+    }
+
+    if (worstTrack) {
+        html += `
+            <div class="stat-card col-6" style="cursor:pointer;" onclick="window.location.href='album.html?id=${worstTrack.albumId}'">
+                <div class="stat-label">Canción peor puntuada</div>
+                ${trackHighlightHtml(worstTrack, worstTies)}
+            </div>`;
+    }
+
+    if (bestArtist) {
+        const bestArtistData  = await getArtistFromDB(bestArtist.name);
+        const bestArtistPhoto = bestArtistData?.photo;
+        const bestArtistAvatar = bestArtistPhoto
+            ? `<img src="${bestArtistPhoto}" style="width:70px;height:70px;border-radius:50%;object-fit:cover;flex-shrink:0;">`
+            : `<div class="artist-initials" style="background:${getColorByRating(bestArtist.avg)}">${bestArtist.name.charAt(0).toUpperCase()}</div>`;
+        html += `
+            <div class="stat-card col-6" style="cursor:pointer;" onclick="window.location.href='artist.html?name='+encodeURIComponent('${bestArtist.name}')">
+                <div class="stat-label">Artista mejor puntuado</div>
+                <div class="artist-card">
+                    ${bestArtistAvatar}
+                    <div>
+                        <div class="artist-name">${bestArtist.name}</div>
+                        <div class="artist-count">Media <strong>${formatRating(bestArtist.avg)}</strong> · ${bestArtist.count} canciones</div>
+                    </div>
+                </div>
+            </div>`;
+    }
+
+    if (worstArtist && worstArtist.name !== bestArtist?.name) {
+        const worstArtistData  = await getArtistFromDB(worstArtist.name);
+        const worstArtistPhoto = worstArtistData?.photo;
+        const worstArtistAvatar = worstArtistPhoto
+            ? `<img src="${worstArtistPhoto}" style="width:70px;height:70px;border-radius:50%;object-fit:cover;flex-shrink:0;">`
+            : `<div class="artist-initials" style="background:${getColorByRating(worstArtist.avg)}">${worstArtist.name.charAt(0).toUpperCase()}</div>`;
+        html += `
+            <div class="stat-card col-6" style="cursor:pointer;" onclick="window.location.href='artist.html?name='+encodeURIComponent('${worstArtist.name}')">
+                <div class="stat-label">Artista peor puntuado</div>
+                <div class="artist-card">
+                    ${worstArtistAvatar}
+                    <div>
+                        <div class="artist-name">${worstArtist.name}</div>
+                        <div class="artist-count">Media <strong>${formatRating(worstArtist.avg)}</strong> · ${worstArtist.count} canciones</div>
+                    </div>
+                </div>
+            </div>`;
+    }
+
+    // Distribución de notas
+    const barsHtml = distribution.map(d => {
+        const heightPct = Math.round((d.count / maxCount) * 100);
+        const barColor = d.label === '9-10' ? '#B533FF' : d.label === '8-9' ? '#3366FF'
+            : d.label === '7-8' ? '#66CC33' : d.label === '6-7' ? '#FFD11A'
+            : d.label === '5-6' ? '#FF8533' : '#FF3333';
+        return `
+            <div class="chart-bar-wrap">
+                <div class="chart-bar" style="height:${heightPct}%; background:${barColor};">
+                    ${d.count > 0 ? `<span class="chart-bar-count">${d.count}</span>` : ''}
+                </div>
+                <span class="chart-label">${d.label}</span>
+            </div>`;
+    }).join('');
+
+    html += `
+        <div class="stat-card col-6">
+            <div class="stat-label">Distribución de notas</div>
+            <div class="chart-container">${barsHtml}</div>
+        </div>`;
+
+    // Gráfica LINEAL de álbumes por mes
+    if (monthEntries.length > 0) {
+        const W = 500, H = 120, PAD = 24;
+        const n = monthEntries.length;
+        const counts = monthEntries.map(([, v]) => v.count);
+        const maxC   = Math.max(...counts, 1);
+
+        // Coordenadas de cada punto
+        const pts = counts.map((c, i) => {
+            const x = PAD + (i / Math.max(n - 1, 1)) * (W - PAD * 2);
+            const y = PAD + (1 - c / maxC) * (H - PAD * 2);
+            return [x, y];
+        });
+
+        // Polilínea
+        const polyline = pts.map(([x, y]) => `${x},${y}`).join(' ');
+
+        // Área rellena (polígono cerrado)
+        const areaPoints = [
+            `${pts[0][0]},${H - PAD}`,
+            ...pts.map(([x, y]) => `${x},${y}`),
+            `${pts[pts.length - 1][0]},${H - PAD}`
+        ].join(' ');
+
+        // Puntos y etiquetas
+        const dotsHtml = pts.map(([x, y], i) => `
+            <circle cx="${x}" cy="${y}" r="3.5" fill="var(--accent-red)" stroke="white" stroke-width="1.5"/>
+            <text x="${x}" y="${y - 8}" text-anchor="middle" font-size="9" fill="var(--text-muted)" font-family="Inter,sans-serif">${counts[i]}</text>
+            <text x="${x}" y="${H - 4}" text-anchor="middle" font-size="8" fill="var(--text-muted)" font-family="Inter,sans-serif">${monthEntries[i][1].label}</text>
+        `).join('');
+
+        html += `
+            <div class="stat-card col-6">
+                <div class="stat-label">Álbumes puntuados por mes</div>
+                <svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;margin-top:12px;">
+                    <!-- Área rellena -->
+                    <polygon points="${areaPoints}" fill="rgba(230,57,70,0.08)"/>
+                    <!-- Línea -->
+                    <polyline points="${polyline}" fill="none" stroke="var(--accent-red)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+                    <!-- Puntos y etiquetas -->
+                    ${dotsHtml}
+                </svg>
+            </div>`;
+    }
+
+    grid.innerHTML = html;
+
+    // Eventos botones "Más"
+    document.querySelectorAll('.wrapped-more-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const list = btn.nextElementSibling;
+            if (list) {
+                const isOpen = list.style.display === 'block';
+                list.style.display = isOpen ? 'none' : 'block';
+                btn.textContent = isOpen ? `+${btn.dataset.count} más` : 'Ocultar';
+            }
+        });
+    });
+}
+
+// ── HELPER: canción destacada con botón "Más" ─────────────────────────────
+function trackHighlightHtml(track, allTied) {
+    const badgeColor = getColorByRating(parseFloat(track.rating));
+    const extraTies  = allTied.slice(1);
+
+    const tiesHtml = extraTies.length > 0 ? `
+        <button class="wrapped-more-btn" data-count="${extraTies.length}"
+            style="margin-top:8px; background:none; border:1px solid var(--border-color); border-radius:8px; padding:3px 10px; font-size:0.72rem; font-weight:700; color:var(--text-muted); cursor:pointer; font-family:'Inter',sans-serif;">
+            +${extraTies.length} más
+        </button>
+        <div style="display:none; margin-top:8px;">
+            ${extraTies.map(t => `
+                <div style="display:flex; align-items:center; gap:10px; padding:6px 0; border-bottom:1px solid var(--border-color);">
+                    <img src="${t.albumCover}" style="width:32px;height:32px;border-radius:4px;object-fit:cover;flex-shrink:0;">
+                    <div style="flex:1;min-width:0;">
+                        <div style="font-size:0.85rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${t.title}</div>
+                        <div style="font-size:0.72rem;color:var(--text-muted);">${t.albumTitle}</div>
+                    </div>
+                    <span style="padding:2px 8px;border-radius:6px;background:${getColorByRating(parseFloat(t.rating))};color:white;font-size:0.75rem;font-weight:900;">${formatRating(parseFloat(t.rating))}</span>
+                </div>`).join('')}
+        </div>` : '';
+
+    return `
+        <div class="highlight-card">
+            <img class="highlight-cover" src="${track.albumCover}" alt="${track.albumTitle}">
+            <div class="highlight-info">
+                <div class="highlight-title">${track.title}</div>
+                <div class="highlight-meta">${track.albumTitle}</div>
+                <span class="highlight-badge" style="background:${badgeColor}">${formatRating(parseFloat(track.rating))}</span>
+            </div>
+        </div>
+        ${tiesHtml}`;
+}
+
+loadWrapped();
