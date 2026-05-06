@@ -611,3 +611,18 @@ h1 {
     transform: translateY(-4px);
     box-shadow: 0 8px 24px rgba(0,0,0,0.08);
 }
+/* ── ICONO HOME EN NAV ── */
+.nav-home-icon {
+    display: flex;
+    align-items: center;
+    color: var(--text-muted);
+    transition: color 0.2s;
+}
+.nav-home-icon svg {
+    width: 18px;
+    height: 18px;
+}
+.nav-home-icon:hover,
+.nav-home-icon.active {
+    color: var(--accent-red);
+}
