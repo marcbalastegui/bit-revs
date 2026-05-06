@@ -1,9 +1,9 @@
-// script.js - Lógica principal de Álbumes
+// script.js - Lógica principal de Music (Álbumes + Singles)
 
 const btnAddAlbum = document.getElementById('btn-add-album');
-const modalAdd = document.getElementById('modal-add');
-const btnCancel = document.getElementById('btn-cancel');
-const albumForm = document.getElementById('album-form');
+const modalAdd    = document.getElementById('modal-add');
+const btnCancel   = document.getElementById('btn-cancel');
+const albumForm   = document.getElementById('album-form');
 let editingAlbumId = null;
 
 // ── GÉNEROS PREDEFINIDOS ──────────────────────────────────────────────────
@@ -42,6 +42,7 @@ function heartSVG() {
     return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`;
 }
 
+// ── FAVORITO EN CARD ──────────────────────────────────────────────────────
 window.toggleAlbumFavoriteCard = async function(event, id) {
     event.stopPropagation();
     const album = await getAlbumByIdFromDB(id);
@@ -52,6 +53,7 @@ window.toggleAlbumFavoriteCard = async function(event, id) {
     if (btn) btn.classList.toggle('active', album.favorite);
 }
 
+// ── BORRAR / EDITAR ───────────────────────────────────────────────────────
 window.deleteAlbum = async function(event, id) {
     event.stopPropagation();
     if (confirm("¿Estás seguro de que quieres borrar este álbum?")) {
@@ -70,7 +72,9 @@ window.editAlbum = async function(event, id) {
     document.getElementById('artist').value = album.artist;
     document.getElementById('featured-artists').value = (album.featuredArtists || []).join(', ');
     document.getElementById('year').value = album.year;
-    if (document.getElementById('album-type')) document.getElementById('album-type').value = album.type;
+    if (document.getElementById('album-type')) document.getElementById('album-type').value = album.type || '';
+    const reviewDateEl = document.getElementById('review-date');
+    if (reviewDateEl) reviewDateEl.value = album.reviewDate || '';
 
     const genres = album.genres || [];
     const customGenres = genres.filter(g => !GENRES_PREDEFINED.includes(g));
@@ -78,17 +82,16 @@ window.editAlbum = async function(event, id) {
     const customInput = document.getElementById('genre-custom');
     if (customInput) customInput.value = customGenres.join(', ');
 
-    document.querySelector('#modal-add .modal-content h2').textContent = "Editar Álbum";
+    document.querySelector('#modal-add .modal-content h2').textContent = "Editar";
     document.getElementById('cover').removeAttribute('required');
-    const reviewDateEl = document.getElementById('review-date');
-    if (reviewDateEl) reviewDateEl.value = album.reviewDate || '';
     modalAdd.classList.remove('hidden');
 };
 
+// ── MODAL NUEVO ───────────────────────────────────────────────────────────
 if (btnAddAlbum && modalAdd) {
     btnAddAlbum.addEventListener('click', () => {
         editingAlbumId = null;
-        document.querySelector('#modal-add .modal-content h2').textContent = "Nueva Reseña de Álbum";
+        document.querySelector('#modal-add .modal-content h2').textContent = "Nueva Reseña";
         document.getElementById('cover').setAttribute('required', 'true');
         if (albumForm) albumForm.reset();
         renderGenreSelector([]);
@@ -107,37 +110,35 @@ if (btnCancel && modalAdd) {
     });
 }
 
+// ── GUARDAR ───────────────────────────────────────────────────────────────
 if (albumForm) {
     albumForm.addEventListener('submit', async function(e) {
         e.preventDefault();
 
-        const title = document.getElementById('title').value.trim();
-        const artist = document.getElementById('artist').value.trim();
+        const title              = document.getElementById('title').value.trim();
+        const artist             = document.getElementById('artist').value.trim();
         const featuredArtistsRaw = document.getElementById('featured-artists').value.trim();
-        const featuredArtists = featuredArtistsRaw !== ''
+        const featuredArtists    = featuredArtistsRaw !== ''
             ? featuredArtistsRaw.split(',').map(a => a.trim()).filter(a => a !== '')
             : [];
-        const year = document.getElementById('year').value;
+        const year       = document.getElementById('year').value;
         const typeElement = document.getElementById('album-type');
-        const type = typeElement ? typeElement.value : "";
-        const genres = getSelectedGenres();
+        const type       = typeElement ? typeElement.value : "";
+        const genres     = getSelectedGenres();
         const reviewDate = document.getElementById('review-date')?.value || '';
-        const fileInput = document.getElementById('cover');
-        const file = fileInput.files[0];
+        const fileInput  = document.getElementById('cover');
+        const file       = fileInput.files[0];
 
-        let albumToSave = null;
-        if (editingAlbumId) {
-            albumToSave = await getAlbumByIdFromDB(editingAlbumId);
-        } else {
-            albumToSave = { id: Date.now(), tracks: [], rating: 0 };
-        }
+        let albumToSave = editingAlbumId
+            ? await getAlbumByIdFromDB(editingAlbumId)
+            : { id: Date.now(), tracks: [], rating: 0 };
 
-        albumToSave.title = title;
-        albumToSave.artist = artist;
+        albumToSave.title           = title;
+        albumToSave.artist          = artist;
         albumToSave.featuredArtists = featuredArtists;
-        albumToSave.year = parseInt(year) || 0;
-        albumToSave.type = type;
-        albumToSave.genres = genres;
+        albumToSave.year            = parseInt(year) || 0;
+        albumToSave.type            = type;
+        albumToSave.genres          = genres;
         if (reviewDate) albumToSave.reviewDate = reviewDate;
 
         if (file) {
@@ -164,6 +165,7 @@ async function finalizeSave(album) {
     }
 }
 
+// ── ARTISTAS LINKS ────────────────────────────────────────────────────────
 function getArtistLinks(album) {
     const allArtists = [album.artist, ...(album.featuredArtists || [])].filter(a => a);
     return allArtists.map(artist =>
@@ -171,6 +173,7 @@ function getArtistLinks(album) {
     ).join(' ft. ');
 }
 
+// ── FILTRAR Y DIBUJAR ─────────────────────────────────────────────────────
 async function processAndRenderAlbums() {
     try {
         const grid = document.getElementById('album-grid');
@@ -181,20 +184,32 @@ async function processAndRenderAlbums() {
 
         let filteredAlbums = [...currentAlbums];
 
+        // Toggle singles: si está activo, mostrar solo singles; si no, ocultar singles
+        const singlesToggle = document.getElementById('singles-toggle');
+        if (singlesToggle) {
+            if (singlesToggle.checked) {
+                filteredAlbums = filteredAlbums.filter(a => a.type === 'Single');
+            } else {
+                filteredAlbums = filteredAlbums.filter(a => a.type !== 'Single');
+            }
+        }
+
+        // Filtro por texto
         const filterInput = document.getElementById('filter-input');
         if (filterInput && filterInput.value) {
             const query = filterInput.value.toLowerCase().trim();
             if (query !== "") {
                 filteredAlbums = filteredAlbums.filter(a => {
-                    const artistMatch = a.artist && a.artist.toLowerCase().includes(query);
-                    const titleMatch = a.title && a.title.toLowerCase().includes(query);
-                    const yearMatch = a.year && a.year.toString().includes(query);
+                    const artistMatch   = a.artist && a.artist.toLowerCase().includes(query);
+                    const titleMatch    = a.title && a.title.toLowerCase().includes(query);
+                    const yearMatch     = a.year && a.year.toString().includes(query);
                     const featuredMatch = a.featuredArtists && a.featuredArtists.some(f => f.toLowerCase().includes(query));
                     return artistMatch || titleMatch || yearMatch || featuredMatch;
                 });
             }
         }
 
+        // Filtro por género
         const genreFilter = document.getElementById('genre-filter');
         if (genreFilter && genreFilter.value !== '') {
             filteredAlbums = filteredAlbums.filter(a =>
@@ -202,20 +217,20 @@ async function processAndRenderAlbums() {
             );
         }
 
+        // Ordenación
         const sortSelect = document.getElementById('sort-select');
         if (sortSelect && sortSelect.value && sortSelect.value !== 'default') {
             const sortMethod = sortSelect.value;
             filteredAlbums.sort((a, b) => {
                 if (sortMethod === 'rating-desc') return b.rating - a.rating;
-                if (sortMethod === 'rating-asc') return a.rating - b.rating;
-                if (sortMethod === 'year-desc') return b.year - a.year;
-                if (sortMethod === 'year-asc') return a.year - b.year;
-                if (sortMethod === 'title-asc') return (a.title || "").localeCompare(b.title || "");
-                if (sortMethod === 'artist-asc') return (a.artist || "").localeCompare(b.artist || "");
+                if (sortMethod === 'rating-asc')  return a.rating - b.rating;
+                if (sortMethod === 'year-desc')   return b.year - a.year;
+                if (sortMethod === 'year-asc')    return a.year - b.year;
+                if (sortMethod === 'title-asc')   return (a.title || "").localeCompare(b.title || "");
+                if (sortMethod === 'artist-asc')  return (a.artist || "").localeCompare(b.artist || "");
                 return 0;
             });
         } else {
-            // Orden por defecto: más recientes primero (mayor id = más reciente)
             filteredAlbums.sort((a, b) => b.id - a.id);
         }
 
@@ -237,19 +252,16 @@ function renderAlbums(albumsToRender, gridElement) {
         card.classList.add('album-card');
         card.onclick = () => window.location.href = `album.html?id=${album.id}`;
 
-        const badgeColor = typeof getColorByRating === 'function' ? getColorByRating(album.rating) : '#b3b3b3';
-        const tagHtml = (album.type && album.type !== "") ? `<div class="album-tag">${album.type}</div>` : '';
-        const isFav = album.favorite || false;
-
-        const genresHtml = (album.genres && album.genres.length > 0)
+        const badgeColor   = typeof getColorByRating === 'function' ? getColorByRating(album.rating) : '#b3b3b3';
+        const tagHtml      = (album.type && album.type !== "") ? `<div class="album-tag">${album.type}</div>` : '';
+        const isFav        = album.favorite || false;
+        const genresHtml   = (album.genres && album.genres.length > 0)
             ? `<div class="card-genres">${album.genres.map(g => `<span class="card-genre-tag">${g}</span>`).join('')}</div>`
             : '';
-
         let displayRating = "-";
         if (album.tracks && album.tracks.length > 0) {
             displayRating = typeof formatRating === 'function' ? formatRating(album.rating) : album.rating;
         }
-
         const artistLinks = getArtistLinks(album);
 
         card.innerHTML = `
@@ -290,13 +302,16 @@ async function populateGenreFilter() {
     });
 }
 
-const globalFilterInput = document.getElementById('filter-input');
-const globalSortSelect = document.getElementById('sort-select');
-const globalGenreFilter = document.getElementById('genre-filter');
+// ── EVENTOS ───────────────────────────────────────────────────────────────
+const globalFilterInput  = document.getElementById('filter-input');
+const globalSortSelect   = document.getElementById('sort-select');
+const globalGenreFilter  = document.getElementById('genre-filter');
+const globalSinglesToggle = document.getElementById('singles-toggle');
 
-if (globalFilterInput) globalFilterInput.addEventListener('input', processAndRenderAlbums);
-if (globalSortSelect) globalSortSelect.addEventListener('change', processAndRenderAlbums);
-if (globalGenreFilter) globalGenreFilter.addEventListener('change', processAndRenderAlbums);
+if (globalFilterInput)   globalFilterInput.addEventListener('input', processAndRenderAlbums);
+if (globalSortSelect)    globalSortSelect.addEventListener('change', processAndRenderAlbums);
+if (globalGenreFilter)   globalGenreFilter.addEventListener('change', processAndRenderAlbums);
+if (globalSinglesToggle) globalSinglesToggle.addEventListener('change', processAndRenderAlbums);
 
 (async () => {
     await populateGenreFilter();

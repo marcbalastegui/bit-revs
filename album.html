@@ -2,70 +2,70 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>BitRevs - Detalles del Álbum</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BitRevs - Detalles</title>
     <link rel="stylesheet" href="style.css">
-        <link rel="icon" type="image/png" href="favicon.png">
 </head>
 <body>
 <header>
     <div class="header-left">
         <a href="home.html" class="logo">BitRevs</a>
     </div>
-<nav>
-    <a href="home.html" class="nav-home-icon active" title="Inicio">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-    </a>
-    <div class="nav-dropdown">
-        <span class="nav-dropdown-trigger">Reviews
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="nav-dropdown-arrow"><polyline points="6 9 12 15 18 9"/></svg>
-        </span>
-        <div class="nav-dropdown-menu">
-            <a href="movies.html">Películas</a>
-            <a href="series.html">Series</a>
-            <a href="index.html">Álbumes</a>
+    <nav>
+        <a href="home.html" class="nav-home-icon" title="Inicio">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        </a>
+        <div class="nav-dropdown">
+            <span class="nav-dropdown-trigger active">Reviews
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="nav-dropdown-arrow"><polyline points="6 9 12 15 18 9"/></svg>
+            </span>
+            <div class="nav-dropdown-menu">
+                <a href="movies.html">Películas</a>
+                <a href="series.html">Series</a>
+                <a href="music.html" class="active">Music</a>
+            </div>
         </div>
-    </div>
-    <a href="top.html">Top Canciones</a>
-    <a href="wrapped.html">Wrapped</a>
-</nav>
+        <a href="top.html">Top Canciones</a>
+        <a href="wrapped.html">Wrapped</a>
+    </nav>
     <div class="header-right">
-        <button style="visibility:hidden;" class="save-btn">+</button>
+        <button id="btn-add-album" class="save-btn" style="visibility:hidden;">+ Añadir</button>
         <a href="profile.html" class="header-avatar" id="global-header-avatar" title="Mi Perfil">U</a>
     </div>
 </header>
 
-    <main id="album-detail-container">
-        </main>
+<main id="album-detail-container"></main>
+
+<!-- MODAL AÑADIR/EDITAR CANCIÓN -->
 <div id="modal-track" class="modal hidden">
-        <div class="modal-content">
-            <h2>Añadir Canción</h2>
-            <form id="track-form">
-                <label for="track-title">Título de la Canción:</label>
-                <input type="text" id="track-title" required placeholder="Ej: Runaway">
+    <div class="modal-content">
+        <h2>Añadir Canción</h2>
+        <form id="track-form">
+            <label for="track-title">Título:</label>
+            <input type="text" id="track-title" required placeholder="Ej: Runaway">
 
-                <label for="track-artist">Artistas invitados (opcional):</label>
-                <input type="text" id="track-artist" placeholder="Ej: Pusha T">
+            <label for="track-artist">Artistas invitados (opcional):</label>
+            <input type="text" id="track-artist" placeholder="Ej: Pusha T">
 
-                <div style="margin-top: 15px; display: flex; align-items: center; gap: 10px;">
-                    <input type="checkbox" id="track-interlude" style="width: auto;">
-                    <label for="track-interlude" style="margin: 0; display: inline;">Es un Interlude (Sin nota)</label>
-                </div>
+            <div style="margin-top:15px; display:flex; align-items:center; gap:10px;">
+                <input type="checkbox" id="track-interlude" style="width:auto;">
+                <label for="track-interlude" style="margin:0; display:inline;">Es un Interlude (Sin nota)</label>
+            </div>
 
-                <div id="rating-container">
-                    <label for="track-rating">Puntuación (0-10):</label>
-                    <input type="text" id="track-rating" placeholder="Ej: 10">
-                </div>
+            <div id="rating-container">
+                <label for="track-rating">Puntuación (0-10):</label>
+                <input type="text" id="track-rating" placeholder="Ej: 10">
+            </div>
 
-                <div class="modal-actions">
-                    <button type="button" id="btn-cancel-track">Cancelar</button>
-                    <button type="submit">Guardar Canción</button>
-                </div>
-            </form>
-        </div>
+            <div class="modal-actions">
+                <button type="button" id="btn-cancel-track">Cancelar</button>
+                <button type="submit">Guardar Canción</button>
+            </div>
+        </form>
     </div>
+</div>
 
-    <script src="db.js"></script>
-    <script src="album.js"></script>
+<!-- MODAL REVIEW -->
 <div id="modal-review" class="modal hidden">
     <div class="review-modal-content">
         <div class="review-modal-header">
@@ -78,5 +78,27 @@
         <div id="review-editor" class="review-editor"></div>
     </div>
 </div>
+
+<!-- MODAL CRÉDITOS -->
+<div id="modal-credits" class="modal hidden">
+    <div class="modal-content" style="max-width:500px;">
+        <h2 id="credits-modal-title">Créditos</h2>
+        <form id="credits-form">
+            <label for="credits-produced">Producido por:</label>
+            <input type="text" id="credits-produced" placeholder="Ej: Metro Boomin, Pharrell Williams">
+
+            <label for="credits-written">Escrito por:</label>
+            <input type="text" id="credits-written" placeholder="Ej: Drake, 40">
+
+            <div class="modal-actions">
+                <button type="button" id="btn-cancel-credits">Cancelar</button>
+                <button type="submit" class="save-btn">Guardar Créditos</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="db.js"></script>
+<script src="album.js"></script>
 </body>
 </html>
