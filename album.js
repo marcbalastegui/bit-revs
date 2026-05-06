@@ -4,7 +4,8 @@ let currentAlbum = null;
 let editingTrackIndex = null;
 let reviewBlocks  = [];
 let reviewTarget  = null;
-let creditsTarget = null; // { type: 'album' } | { type: 'track', index: N }
+let creditsTarget = null;
+let creditsEditMode = false; // false = vista lectura, true = edición
 
 async function loadAlbumDetails() {
     const params  = new URLSearchParams(window.location.search);
@@ -35,12 +36,12 @@ window.toggleAlbumFavorite = async function() {
     currentAlbum.favorite = !currentAlbum.favorite;
     await saveAlbumToDB(currentAlbum);
     const btn = document.getElementById('btn-album-favorite');
-    if (btn) { btn.classList.toggle('active', currentAlbum.favorite); }
+    if (btn) btn.classList.toggle('active', currentAlbum.favorite);
 }
 
 // ── BORRAR / EDITAR TRACK ─────────────────────────────────────────────────
 window.deleteTrack = async function(index) {
-    if (await brConfirm("¿Borrar esta canción?", "Borrar canción")) {
+    if (await brConfirm("Esta acción no se puede deshacer.", "¿Borrar canción?")) {
         currentAlbum.tracks.splice(index, 1);
         recalculateAlbumRating();
         await saveAlbumToDB(currentAlbum);
@@ -110,17 +111,16 @@ function renderAlbumContent() {
     const badgeColor = getColorByRating(currentAlbum.rating);
     const typeText   = currentAlbum.type || 'Álbum';
     const isFav      = currentAlbum.favorite || false;
-    const albumHasReview   = currentAlbum.review   && currentAlbum.review.length > 0;
-    const albumHasCredits  = currentAlbum.credits   && (currentAlbum.credits.produced || currentAlbum.credits.written);
+    const albumHasReview  = currentAlbum.review  && currentAlbum.review.length > 0;
+    const albumHasCredits = currentAlbum.credits && (currentAlbum.credits.produced || currentAlbum.credits.written);
 
     let tracksHtml = '';
     currentAlbum.tracks.forEach((track, index) => {
-        const trackColor      = track.isInterlude ? '#4D4D4D' : getColorByRating(track.rating);
-        const displayRating   = track.isInterlude ? 'INTERLUDE' : formatRating(track.rating);
-        const badgeClass      = track.isInterlude ? 'rating-badge album-tag' : 'rating-badge';
-        const trackHasReview  = track.review  && track.review.length > 0;
-        const trackHasCredits = track.credits && (track.credits.produced || track.credits.written);
-        const artistDisplay   = buildTrackArtistDisplay(track);
+        const trackColor     = track.isInterlude ? '#4D4D4D' : getColorByRating(track.rating);
+        const displayRating  = track.isInterlude ? 'INTERLUDE' : formatRating(track.rating);
+        const badgeClass     = track.isInterlude ? 'rating-badge album-tag' : 'rating-badge';
+        const trackHasReview = track.review && track.review.length > 0;
+        const artistDisplay  = buildTrackArtistDisplay(track);
 
         tracksHtml += `
             <div class="track-item" data-index="${index}">
@@ -128,15 +128,10 @@ function renderAlbumContent() {
                 <div class="track-info">
                     <h4>${track.title}</h4>
                     <p>${artistDisplay}</p>
-                    ${trackHasCredits ? `<p class="track-credits-display">
-                        ${track.credits.produced ? '<span>Prod. ' + track.credits.produced + '</span>' : ''}
-                        ${track.credits.produced && track.credits.written ? ' · ' : ''}
-                        ${track.credits.written ? '<span>Escrito por ' + track.credits.written + '</span>' : ''}
-                        <button onclick="openCredits('track', ${index})" class="credits-edit-btn" title="Editar créditos">✎</button>
-                    </p>` : `<button onclick="openCredits('track', ${index})" class="credits-add-btn" title="Añadir créditos">+ créditos</button>`}
                 </div>
                 <div class="track-actions">
                     <button class="track-review-btn${trackHasReview ? ' has-review' : ''}" onclick="openReview('track', ${index})" title="${trackHasReview ? 'Ver review' : 'Escribir review'}">${reviewPenSVG(trackHasReview)}</button>
+                    <button class="track-review-btn" onclick="openCredits('track', ${index})" title="Créditos" style="opacity:0;" class="track-credits-btn">${creditsSVG(false)}</button>
                     <button class="track-btn edit"   onclick="editTrack(${index})"   title="Editar">✎</button>
                     <button class="track-btn delete" onclick="deleteTrack(${index})" title="Borrar">✖</button>
                 </div>
@@ -148,20 +143,6 @@ function renderAlbumContent() {
     let displayAlbumRating = "-";
     if (currentAlbum.tracks.length > 0) displayAlbumRating = formatRating(currentAlbum.rating);
 
-    // Créditos del álbum — solo lectura con lápiz de edición
-    let albumCreditsHtml = '';
-    if (albumHasCredits) {
-        const prod = currentAlbum.credits.produced;
-        const writ = currentAlbum.credits.written;
-        albumCreditsHtml = `
-            <div class="album-credits-display">
-                ${prod ? `<span>Prod. ${prod}</span>` : ''}
-                ${prod && writ ? ' · ' : ''}
-                ${writ ? `<span>Escrito por ${writ}</span>` : ''}
-                <button onclick="openCredits('album')" class="credits-edit-btn" title="Editar créditos">✎</button>
-            </div>`;
-    }
-
     container.innerHTML = `
         <div class="album-header-banner">
             <img src="${currentAlbum.coverBase64}" alt="${currentAlbum.title}" class="detail-cover">
@@ -169,16 +150,15 @@ function renderAlbumContent() {
                 <span class="detail-type">${typeText} • ${currentAlbum.year}</span>
                 <h1 class="detail-title">${currentAlbum.title}</h1>
                 <h2 class="detail-artist">${currentAlbum.artist}</h2>
-                ${albumCreditsHtml}
                 <div style="display:flex; align-items:center; gap:12px; margin-top:auto; flex-wrap:wrap;">
                     <div class="rating-big" style="background-color: ${badgeColor};">${displayAlbumRating}</div>
                     <button id="btn-album-favorite" class="album-fav-btn${isFav ? ' active' : ''}" onclick="toggleAlbumFavorite()">${heartSVG()}</button>
                     <button class="album-review-btn${albumHasReview ? ' has-review' : ''}" onclick="openReview('album')">
                         ${reviewPenSVG(albumHasReview)} ${albumHasReview ? 'Ver review' : 'Escribir review'}
                     </button>
-                    ${!albumHasCredits ? `<button class="album-review-btn" onclick="openCredits('album')">
-                        ${creditsSVG(false)} Créditos
-                    </button>` : ''}
+                    <button class="album-review-btn${albumHasCredits ? ' has-review' : ''}" onclick="openCredits('album')">
+                        ${creditsSVG(albumHasCredits)} ${albumHasCredits ? 'Créditos' : 'Créditos'}
+                    </button>
                 </div>
             </div>
         </div>
@@ -203,46 +183,104 @@ function renderAlbumContent() {
 }
 
 // ── CREDITS MODAL ─────────────────────────────────────────────────────────
-window.openCredits = function(type, index) {
-    if (type === 'album') {
-        creditsTarget = { type: 'album' };
-        const c = currentAlbum.credits || {};
-        document.getElementById('credits-modal-title').textContent = `Créditos: ${currentAlbum.title}`;
-        document.getElementById('credits-produced').value = c.produced || '';
-        document.getElementById('credits-written').value  = c.written  || '';
+
+function renderCreditsModal(target, editMode) {
+    const modal   = document.getElementById('modal-credits');
+    const titleEl = document.getElementById('credits-modal-title');
+    const body    = document.getElementById('credits-modal-body');
+
+    let credits = {};
+    if (target.type === 'album') {
+        titleEl.textContent = currentAlbum.title;
+        credits = currentAlbum.credits || {};
     } else {
-        creditsTarget = { type: 'track', index };
-        const track = currentAlbum.tracks[index];
-        const c = track.credits || {};
-        document.getElementById('credits-modal-title').textContent = `Créditos: ${track.title}`;
-        document.getElementById('credits-produced').value = c.produced || '';
-        document.getElementById('credits-written').value  = c.written  || '';
+        const track = currentAlbum.tracks[target.index];
+        titleEl.textContent = track.title;
+        credits = track.credits || {};
     }
-    document.getElementById('modal-credits').classList.remove('hidden');
+
+    const hasCredits = credits.produced || credits.written;
+
+    if (!editMode && hasCredits) {
+        // VISTA DE SOLO LECTURA
+        body.innerHTML = `
+            <div class="credits-view">
+                <button class="credits-edit-trigger" id="btn-credits-edit" title="Editar créditos">✎</button>
+                <div class="credits-view-row">
+                    ${credits.produced ? `
+                        <div class="credits-view-item">
+                            <span class="credits-view-label">Producido por</span>
+                            <span class="credits-view-value">${credits.produced}</span>
+                        </div>` : ''}
+                    ${credits.written ? `
+                        <div class="credits-view-item">
+                            <span class="credits-view-label">Escrito por</span>
+                            <span class="credits-view-value">${credits.written}</span>
+                        </div>` : ''}
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button type="button" id="btn-cancel-credits">Cerrar</button>
+            </div>
+        `;
+        document.getElementById('btn-credits-edit').addEventListener('click', () => {
+            renderCreditsModal(target, true);
+        });
+        document.getElementById('btn-cancel-credits').addEventListener('click', () => {
+            modal.classList.add('hidden');
+        });
+    } else {
+        // MODO EDICIÓN
+        body.innerHTML = `
+            <form id="credits-form">
+                <label for="credits-produced">Producido por:</label>
+                <input type="text" id="credits-produced" placeholder="Ej: Metro Boomin, Pharrell" value="${credits.produced || ''}">
+                <label for="credits-written">Escrito por:</label>
+                <input type="text" id="credits-written" placeholder="Ej: Drake, 40" value="${credits.written || ''}">
+                <div class="modal-actions">
+                    <button type="button" id="btn-cancel-credits">${hasCredits ? 'Cancelar' : 'Cancelar'}</button>
+                    <button type="submit" class="save-btn">Guardar Créditos</button>
+                </div>
+            </form>
+        `;
+        document.getElementById('btn-cancel-credits').addEventListener('click', () => {
+            if (hasCredits) {
+                renderCreditsModal(target, false); // volver a vista lectura
+            } else {
+                modal.classList.add('hidden');
+            }
+        });
+        document.getElementById('credits-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const newCredits = {
+                produced: document.getElementById('credits-produced').value.trim(),
+                written:  document.getElementById('credits-written').value.trim()
+            };
+            if (target.type === 'album') {
+                currentAlbum.credits = newCredits;
+            } else {
+                currentAlbum.tracks[target.index].credits = newCredits;
+            }
+            await saveAlbumToDB(currentAlbum);
+            modal.classList.add('hidden');
+            renderAlbumContent();
+        });
+    }
+
+    modal.classList.remove('hidden');
+}
+
+window.openCredits = function(type, index) {
+    creditsTarget  = type === 'album' ? { type: 'album' } : { type: 'track', index };
+    creditsEditMode = false;
+    const target   = creditsTarget;
+    const credits  = type === 'album' ? (currentAlbum.credits || {}) : (currentAlbum.tracks[index]?.credits || {});
+    const hasCredits = credits.produced || credits.written;
+    renderCreditsModal(target, !hasCredits); // si no hay créditos, abrir en modo edición directamente
 }
 
 function initCreditsModal() {
-    document.getElementById('btn-cancel-credits')?.addEventListener('click', () => {
-        document.getElementById('modal-credits').classList.add('hidden');
-    });
-
-    document.getElementById('credits-form')?.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const credits = {
-            produced: document.getElementById('credits-produced').value.trim(),
-            written:  document.getElementById('credits-written').value.trim()
-        };
-
-        if (creditsTarget.type === 'album') {
-            currentAlbum.credits = credits;
-        } else {
-            currentAlbum.tracks[creditsTarget.index].credits = credits;
-        }
-
-        await saveAlbumToDB(currentAlbum);
-        document.getElementById('modal-credits').classList.add('hidden');
-        renderAlbumContent();
-    });
+    // El modal se gestiona dinámicamente desde renderCreditsModal
 }
 
 // ── REVIEW MODAL ──────────────────────────────────────────────────────────
@@ -253,7 +291,7 @@ window.openReview = function(type, index) {
         document.getElementById('review-modal-title').textContent = `Review: ${currentAlbum.title}`;
     } else {
         reviewTarget = { type: 'track', index };
-        const track = currentAlbum.tracks[index];
+        const track  = currentAlbum.tracks[index];
         reviewBlocks = track.review ? JSON.parse(JSON.stringify(track.review)) : [];
         document.getElementById('review-modal-title').textContent = `Review: ${track.title}`;
     }
@@ -265,11 +303,9 @@ window.openReview = function(type, index) {
 function renderReviewEditor() {
     const editor = document.getElementById('review-editor');
     editor.innerHTML = '';
-
     reviewBlocks.forEach((block, i) => {
-        const wrapper  = document.createElement('div');
+        const wrapper = document.createElement('div');
         wrapper.className = 'review-block-wrapper';
-
         const deleteBtn = document.createElement('button');
         deleteBtn.className = 'review-block-delete';
         deleteBtn.innerHTML = '✖';
@@ -278,7 +314,6 @@ function renderReviewEditor() {
             reviewBlocks.splice(i, 1);
             renderReviewEditor();
         });
-
         const textarea = document.createElement('textarea');
         textarea.className = `review-block review-block-${block.type}`;
         textarea.placeholder = block.type === 'lyrics' ? 'Pega aquí los lyrics…' : 'Escribe tu análisis…';
@@ -289,11 +324,9 @@ function renderReviewEditor() {
             textarea.style.height = textarea.scrollHeight + 'px';
         });
         setTimeout(() => { textarea.style.height = 'auto'; textarea.style.height = textarea.scrollHeight + 'px'; }, 0);
-
         wrapper.appendChild(deleteBtn);
         wrapper.appendChild(textarea);
         editor.appendChild(wrapper);
-
         const insertBar = document.createElement('div');
         insertBar.className = 'review-insert-bar';
         insertBar.innerHTML = `
@@ -347,7 +380,10 @@ document.getElementById('track-form').addEventListener('submit', async function(
     let rating = "";
     if (!isInterlude) {
         rating = document.getElementById('track-rating').value.replace(',', '.');
-        if (isNaN(rating) || rating < 0 || rating > 10 || rating.trim() === "") { await brAlert("Introduce una nota válida entre 0 y 10.", "Nota inválida"); return; }
+        if (isNaN(rating) || rating < 0 || rating > 10 || rating.trim() === "") {
+            await brAlert("Introduce una nota válida entre 0 y 10.", "Nota inválida");
+            return;
+        }
         rating = parseFloat(rating).toFixed(1);
     }
     const newTrack = { title, artist, isInterlude, rating };
