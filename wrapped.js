@@ -226,23 +226,48 @@ async function loadWrapped() {
             <div class="chart-container">${barsHtml}</div>
         </div>`;
 
-    // Gráfica de álbumes por mes
+    // Gráfica LINEAL de álbumes por mes
     if (monthEntries.length > 0) {
-        const monthBarsHtml = monthEntries.map(([, v]) => {
-            const heightPct = Math.round((v.count / maxMonthCount) * 100);
-            return `
-                <div class="chart-bar-wrap">
-                    <div class="chart-bar" style="height:${heightPct}%; background:var(--accent-red);">
-                        ${v.count > 0 ? `<span class="chart-bar-count">${v.count}</span>` : ''}
-                    </div>
-                    <span class="chart-label">${v.label}</span>
-                </div>`;
-        }).join('');
+        const W = 500, H = 120, PAD = 24;
+        const n = monthEntries.length;
+        const counts = monthEntries.map(([, v]) => v.count);
+        const maxC   = Math.max(...counts, 1);
+
+        // Coordenadas de cada punto
+        const pts = counts.map((c, i) => {
+            const x = PAD + (i / Math.max(n - 1, 1)) * (W - PAD * 2);
+            const y = PAD + (1 - c / maxC) * (H - PAD * 2);
+            return [x, y];
+        });
+
+        // Polilínea
+        const polyline = pts.map(([x, y]) => `${x},${y}`).join(' ');
+
+        // Área rellena (polígono cerrado)
+        const areaPoints = [
+            `${pts[0][0]},${H - PAD}`,
+            ...pts.map(([x, y]) => `${x},${y}`),
+            `${pts[pts.length - 1][0]},${H - PAD}`
+        ].join(' ');
+
+        // Puntos y etiquetas
+        const dotsHtml = pts.map(([x, y], i) => `
+            <circle cx="${x}" cy="${y}" r="3.5" fill="var(--accent-red)" stroke="white" stroke-width="1.5"/>
+            <text x="${x}" y="${y - 8}" text-anchor="middle" font-size="9" fill="var(--text-muted)" font-family="Inter,sans-serif">${counts[i]}</text>
+            <text x="${x}" y="${H - 4}" text-anchor="middle" font-size="8" fill="var(--text-muted)" font-family="Inter,sans-serif">${monthEntries[i][1].label}</text>
+        `).join('');
 
         html += `
-            <div class="stat-card col-6">
+            <div class="stat-card col-12">
                 <div class="stat-label">Álbumes puntuados por mes</div>
-                <div class="chart-container" style="height:140px;">${monthBarsHtml}</div>
+                <svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;margin-top:12px;">
+                    <!-- Área rellena -->
+                    <polygon points="${areaPoints}" fill="rgba(230,57,70,0.08)"/>
+                    <!-- Línea -->
+                    <polyline points="${polyline}" fill="none" stroke="var(--accent-red)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+                    <!-- Puntos y etiquetas -->
+                    ${dotsHtml}
+                </svg>
             </div>`;
     }
 
