@@ -162,6 +162,8 @@ function renderMediaGrid(items) {
     items.forEach(item => {
         const card = document.createElement('div');
         card.classList.add('album-card');
+        card.style.cursor = 'pointer';
+        card.addEventListener('click', () => window.location.href = `media-detail.html?type=series&id=${item.id}`);
         const badgeColor = getColorByRating(item.rating);
 
         const creatorHtml = item.creator
@@ -182,7 +184,7 @@ function renderMediaGrid(items) {
 
         card.innerHTML = `
             <div class="card-actions">
-                <button class="action-btn btn-edit" onclick="editMedia(event, ${item.id})">✎</button>
+                <button class="action-btn btn-edit" onclick="editMedia(event, ${item.id})" onclick="event.stopPropagation()">✎</button>
                 <button class="action-btn btn-delete" onclick="deleteMedia(event, ${item.id})">✖</button>
             </div>
             <div class="cover-container vertical"><img src="${item.coverBase64}" alt="${item.title}"></div>
