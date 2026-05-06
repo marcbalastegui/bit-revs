@@ -80,6 +80,8 @@ window.editAlbum = async function(event, id) {
 
     document.querySelector('#modal-add .modal-content h2').textContent = "Editar Álbum";
     document.getElementById('cover').removeAttribute('required');
+    const reviewDateEl = document.getElementById('review-date');
+    if (reviewDateEl) reviewDateEl.value = album.reviewDate || '';
     modalAdd.classList.remove('hidden');
 };
 
@@ -92,6 +94,8 @@ if (btnAddAlbum && modalAdd) {
         renderGenreSelector([]);
         document.getElementById('genre-custom').value = '';
         document.getElementById('featured-artists').value = '';
+        const rdEl = document.getElementById('review-date');
+        if (rdEl) rdEl.value = '';
         modalAdd.classList.remove('hidden');
     });
 }
@@ -117,6 +121,7 @@ if (albumForm) {
         const typeElement = document.getElementById('album-type');
         const type = typeElement ? typeElement.value : "";
         const genres = getSelectedGenres();
+        const reviewDate = document.getElementById('review-date')?.value || '';
         const fileInput = document.getElementById('cover');
         const file = fileInput.files[0];
 
@@ -133,6 +138,7 @@ if (albumForm) {
         albumToSave.year = parseInt(year) || 0;
         albumToSave.type = type;
         albumToSave.genres = genres;
+        if (reviewDate) albumToSave.reviewDate = reviewDate;
 
         if (file) {
             const reader = new FileReader();

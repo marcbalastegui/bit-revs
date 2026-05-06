@@ -34,47 +34,32 @@ async function loadWrapped() {
 
     // ── ESTADÍSTICAS ──────────────────────────────────────────────────────
 
-    // Media global
     const globalAvg = allTracks.length > 0
-        ? allTracks.reduce((sum, t) => sum + parseFloat(t.rating), 0) / allTracks.length
-        : 0;
-
-    // Total canciones
+        ? allTracks.reduce((sum, t) => sum + parseFloat(t.rating), 0) / allTracks.length : 0;
     const totalTracks = allTracks.length;
 
-    // Género más escuchado
     const genreCount = {};
-    albums.forEach(a => {
-        if (!a.genres) return;
-        a.genres.forEach(g => { genreCount[g] = (genreCount[g] || 0) + 1; });
-    });
+    albums.forEach(a => { if (!a.genres) return; a.genres.forEach(g => { genreCount[g] = (genreCount[g] || 0) + 1; }); });
     const topGenre = Object.entries(genreCount).sort((a, b) => b[1] - a[1])[0];
 
-    // Álbum mejor puntuado
     const topAlbum = [...scoredAlbums].sort((a, b) => parseFloat(b.rating) - parseFloat(a.rating))[0];
 
-    // Canciones ordenadas de mejor a peor (con desempate por nota álbum)
     const sortedBest = [...allTracks].sort((a, b) => {
         const diff = parseFloat(b.rating) - parseFloat(a.rating);
-        if (diff !== 0) return diff;
-        return b.albumRating - a.albumRating;
+        return diff !== 0 ? diff : b.albumRating - a.albumRating;
     });
     const sortedWorst = [...allTracks].sort((a, b) => {
         const diff = parseFloat(a.rating) - parseFloat(b.rating);
-        if (diff !== 0) return diff;
-        return a.albumRating - b.albumRating;
+        return diff !== 0 ? diff : a.albumRating - b.albumRating;
     });
 
     const topTrack   = sortedBest[0];
     const worstTrack = sortedWorst[0];
-
-    // Todas las canciones empatadas en mejor nota
     const bestRating  = topTrack   ? parseFloat(topTrack.rating)   : -1;
     const worstRating = worstTrack ? parseFloat(worstTrack.rating) : -1;
-    const bestTies    = sortedBest.filter(t  => parseFloat(t.rating)  === bestRating);
-    const worstTies   = sortedWorst.filter(t => parseFloat(t.rating)  === worstRating);
+    const bestTies    = sortedBest.filter(t  => parseFloat(t.rating) === bestRating);
+    const worstTies   = sortedWorst.filter(t => parseFloat(t.rating) === worstRating);
 
-    // Artistas: media ponderada por canciones
     const artistStats = {};
     allTracks.forEach(t => {
         const artist = t.albumArtist || 'Desconocido';
@@ -82,22 +67,15 @@ async function loadWrapped() {
         artistStats[artist].total += parseFloat(t.rating);
         artistStats[artist].count++;
     });
-
-    // Solo artistas con al menos 3 canciones para que la media sea significativa
     const artistEntries = Object.entries(artistStats)
         .filter(([, s]) => s.count >= 3)
         .map(([name, s]) => ({ name, avg: s.total / s.count, count: s.count }))
         .sort((a, b) => b.avg - a.avg);
-
     const bestArtist  = artistEntries[0];
     const worstArtist = artistEntries[artistEntries.length - 1];
 
-    // Artista más escuchado (por álbumes)
     const artistAlbumCount = {};
-    albums.forEach(a => {
-        if (!a.artist) return;
-        artistAlbumCount[a.artist] = (artistAlbumCount[a.artist] || 0) + 1;
-    });
+    albums.forEach(a => { if (!a.artist) return; artistAlbumCount[a.artist] = (artistAlbumCount[a.artist] || 0) + 1; });
     const topListenedArtist = Object.entries(artistAlbumCount).sort((a, b) => b[1] - a[1])[0];
 
     // Distribución de notas
@@ -113,10 +91,25 @@ async function loadWrapped() {
     }));
     const maxCount = Math.max(...distribution.map(d => d.count), 1);
 
+    // ── GRÁFICA DE ÁLBUMES POR MES ─────────────────────────────────────────
+    // Solo álbumes que tienen reviewDate
+    const albumsWithDate = albums.filter(a => a.reviewDate);
+    const monthMap = {};
+    const MONTH_NAMES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+
+    albumsWithDate.forEach(a => {
+        const d = new Date(a.reviewDate);
+        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        if (!monthMap[key]) monthMap[key] = { label: `${MONTH_NAMES[d.getMonth()]} ${d.getFullYear()}`, count: 0 };
+        monthMap[key].count++;
+    });
+
+    const monthEntries = Object.entries(monthMap).sort(([a], [b]) => a.localeCompare(b));
+    const maxMonthCount = Math.max(...monthEntries.map(([, v]) => v.count), 1);
+
     // ── HTML ──────────────────────────────────────────────────────────────
     let html = '';
 
-    // Media global
     html += `
         <div class="stat-card col-4">
             <div class="stat-label">Media global</div>
@@ -124,7 +117,6 @@ async function loadWrapped() {
             <div class="stat-value-sub">sobre 10 puntos</div>
         </div>`;
 
-    // Total canciones
     html += `
         <div class="stat-card col-4">
             <div class="stat-label">Canciones puntuadas</div>
@@ -132,7 +124,6 @@ async function loadWrapped() {
             <div class="stat-value-sub">en ${scoredAlbums.length} álbum${scoredAlbums.length !== 1 ? 'es' : ''}</div>
         </div>`;
 
-    // Género más escuchado
     html += topGenre ? `
         <div class="stat-card col-4">
             <div class="stat-label">Género más escuchado</div>
@@ -140,7 +131,6 @@ async function loadWrapped() {
             <div class="stat-value-sub" style="margin-top:10px;">${topGenre[1]} álbum${topGenre[1] !== 1 ? 'es' : ''}</div>
         </div>` : '';
 
-    // Artista más escuchado
     if (topListenedArtist) {
         html += `
             <div class="stat-card col-6" style="cursor:pointer;" onclick="window.location.href='artist.html?name='+encodeURIComponent('${topListenedArtist[0]}')">
@@ -155,7 +145,6 @@ async function loadWrapped() {
             </div>`;
     }
 
-    // Álbum mejor puntuado
     if (topAlbum) {
         const badgeColor = getColorByRating(topAlbum.rating);
         html += `
@@ -172,7 +161,6 @@ async function loadWrapped() {
             </div>`;
     }
 
-    // Canción mejor puntuada con "Más"
     if (topTrack) {
         html += `
             <div class="stat-card col-6" style="cursor:pointer;" onclick="window.location.href='album.html?id=${topTrack.albumId}'">
@@ -181,7 +169,6 @@ async function loadWrapped() {
             </div>`;
     }
 
-    // Canción peor puntuada con "Más"
     if (worstTrack) {
         html += `
             <div class="stat-card col-6" style="cursor:pointer;" onclick="window.location.href='album.html?id=${worstTrack.albumId}'">
@@ -190,15 +177,12 @@ async function loadWrapped() {
             </div>`;
     }
 
-    // Artista mejor puntuado (media ≥3 canciones)
     if (bestArtist) {
         html += `
             <div class="stat-card col-6" style="cursor:pointer;" onclick="window.location.href='artist.html?name='+encodeURIComponent('${bestArtist.name}')">
                 <div class="stat-label">Artista mejor puntuado</div>
                 <div class="artist-card">
-                    <div class="artist-initials" style="background:${getColorByRating(bestArtist.avg)}">
-                        ${bestArtist.name.charAt(0).toUpperCase()}
-                    </div>
+                    <div class="artist-initials" style="background:${getColorByRating(bestArtist.avg)}">${bestArtist.name.charAt(0).toUpperCase()}</div>
                     <div>
                         <div class="artist-name">${bestArtist.name}</div>
                         <div class="artist-count">Media <strong>${formatRating(bestArtist.avg)}</strong> · ${bestArtist.count} canciones</div>
@@ -207,15 +191,12 @@ async function loadWrapped() {
             </div>`;
     }
 
-    // Artista peor puntuado
     if (worstArtist && worstArtist.name !== bestArtist?.name) {
         html += `
             <div class="stat-card col-6" style="cursor:pointer;" onclick="window.location.href='artist.html?name='+encodeURIComponent('${worstArtist.name}')">
                 <div class="stat-label">Artista peor puntuado</div>
                 <div class="artist-card">
-                    <div class="artist-initials" style="background:${getColorByRating(worstArtist.avg)}">
-                        ${worstArtist.name.charAt(0).toUpperCase()}
-                    </div>
+                    <div class="artist-initials" style="background:${getColorByRating(worstArtist.avg)}">${worstArtist.name.charAt(0).toUpperCase()}</div>
                     <div>
                         <div class="artist-name">${worstArtist.name}</div>
                         <div class="artist-count">Media <strong>${formatRating(worstArtist.avg)}</strong> · ${worstArtist.count} canciones</div>
@@ -240,10 +221,30 @@ async function loadWrapped() {
     }).join('');
 
     html += `
-        <div class="stat-card col-12">
+        <div class="stat-card col-6">
             <div class="stat-label">Distribución de notas</div>
             <div class="chart-container">${barsHtml}</div>
         </div>`;
+
+    // Gráfica de álbumes por mes
+    if (monthEntries.length > 0) {
+        const monthBarsHtml = monthEntries.map(([, v]) => {
+            const heightPct = Math.round((v.count / maxMonthCount) * 100);
+            return `
+                <div class="chart-bar-wrap">
+                    <div class="chart-bar" style="height:${heightPct}%; background:var(--accent-red);">
+                        ${v.count > 0 ? `<span class="chart-bar-count">${v.count}</span>` : ''}
+                    </div>
+                    <span class="chart-label">${v.label}</span>
+                </div>`;
+        }).join('');
+
+        html += `
+            <div class="stat-card col-6">
+                <div class="stat-label">Álbumes puntuados por mes</div>
+                <div class="chart-container" style="height:140px;">${monthBarsHtml}</div>
+            </div>`;
+    }
 
     grid.innerHTML = html;
 
@@ -271,7 +272,7 @@ function trackHighlightHtml(track, allTied) {
             style="margin-top:8px; background:none; border:1px solid var(--border-color); border-radius:8px; padding:3px 10px; font-size:0.72rem; font-weight:700; color:var(--text-muted); cursor:pointer; font-family:'Inter',sans-serif;">
             +${extraTies.length} más
         </button>
-        <div style="display:none; margin-top:8px; display:none;">
+        <div style="display:none; margin-top:8px;">
             ${extraTies.map(t => `
                 <div style="display:flex; align-items:center; gap:10px; padding:6px 0; border-bottom:1px solid var(--border-color);">
                     <img src="${t.albumCover}" style="width:32px;height:32px;border-radius:4px;object-fit:cover;flex-shrink:0;">
