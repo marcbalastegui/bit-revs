@@ -127,7 +127,7 @@ function renderScenes() {
         } else {
             return `
                 <div class="scene-card">
-                    <div class="scene-card-actions">
+                    <div class="scene-card-actions" style="opacity:1;">
                         <button class="action-btn btn-edit" onclick="event.stopPropagation(); editScene(${index})" title="Editar">✎</button>
                         <button class="action-btn btn-delete" onclick="event.stopPropagation(); deleteScene(${index})" title="Borrar">✖</button>
                     </div>
