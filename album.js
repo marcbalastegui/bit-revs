@@ -128,10 +128,15 @@ function renderAlbumContent() {
                 <div class="track-info">
                     <h4>${track.title}</h4>
                     <p>${artistDisplay}</p>
+                    ${trackHasCredits ? `<p class="track-credits-display">
+                        ${track.credits.produced ? '<span>Prod. ' + track.credits.produced + '</span>' : ''}
+                        ${track.credits.produced && track.credits.written ? ' · ' : ''}
+                        ${track.credits.written ? '<span>Escrito por ' + track.credits.written + '</span>' : ''}
+                        <button onclick="openCredits('track', ${index})" class="credits-edit-btn" title="Editar créditos">✎</button>
+                    </p>` : `<button onclick="openCredits('track', ${index})" class="credits-add-btn" title="Añadir créditos">+ créditos</button>`}
                 </div>
                 <div class="track-actions">
                     <button class="track-review-btn${trackHasReview ? ' has-review' : ''}" onclick="openReview('track', ${index})" title="${trackHasReview ? 'Ver review' : 'Escribir review'}">${reviewPenSVG(trackHasReview)}</button>
-                    <button class="track-review-btn${trackHasCredits ? ' has-review' : ''}" onclick="openCredits('track', ${index})" title="${trackHasCredits ? 'Ver créditos' : 'Añadir créditos'}">${creditsSVG(trackHasCredits)}</button>
                     <button class="track-btn edit"   onclick="editTrack(${index})"   title="Editar">✎</button>
                     <button class="track-btn delete" onclick="deleteTrack(${index})" title="Borrar">✖</button>
                 </div>
@@ -143,14 +148,18 @@ function renderAlbumContent() {
     let displayAlbumRating = "-";
     if (currentAlbum.tracks.length > 0) displayAlbumRating = formatRating(currentAlbum.rating);
 
-    // Créditos del álbum si existen
+    // Créditos del álbum — solo lectura con lápiz de edición
     let albumCreditsHtml = '';
     if (albumHasCredits) {
-        albumCreditsHtml = `<div style="margin-top:8px; font-size:0.78rem; color:var(--text-muted);">`;
-        if (currentAlbum.credits.produced) albumCreditsHtml += `<span>Prod. ${currentAlbum.credits.produced}</span>`;
-        if (currentAlbum.credits.produced && currentAlbum.credits.written) albumCreditsHtml += ` · `;
-        if (currentAlbum.credits.written) albumCreditsHtml += `<span>Escrito por ${currentAlbum.credits.written}</span>`;
-        albumCreditsHtml += `</div>`;
+        const prod = currentAlbum.credits.produced;
+        const writ = currentAlbum.credits.written;
+        albumCreditsHtml = `
+            <div class="album-credits-display">
+                ${prod ? `<span>Prod. ${prod}</span>` : ''}
+                ${prod && writ ? ' · ' : ''}
+                ${writ ? `<span>Escrito por ${writ}</span>` : ''}
+                <button onclick="openCredits('album')" class="credits-edit-btn" title="Editar créditos">✎</button>
+            </div>`;
     }
 
     container.innerHTML = `
@@ -167,9 +176,9 @@ function renderAlbumContent() {
                     <button class="album-review-btn${albumHasReview ? ' has-review' : ''}" onclick="openReview('album')">
                         ${reviewPenSVG(albumHasReview)} ${albumHasReview ? 'Ver review' : 'Escribir review'}
                     </button>
-                    <button class="album-review-btn${albumHasCredits ? ' has-review' : ''}" onclick="openCredits('album')">
-                        ${creditsSVG(albumHasCredits)} ${albumHasCredits ? 'Ver créditos' : 'Créditos'}
-                    </button>
+                    ${!albumHasCredits ? `<button class="album-review-btn" onclick="openCredits('album')">
+                        ${creditsSVG(false)} Créditos
+                    </button>` : ''}
                 </div>
             </div>
         </div>
