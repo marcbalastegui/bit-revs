@@ -13,7 +13,7 @@ async function loadArtistStats() {
     }
 
     const albums = await getAllAlbumsFromDB();
-    
+
     // Encontrar álbumes donde el artista es principal O colaborador
     const artistAlbums = albums.filter(a => {
         const isPrincipal = a.artist && a.artist.toLowerCase() === artistName.toLowerCase();
@@ -21,7 +21,17 @@ async function loadArtistStats() {
         return isPrincipal || isFeatured;
     });
 
-    if (artistAlbums.length === 0) {
+    // Comprobar si al menos tiene canciones como feature aunque no tenga álbumes propios
+    const hasTrackFeatures = albums.some(album => {
+        if (!album.tracks) return false;
+        return album.tracks.some(track => {
+            if (!track.artist) return false;
+            return track.artist.split(',').map(a => a.trim())
+                .some(a => a.toLowerCase() === artistName.toLowerCase());
+        });
+    });
+
+    if (artistAlbums.length === 0 && !hasTrackFeatures) {
         document.getElementById('artist-grid').innerHTML = `
             <div class="stat-card col-12" style="text-align:center; color:var(--text-muted);">
                 <p>No hay álbumes de este artista.</p>
@@ -29,9 +39,10 @@ async function loadArtistStats() {
         return;
     }
 
-    // Actualizar hero
+    // Actualizar hero — siempre, independientemente de si tiene álbumes propios
     document.getElementById('artist-name').textContent = artistName;
     document.getElementById('artist-initial').textContent = artistName.charAt(0).toUpperCase();
+    document.getElementById('artist-subtitle').textContent = 'Estadísticas personalizadas';
 
     // Cargar foto del artista si existe
     const artistData = await getArtistFromDB(artistName);
@@ -154,29 +165,41 @@ async function loadArtistStats() {
 
     let html = '';
 
-    // Media de álbumes
-    html += `
-        <div class="stat-card col-4">
-            <div class="stat-label">Media de álbumes</div>
-            <div class="stat-value-big">${formatRating(avgAlbumRating)}</div>
-            <div class="stat-value-sub">${albumsWithRating.length} álbum${albumsWithRating.length !== 1 ? 'es' : ''}</div>
-        </div>`;
+    // Media de álbumes — solo si tiene álbumes propios
+    if (ownAlbums.length > 0) {
+        html += `
+            <div class="stat-card col-4">
+                <div class="stat-label">Media de álbumes</div>
+                <div class="stat-value-big">${formatRating(avgAlbumRating)}</div>
+                <div class="stat-value-sub">${albumsWithRating.length} álbum${albumsWithRating.length !== 1 ? 'es' : ''}</div>
+            </div>`;
 
-    // Total de álbumes
-    html += `
-        <div class="stat-card col-4">
-            <div class="stat-label">Total de álbumes</div>
-            <div class="stat-value-big">${ownAlbums.length}</div>
-            <div class="stat-value-sub">${collaborations.length} colaboraciones</div>
-        </div>`;
+        html += `
+            <div class="stat-card col-4">
+                <div class="stat-label">Total de álbumes</div>
+                <div class="stat-value-big">${ownAlbums.length}</div>
+                <div class="stat-value-sub">${collaborations.length} colaboración${collaborations.length !== 1 ? 'es' : ''}</div>
+            </div>`;
+    }
 
-    // Total de canciones
+    // Total de canciones — siempre
+    const trackColSize = ownAlbums.length > 0 ? 'col-4' : 'col-6';
     html += `
-        <div class="stat-card col-4">
+        <div class="stat-card ${trackColSize}">
             <div class="stat-label">Canciones puntuadas</div>
             <div class="stat-value-big">${allTracks.length}</div>
             <div class="stat-value-sub">media: ${formatRating(avgTrackRating)}</div>
         </div>`;
+
+    // Si solo tiene features, mostrar una card informativa
+    if (ownAlbums.length === 0) {
+        html += `
+            <div class="stat-card col-6">
+                <div class="stat-label">Aparece como</div>
+                <div class="stat-value-big" style="font-size:1.4rem; letter-spacing:-0.5px;">Artista invitado</div>
+                <div class="stat-value-sub">Solo aparece como feature en canciones de otros artistas</div>
+            </div>`;
+    }
 
     // Mejor álbum
     if (bestAlbum) {
