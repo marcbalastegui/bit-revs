@@ -13,7 +13,7 @@ async function loadArtistStats() {
     }
 
     const albums = await getAllAlbumsFromDB();
-
+    
     // Encontrar álbumes donde el artista es principal O colaborador
     const artistAlbums = albums.filter(a => {
         const isPrincipal = a.artist && a.artist.toLowerCase() === artistName.toLowerCase();
