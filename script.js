@@ -268,6 +268,7 @@ function renderAlbums(albumsToRender, gridElement) {
             <div class="card-actions">
                 <button class="action-btn btn-edit" onclick="editAlbum(event, ${album.id})" title="Editar">✎</button>
                 <button class="action-btn btn-delete" onclick="deleteAlbum(event, ${album.id})" title="Borrar">✖</button>
+                <button class="action-btn" onclick="addAlbumToCollection(event, ${album.id})" title="Añadir a colección" style="background:rgba(100,100,100,0.8); font-size:0.7rem;">+C</button>
             </div>
             <button class="card-fav-btn${isFav ? ' active' : ''}" data-id="${album.id}" onclick="toggleAlbumFavoriteCard(event, ${album.id})" title="${isFav ? 'Quitar de favoritos' : 'Añadir a favoritos'}">${heartSVG()}</button>
             <div class="cover-container">
@@ -349,3 +350,10 @@ function toggleGalleryBadges(grid) {
         grid.querySelectorAll('.card-gallery-badge').forEach(b => b.remove());
     }
 }
+
+
+// ── AÑADIR A COLECCIÓN DESDE CARD ─────────────────────────────────────────
+window.addAlbumToCollection = async function(event, albumId) {
+    event.stopPropagation();
+    window.location.href = `collections.html?add=album_${albumId}`;
+};
