@@ -10,7 +10,6 @@
         /* ── ARTIST HERO ── */
         .artist-hero {
             position: relative;
-            margin-bottom: 40px;
         }
 
         /* Banner */
@@ -361,9 +360,9 @@
 </header>
 
 <main>
-    <div class="artist-hero">
+    <div class="artist-hero" style="max-width:1100px; margin:0 auto 40px; padding:0 20px;">
         <!-- Banner clicable -->
-        <div class="artist-banner no-banner" id="artist-banner">
+        <div class="artist-banner no-banner" id="artist-banner" style="border-radius:20px; overflow:hidden;">
             <div class="artist-banner-overlay">Cambiar banner</div>
         </div>
         <input type="file" id="input-artist-banner" accept="image/*" style="display:none;">
@@ -378,7 +377,7 @@
             <input type="file" id="input-artist-photo" accept="image/*" style="display:none;">
             <div class="artist-hero-text">
                 <h1 id="artist-name">Cargando…</h1>
-                <p id="artist-subtitle">Estadísticas personalizadas</p>
+                <p id="artist-subtitle">Perfil de artista</p>
             </div>
         </div>
     </div>

@@ -42,7 +42,7 @@ async function loadArtistStats() {
     // Actualizar hero — siempre, independientemente de si tiene álbumes propios
     document.getElementById('artist-name').textContent = artistName;
     document.getElementById('artist-initial').textContent = artistName.charAt(0).toUpperCase();
-    document.getElementById('artist-subtitle').textContent = 'Estadísticas personalizadas';
+    document.getElementById('artist-subtitle').textContent = 'Perfil de artista';
 
     // Cargar foto y banner del artista si existen
     const artistData = await getArtistFromDB(artistName);
