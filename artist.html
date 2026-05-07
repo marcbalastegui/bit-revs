@@ -7,46 +7,105 @@
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
     <style>
-        /* ── ARTIST PAGE ── */
+        /* ── ARTIST HERO ── */
         .artist-hero {
-            text-align: center;
-            padding: 60px 20px 40px;
             position: relative;
+            margin-bottom: 40px;
         }
 
-        .artist-hero-content {
+        /* Banner */
+        .artist-banner {
+            width: 100%;
+            height: 320px;
+            background: #1a1a1a;
+            background-size: cover;
+            background-position: center top;
+            position: relative;
+            cursor: pointer;
+        }
+
+        /* Degradado negro en la parte inferior del banner */
+        .artist-banner::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(
+                to bottom,
+                rgba(0,0,0,0) 30%,
+                rgba(0,0,0,0.6) 65%,
+                rgba(0,0,0,0.92) 100%
+            );
+        }
+
+        .artist-banner-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0,0,0,0.3);
             display: flex;
-            flex-direction: column;
             align-items: center;
-            gap: 20px;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.2s;
+            z-index: 3;
+            font-size: 0.8rem;
+            font-weight: 800;
+            color: white;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .artist-banner:hover .artist-banner-overlay { opacity: 1; }
+
+        /* Contenido del hero sobre el banner */
+        .artist-hero-content {
+            position: absolute;
+            bottom: 0;
+            left: 0; right: 0;
+            display: flex;
+            align-items: flex-end;
+            gap: 24px;
+            padding: 0 40px 28px;
+            z-index: 2;
         }
 
         .artist-avatar-large {
-            width: 140px; height: 140px;
+            width: 120px; height: 120px;
             border-radius: 50%;
             background: var(--accent-red);
             color: white;
-            font-size: 3.5rem;
+            font-size: 3rem;
             font-weight: 900;
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 8px 30px rgba(230, 57, 70, 0.2);
+            border: 3px solid rgba(255,255,255,0.15);
+            box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+            flex-shrink: 0;
+            position: relative;
+            overflow: hidden;
         }
+
+        .artist-hero-text { padding-bottom: 4px; }
 
         .artist-hero h1 {
             font-family: 'Playfair Display', Georgia, serif;
-            font-size: 3.5rem;
+            font-size: 3rem;
             font-weight: 900;
-            letter-spacing: -2px;
-            margin: 0;
-            color: var(--text-main);
+            letter-spacing: -1.5px;
+            margin: 0 0 4px;
+            color: white;
+            text-shadow: 0 2px 12px rgba(0,0,0,0.5);
         }
 
         .artist-hero p {
-            color: var(--text-muted);
-            font-size: 1rem;
+            color: rgba(255,255,255,0.7);
+            font-size: 0.9rem;
             margin: 0;
+            font-weight: 500;
+        }
+
+        /* Sin banner — fondo degradado por defecto */
+        .artist-banner.no-banner {
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
         }
 
         /* ── GRID DE STATS ── */
@@ -303,14 +362,21 @@
 
 <main>
     <div class="artist-hero">
+        <!-- Banner clicable -->
+        <div class="artist-banner no-banner" id="artist-banner">
+            <div class="artist-banner-overlay">Cambiar banner</div>
+        </div>
+        <input type="file" id="input-artist-banner" accept="image/*" style="display:none;">
+
+        <!-- Avatar + nombre sobre el degradado -->
         <div class="artist-hero-content">
-            <div class="artist-avatar-large" id="artist-avatar-container" title="Click para cambiar foto" style="cursor:pointer; position:relative; overflow:hidden;">
+            <div class="artist-avatar-large" id="artist-avatar-container" title="Cambiar foto" style="cursor:pointer;">
                 <span id="artist-initial">A</span>
                 <img id="artist-photo" src="" alt="" style="display:none; width:100%; height:100%; object-fit:cover; position:absolute; inset:0; border-radius:50%;">
-                <div id="artist-avatar-overlay" style="position:absolute; inset:0; border-radius:50%; background:rgba(0,0,0,0.45); display:flex; align-items:center; justify-content:center; opacity:0; transition:opacity 0.2s; font-size:0.7rem; font-weight:800; color:white; letter-spacing:0.5px;">EDITAR</div>
+                <div id="artist-avatar-overlay" style="position:absolute; inset:0; border-radius:50%; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; opacity:0; transition:opacity 0.2s; font-size:0.6rem; font-weight:800; color:white; letter-spacing:0.5px; text-align:center;">EDITAR</div>
             </div>
             <input type="file" id="input-artist-photo" accept="image/*" style="display:none;">
-            <div>
+            <div class="artist-hero-text">
                 <h1 id="artist-name">Cargando…</h1>
                 <p id="artist-subtitle">Estadísticas personalizadas</p>
             </div>
@@ -328,12 +394,11 @@
 <script src="db.js"></script>
 <script src="artist.js"></script>
 <script>
-    // Hover overlay on artist avatar
     const avatarContainer = document.getElementById('artist-avatar-container');
-    const overlay = document.getElementById('artist-avatar-overlay');
-    if (avatarContainer && overlay) {
-        avatarContainer.addEventListener('mouseover', () => overlay.style.opacity = '1');
-        avatarContainer.addEventListener('mouseout',  () => overlay.style.opacity = '0');
+    const avatarOverlay   = document.getElementById('artist-avatar-overlay');
+    if (avatarContainer && avatarOverlay) {
+        avatarContainer.addEventListener('mouseover', () => avatarOverlay.style.opacity = '1');
+        avatarContainer.addEventListener('mouseout',  () => avatarOverlay.style.opacity = '0');
     }
 </script>
 </body>

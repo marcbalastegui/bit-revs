@@ -44,11 +44,10 @@ async function loadArtistStats() {
     document.getElementById('artist-initial').textContent = artistName.charAt(0).toUpperCase();
     document.getElementById('artist-subtitle').textContent = 'Estadísticas personalizadas';
 
-    // Cargar foto del artista si existe
+    // Cargar foto y banner del artista si existen
     const artistData = await getArtistFromDB(artistName);
-    if (artistData && artistData.photo) {
-        applyArtistPhoto(artistData.photo);
-    }
+    if (artistData && artistData.photo)  applyArtistPhoto(artistData.photo);
+    if (artistData && artistData.banner) applyArtistBanner(artistData.banner);
 
     // Click en avatar → subir foto
     const avatarContainer = document.getElementById('artist-avatar-container');
@@ -61,8 +60,30 @@ async function loadArtistStats() {
             const reader = new FileReader();
             reader.onload = async (ev) => {
                 const photoData = ev.target.result;
-                await saveArtistToDB({ name: artistName, photo: photoData });
+                const existing  = await getArtistFromDB(artistName) || { name: artistName };
+                existing.photo  = photoData;
+                await saveArtistToDB(existing);
                 applyArtistPhoto(photoData);
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    // Click en banner → subir banner
+    const bannerEl    = document.getElementById('artist-banner');
+    const inputBanner = document.getElementById('input-artist-banner');
+    if (bannerEl && inputBanner) {
+        bannerEl.addEventListener('click', () => inputBanner.click());
+        inputBanner.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file || !file.type.startsWith('image/')) return;
+            const reader = new FileReader();
+            reader.onload = async (ev) => {
+                const bannerData = ev.target.result;
+                const existing   = await getArtistFromDB(artistName) || { name: artistName };
+                existing.banner  = bannerData;
+                await saveArtistToDB(existing);
+                applyArtistBanner(bannerData);
             };
             reader.readAsDataURL(file);
         });
@@ -324,7 +345,7 @@ async function loadArtistStats() {
 loadArtistStats();
 
 
-// ── HELPER: aplicar foto al avatar ───────────────────────────────────────
+// ── HELPERS: aplicar foto y banner ───────────────────────────────────────
 function applyArtistPhoto(photoData) {
     const initial   = document.getElementById('artist-initial');
     const photoEl   = document.getElementById('artist-photo');
@@ -332,4 +353,11 @@ function applyArtistPhoto(photoData) {
     if (initial)   initial.style.display = 'none';
     if (photoEl)   { photoEl.src = photoData; photoEl.style.display = 'block'; }
     if (container) container.style.background = 'transparent';
+}
+
+function applyArtistBanner(bannerData) {
+    const banner = document.getElementById('artist-banner');
+    if (!banner) return;
+    banner.style.backgroundImage = `url(${bannerData})`;
+    banner.classList.remove('no-banner');
 }
