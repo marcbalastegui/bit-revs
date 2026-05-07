@@ -69,11 +69,11 @@ async function loadArtistStats() {
         });
     }
 
-    // Click en banner → subir banner
-    const bannerEl    = document.getElementById('artist-banner');
+    // Click en botón banner → subir banner
+    const btnBanner   = document.getElementById('btn-change-banner');
     const inputBanner = document.getElementById('input-artist-banner');
-    if (bannerEl && inputBanner) {
-        bannerEl.addEventListener('click', () => inputBanner.click());
+    if (btnBanner && inputBanner) {
+        btnBanner.addEventListener('click', (e) => { e.stopPropagation(); inputBanner.click(); });
         inputBanner.addEventListener('change', async (e) => {
             const file = e.target.files[0];
             if (!file || !file.type.startsWith('image/')) return;
