@@ -782,3 +782,16 @@ h1 { font-size: 2.8rem; font-weight: 900; margin-bottom: 30px; letter-spacing: -
     backdrop-filter: blur(4px);
     box-shadow: 0 2px 8px rgba(0,0,0,0.3);
 }
+#btn-cancel-collection {
+    background: var(--bg-secondary);
+    color: var(--text-main);
+    border: 1px solid var(--border-color);
+    padding: 10px 20px;
+    border-radius: 10px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.95rem;
+    transition: background 0.2s;
+}
+#btn-cancel-collection:hover { background: #e0e0e0; }

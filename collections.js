@@ -35,7 +35,6 @@ async function initCollections() {
     renderCollectionsList();
     initModals();
     initBannerUpload();
-    initNotesAutosave();
 }
 
 // ── RENDER LISTA ───────────────────────────────────────────────────────────
@@ -147,13 +146,11 @@ function openCollection(id) {
     document.getElementById('view-detail').style.display = 'block';
     document.getElementById('detail-name').textContent   = col.name;
     document.getElementById('detail-quote-display').textContent = col.quote ? `"${col.quote}"` : '';
-    document.getElementById('collection-notes').value    = col.notes || '';
 
     // Banner
     const banner = document.getElementById('detail-banner');
     const accent = col.color || ACCENT_COLORS[0];
     if (col.banner) {
-        banner.style.backgroundImage = `url(${col.banner})`;
         banner.style.background = `url(${col.banner}) center/cover no-repeat`;
     } else {
         banner.style.backgroundImage = 'none';
@@ -171,8 +168,11 @@ function backToList() {
     initCollections();
 }
 
+// Sizes cycle: large, small, small, medium, large, small...
+const SIZE_PATTERN = ['large', 'small', 'small', 'medium', 'large', 'small', 'medium', 'small'];
+
 function renderDetailGrid(col) {
-    const grid  = document.getElementById('detail-grid');
+    const grid = document.getElementById('detail-grid');
     grid.innerHTML = '';
 
     const items = (col.items || []).map(ref =>
@@ -180,63 +180,36 @@ function renderDetailGrid(col) {
     ).filter(Boolean);
 
     if (items.length === 0) {
-        grid.innerHTML = `<p style="color:var(--text-muted); font-style:italic; grid-column:1/-1;">
+        grid.style.display = 'block';
+        grid.innerHTML = `<p style="color:var(--text-muted); font-style:italic;">
             Colección vacía. Pulsa "+ Añadir" para agregar contenido.
         </p>`;
         return;
     }
 
     items.forEach((item, index) => {
-        const card = document.createElement('div');
-        card.className  = 'album-card';
-        card.draggable  = true;
-        card.dataset.idx = index;
-        card.style.cursor = 'grab';
-
+        const size       = SIZE_PATTERN[index % SIZE_PATTERN.length];
         const isVertical = item._type !== 'album';
         const badgeColor = getColorByRating(item.rating);
-        const href = item._type === 'album'
+        const href       = item._type === 'album'
             ? `album.html?id=${item.id}`
             : `media-detail.html?type=${item._type === 'movie' ? 'movies' : 'series'}&id=${item.id}`;
 
+        const card = document.createElement('div');
+        card.className = `collection-masonry-item size-${size}`;
         card.addEventListener('click', () => window.location.href = href);
 
-        // Drag & drop
-        card.addEventListener('dragstart', (e) => {
-            dragSrcIdx = index;
-            e.dataTransfer.effectAllowed = 'move';
-            card.style.opacity = '0.5';
-        });
-        card.addEventListener('dragend', () => { card.style.opacity = '1'; });
-        card.addEventListener('dragover', (e) => { e.preventDefault(); card.style.transform = 'translateY(-4px)'; });
-        card.addEventListener('dragleave', () => { card.style.transform = ''; });
-        card.addEventListener('drop', async (e) => {
-            e.preventDefault(); e.stopPropagation();
-            card.style.transform = '';
-            if (dragSrcIdx === null || dragSrcIdx === index) return;
-            const col = allCollections.find(c => c.id === currentColId);
-            const moved = col.items.splice(dragSrcIdx, 1)[0];
-            col.items.splice(index, 0, moved);
-            dragSrcIdx = null;
-            await saveCollectionToDB(col);
-            allCollections = await getAllCollectionsFromDB();
-            renderDetailGrid(col);
-        });
+        const meta = [item.artist || item.director || item.creator, item.year].filter(Boolean).join(' · ');
 
         card.innerHTML = `
             <div class="card-actions">
                 <button class="action-btn btn-delete" onclick="event.stopPropagation(); removeFromCollection(${item.id}, '${item._type}')" title="Quitar">✖</button>
             </div>
-            <div class="cover-container${isVertical ? ' vertical' : ''}">
-                <img src="${item.coverBase64}" alt="${item.title}">
-            </div>
-            <div class="album-info">
-                <div class="title-row">
-                    <h3>${item.title}</h3>
-                    <span class="rating-badge" style="background-color:${badgeColor};">${formatRating(item.rating)}</span>
-                </div>
-                <p>${item.artist || item.director || item.creator || ''} ${item.year ? '· ' + item.year : ''}</p>
-                <p style="font-size:0.7rem; color:var(--text-muted); margin-top:2px;">${item._typeLabel}</p>
+            <img src="${item.coverBase64}" alt="${item.title}">
+            <div class="collection-masonry-item-info">
+                <div class="collection-masonry-item-title">${item.title}</div>
+                <div class="collection-masonry-item-meta">${meta}</div>
+                <span class="collection-masonry-item-badge" style="background:${badgeColor}">${formatRating(item.rating)}</span>
             </div>
         `;
         grid.appendChild(card);
@@ -262,20 +235,7 @@ window.toggleFavorite = async function(id) {
     renderCollectionsList();
 }
 
-// ── NOTAS AUTOSAVE ─────────────────────────────────────────────────────────
-function initNotesAutosave() {
-    const textarea = document.getElementById('collection-notes');
-    textarea.addEventListener('input', () => {
-        clearTimeout(notesSaveTimer);
-        notesSaveTimer = setTimeout(async () => {
-            const col = allCollections.find(c => c.id === currentColId);
-            if (!col) return;
-            col.notes = textarea.value;
-            await saveCollectionToDB(col);
-            allCollections = await getAllCollectionsFromDB();
-        }, 800);
-    });
-}
+
 
 // ── BANNER ─────────────────────────────────────────────────────────────────
 function initBannerUpload() {
