@@ -127,12 +127,12 @@ function renderScenes() {
         } else {
             return `
                 <div class="scene-card">
-                    <div class="scene-card-actions" style="opacity:1;">
-                        <button class="action-btn btn-edit" onclick="event.stopPropagation(); editScene(${index})" title="Editar">✎</button>
-                        <button class="action-btn btn-delete" onclick="event.stopPropagation(); deleteScene(${index})" title="Borrar">✖</button>
-                    </div>
-                    <div class="scene-frame">
-                        <img src="${scene.image}" alt="Escena">
+                    <div class="scene-frame" style="position:relative;">
+                        <div style="position:absolute; top:8px; right:8px; z-index:20; display:flex; gap:6px;">
+                            <button class="action-btn btn-edit" onclick="event.stopPropagation(); editScene(${index})" title="Editar">✎</button>
+                            <button class="action-btn btn-delete" onclick="event.stopPropagation(); deleteScene(${index})" title="Borrar">✖</button>
+                        </div>
+                        <img src="${scene.image}" alt="Escena" style="pointer-events:none;">
                         ${scene.subtitle ? `<div class="scene-frame-subtitle">${scene.subtitle}</div>` : ''}
                     </div>
                 </div>`;
