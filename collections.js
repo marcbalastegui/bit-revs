@@ -1,22 +1,20 @@
-// collections.js - Colecciones mejoradas
+// collections.js - Colecciones con formatos por elemento y artistas
 
-const ACCENT_COLORS = [
-    '#e63946', '#3a86ff', '#8338ec', '#fb5607',
-    '#06d6a0', '#ffbe0b', '#ff006e', '#3d405b'
-];
+const ACCENT_COLORS = ['#e63946','#3a86ff','#8338ec','#fb5607','#06d6a0','#ffbe0b','#ff006e','#3d405b'];
+const FORMATS = ['cover', 'title', 'full', 'horizontal']; // formatos disponibles
 
-let allCollections  = [];
-let currentColId    = null;
-let editingColId    = null;
-let allItems        = [];
-let selectedColor   = ACCENT_COLORS[0];
-let notesSaveTimer  = null;
-let dragSrcIdx      = null;
+let allCollections = [];
+let currentColId   = null;
+let editingColId   = null;
+let allItems       = []; // álbumes, pelis, series
+let allArtists     = []; // artistas únicos
+let selectedColor  = ACCENT_COLORS[0];
+let currentTab     = 'all';
 
 // ── DB ─────────────────────────────────────────────────────────────────────
 async function getAllCollectionsFromDB() { return await getAllItemsFromDB('collections'); }
-async function saveCollectionToDB(col)  { return await saveItemToDB('collections', col); }
-async function deleteCollectionFromDB(id) { return await deleteItemFromDB('collections', id); }
+async function saveCollectionToDB(col)   { return await saveItemToDB('collections', col); }
+async function deleteCollectionFromDB(id){ return await deleteItemFromDB('collections', id); }
 
 // ── INIT ───────────────────────────────────────────────────────────────────
 async function initCollections() {
@@ -32,9 +30,51 @@ async function initCollections() {
         ...series.map(s => ({ ...s, _type: 'series', _typeLabel: 'Serie' })),
     ];
 
+    // Recopilar artistas únicos
+    const artistNames = new Set();
+    albums.forEach(a => {
+        if (a.artist) artistNames.add(a.artist);
+        if (a.featuredArtists) a.featuredArtists.forEach(f => artistNames.add(f));
+        if (a.tracks) a.tracks.forEach(t => {
+            if (t.artist) t.artist.split(',').map(x => x.trim()).forEach(n => { if (n) artistNames.add(n); });
+        });
+    });
+
+    allArtists = await Promise.all([...artistNames].sort().map(async name => {
+        const data = await getArtistFromDB(name);
+        return { name, photo: data?.photo || null, _type: 'artist', _typeLabel: 'Artista' };
+    }));
+
     renderCollectionsList();
     initModals();
     initBannerUpload();
+}
+
+// ── COLLAGE ────────────────────────────────────────────────────────────────
+function buildCollageHtml(covers, accent) {
+    const bg = accent + '22';
+    if (covers.length === 0) {
+        return `<div class="collection-collage-empty" style="background:${bg};">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="${accent}" stroke-width="1.5" style="width:40px;height:40px;opacity:0.4;"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+        </div>`;
+    }
+    const n = Math.min(covers.length, 5);
+    const layouts = [
+        [[{w:'70%',h:'90%',t:'5%',l:'15%'}]],
+        [[{w:'55%',h:'85%',t:'8%',l:'4%'},{w:'48%',h:'75%',t:'12%',r:'4%'}]],
+        [[{w:'52%',h:'88%',t:'6%',l:'3%'},{w:'44%',h:'50%',t:'4%',r:'3%'},{w:'44%',h:'42%',b:'4%',r:'3%'}]],
+        [[{w:'50%',h:'88%',t:'6%',l:'3%'},{w:'43%',h:'40%',t:'4%',r:'3%'},{w:'30%',h:'44%',b:'4%',r:'16%'},{w:'30%',h:'35%',b:'10%',r:'50%'}]],
+        [[{w:'48%',h:'85%',t:'8%',l:'2%'},{w:'38%',h:'46%',t:'4%',l:'53%'},{w:'26%',h:'40%',b:'4%',r:'2%'},{w:'32%',h:'42%',b:'4%',l:'53%'},{w:'22%',h:'32%',b:'12%',l:'30%'}]]
+    ];
+    const positions = layouts[n - 1][0];
+    const imgs = positions.map((pos, i) => {
+        const style = Object.entries(pos).map(([k, v]) => {
+            const map = { w: 'width', h: 'height', t: 'top', l: 'left', r: 'right', b: 'bottom' };
+            return `${map[k]}:${v}`;
+        }).join(';');
+        return `<img class="collage-img" src="${covers[i]}" style="${style};">`;
+    }).join('');
+    return `<div class="collection-collage" style="background:${bg};">${imgs}</div>`;
 }
 
 // ── RENDER LISTA ───────────────────────────────────────────────────────────
@@ -43,103 +83,56 @@ function renderCollectionsList() {
     grid.innerHTML = '';
 
     if (allCollections.length === 0) {
-        grid.innerHTML = `<div style="grid-column:1/-1; color:var(--text-muted); font-size:0.9rem; font-style:italic; padding:20px 0;">
-            Aún no tienes colecciones. ¡Crea tu primera!
-        </div>`;
+        grid.innerHTML = `<div style="grid-column:1/-1;color:var(--text-muted);font-size:0.9rem;font-style:italic;padding:20px 0;">Aún no tienes colecciones.</div>`;
         return;
     }
 
-    // Favoritas primero
     const sorted = [...allCollections].sort((a, b) => (b.favorite ? 1 : 0) - (a.favorite ? 1 : 0));
 
     sorted.forEach((col, i) => {
-        const card = document.createElement('div');
+        const card  = document.createElement('div');
         card.className = 'collection-card';
         card.style.animationDelay = `${i * 0.04}s`;
         card.addEventListener('click', () => openCollection(col.id));
 
         const accent = col.color || ACCENT_COLORS[0];
-        const covers  = (col.items || [])
+        const covers = (col.items || [])
+            .filter(ref => ref.type !== 'artist')
             .map(ref => allItems.find(a => a.id === ref.id && a._type === ref.type)?.coverBase64)
             .filter(Boolean);
 
-        const collageHtml = buildCollageHtml(covers, accent);
-        const itemCount   = (col.items || []).length;
+        // Also add artist photos if no covers
+        if (covers.length === 0) {
+            (col.items || []).filter(ref => ref.type === 'artist').forEach(ref => {
+                const artist = allArtists.find(a => a.name === ref.id);
+                if (artist?.photo) covers.push(artist.photo);
+            });
+        }
+
+        const itemCount = (col.items || []).length;
 
         card.innerHTML = `
             <div class="collection-card-actions">
-                <button class="action-btn btn-edit"   onclick="event.stopPropagation(); editCollection(${col.id})" title="Editar">✎</button>
-                <button class="action-btn btn-delete" onclick="event.stopPropagation(); deleteCollection(${col.id})" title="Borrar">✖</button>
+                <button class="action-btn btn-edit" onclick="event.stopPropagation();editCollection(${col.id})" title="Editar">✎</button>
+                <button class="action-btn btn-delete" onclick="event.stopPropagation();deleteCollection(${col.id})" title="Borrar">✖</button>
             </div>
-            ${collageHtml}
+            ${buildCollageHtml(covers, accent)}
             <div class="collection-card-info">
                 <div class="collection-card-name">${col.favorite ? '★ ' : ''}${col.name}</div>
                 ${col.quote ? `<div class="collection-card-quote">"${col.quote}"</div>` : ''}
                 <div class="collection-card-footer">
                     <span class="collection-card-count">${itemCount} elemento${itemCount !== 1 ? 's' : ''}</span>
-                    <button class="collection-fav-star" onclick="event.stopPropagation(); toggleFavorite(${col.id})" title="${col.favorite ? 'Quitar de destacadas' : 'Destacar'}">
-                        ${col.favorite ? '★' : '☆'}
-                    </button>
+                    <button class="collection-fav-star" onclick="event.stopPropagation();toggleFavorite(${col.id})">${col.favorite ? '★' : '☆'}</button>
                 </div>
-            </div>
-        `;
+            </div>`;
         grid.appendChild(card);
     });
-}
-
-// ── COLLAGE ────────────────────────────────────────────────────────────────
-function buildCollageHtml(covers, accent) {
-    const bg = accent + '22'; // color con opacidad baja de fondo
-
-    if (covers.length === 0) {
-        return `<div class="collection-collage-empty" style="background:${bg};">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="${accent}" stroke-width="1.5" style="width:40px;height:40px;opacity:0.4;"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
-        </div>`;
-    }
-
-    // Layouts dinámicos según número de portadas
-    const n = Math.min(covers.length, 5);
-
-    if (n === 1) {
-        return `<div class="collection-collage" style="background:${bg};">
-            <img class="collage-img" src="${covers[0]}" style="width:70%; height:90%; top:5%; left:15%;">
-        </div>`;
-    }
-    if (n === 2) {
-        return `<div class="collection-collage" style="background:${bg};">
-            <img class="collage-img" src="${covers[0]}" style="width:55%; height:85%; top:8%; left:4%;">
-            <img class="collage-img" src="${covers[1]}" style="width:48%; height:75%; top:12%; right:4%;">
-        </div>`;
-    }
-    if (n === 3) {
-        return `<div class="collection-collage" style="background:${bg};">
-            <img class="collage-img" src="${covers[0]}" style="width:52%; height:88%; top:6%; left:3%;">
-            <img class="collage-img" src="${covers[1]}" style="width:44%; height:50%; top:4%; right:3%;">
-            <img class="collage-img" src="${covers[2]}" style="width:44%; height:42%; bottom:4%; right:3%;">
-        </div>`;
-    }
-    if (n === 4) {
-        return `<div class="collection-collage" style="background:${bg};">
-            <img class="collage-img" src="${covers[0]}" style="width:50%; height:88%; top:6%; left:3%;">
-            <img class="collage-img" src="${covers[1]}" style="width:43%; height:40%; top:4%; right:3%;">
-            <img class="collage-img" src="${covers[2]}" style="width:30%; height:44%; bottom:4%; right:16%;">
-            <img class="collage-img" src="${covers[3]}" style="width:30%; height:35%; bottom:10%; right:50%;">
-        </div>`;
-    }
-    // 5+
-    return `<div class="collection-collage" style="background:${bg};">
-        <img class="collage-img" src="${covers[0]}" style="width:48%; height:85%; top:8%; left:2%;">
-        <img class="collage-img" src="${covers[1]}" style="width:38%; height:46%; top:4%; left:53%;">
-        <img class="collage-img" src="${covers[2]}" style="width:26%; height:40%; bottom:4%; right:2%;">
-        <img class="collage-img" src="${covers[3]}" style="width:32%; height:42%; bottom:4%; left:53%;">
-        <img class="collage-img" src="${covers[4]}" style="width:22%; height:32%; bottom:12%; left:30%;">
-    </div>`;
 }
 
 // ── DETALLE ────────────────────────────────────────────────────────────────
 function openCollection(id) {
     currentColId = id;
-    const col    = allCollections.find(c => c.id === id);
+    const col = allCollections.find(c => c.id === id);
     if (!col) return;
 
     document.getElementById('view-list').style.display   = 'none';
@@ -147,15 +140,11 @@ function openCollection(id) {
     document.getElementById('detail-name').textContent   = col.name;
     document.getElementById('detail-quote-display').textContent = col.quote ? `"${col.quote}"` : '';
 
-    // Banner
     const banner = document.getElementById('detail-banner');
     const accent = col.color || ACCENT_COLORS[0];
-    if (col.banner) {
-        banner.style.background = `url(${col.banner}) center/cover no-repeat`;
-    } else {
-        banner.style.backgroundImage = 'none';
-        banner.style.background = `linear-gradient(135deg, ${accent}dd 0%, ${accent}66 100%)`;
-    }
+    banner.style.background = col.banner
+        ? `url(${col.banner}) center/cover no-repeat`
+        : `linear-gradient(135deg, ${accent}dd 0%, ${accent}66 100%)`;
 
     renderDetailGrid(col);
 }
@@ -164,58 +153,116 @@ function backToList() {
     currentColId = null;
     document.getElementById('view-list').style.display   = 'block';
     document.getElementById('view-detail').style.display = 'none';
-    allCollections = [];
     initCollections();
 }
 
-// Sizes cycle: large, small, small, medium, large, small...
-const SIZE_PATTERN = ['large', 'small', 'small', 'medium', 'large', 'small', 'medium', 'small'];
-
+// ── RENDER GRID CON FORMATOS ───────────────────────────────────────────────
 function renderDetailGrid(col) {
     const grid = document.getElementById('detail-grid');
     grid.innerHTML = '';
 
-    const items = (col.items || []).map(ref =>
-        allItems.find(a => a.id === ref.id && a._type === ref.type)
-    ).filter(Boolean);
-
-    if (items.length === 0) {
-        grid.style.display = 'block';
-        grid.innerHTML = `<p style="color:var(--text-muted); font-style:italic;">
-            Colección vacía. Pulsa "+ Añadir" para agregar contenido.
-        </p>`;
+    const refs = col.items || [];
+    if (refs.length === 0) {
+        grid.innerHTML = `<p style="color:var(--text-muted);font-style:italic;">Colección vacía. Pulsa "+ Añadir" para agregar contenido.</p>`;
         return;
     }
 
-    items.forEach((item, index) => {
-        const size       = SIZE_PATTERN[index % SIZE_PATTERN.length];
-        const isVertical = item._type !== 'album';
-        const badgeColor = getColorByRating(item.rating);
-        const href       = item._type === 'album'
-            ? `album.html?id=${item.id}`
-            : `media-detail.html?type=${item._type === 'movie' ? 'movies' : 'series'}&id=${item.id}`;
+    refs.forEach((ref, index) => {
+        const fmt = ref.format || 'full';
 
-        const card = document.createElement('div');
-        card.className = `collection-masonry-item size-${size}`;
-        card.addEventListener('click', () => window.location.href = href);
-
-        const meta = [item.artist || item.director || item.creator, item.year].filter(Boolean).join(' · ');
-
-        card.innerHTML = `
-            <div class="card-actions">
-                <button class="action-btn btn-delete" onclick="event.stopPropagation(); removeFromCollection(${item.id}, '${item._type}')" title="Quitar">✖</button>
-            </div>
-            <img src="${item.coverBase64}" alt="${item.title}">
-            <div class="collection-masonry-item-info">
-                <div class="collection-masonry-item-title">${item.title}</div>
-                <div class="collection-masonry-item-meta">${meta}</div>
-                <span class="collection-masonry-item-badge" style="background:${badgeColor}">${formatRating(item.rating)}</span>
-            </div>
-        `;
-        grid.appendChild(card);
+        if (ref.type === 'artist') {
+            renderArtistItem(ref, index, fmt, grid, col);
+        } else {
+            const item = allItems.find(a => a.id === ref.id && a._type === ref.type);
+            if (!item) return;
+            renderMediaItem(item, ref, index, fmt, grid, col);
+        }
     });
 }
 
+function renderMediaItem(item, ref, index, fmt, grid, col) {
+    const badgeColor = getColorByRating(item.rating);
+    const href = item._type === 'album'
+        ? `album.html?id=${item.id}`
+        : `media-detail.html?type=${item._type === 'movie' ? 'movies' : 'series'}&id=${item.id}`;
+
+    const card = document.createElement('div');
+    card.className = `col-item fmt-${fmt}`;
+
+    const meta = item.artist || item.director || item.creator || '';
+
+    card.innerHTML = `
+        <div class="col-item-overlay">
+            <div class="col-item-overlay-actions">
+                ${formatButtons(fmt, index)}
+            </div>
+            <button class="col-item-overlay-remove" onclick="event.stopPropagation();removeFromCollection(${item.id},'${item._type}')">✖ Quitar</button>
+        </div>
+        <img src="${item.coverBase64}" alt="${item.title}">
+        <div class="col-item-info">
+            <div class="col-item-title">${item.title}</div>
+            <div class="col-item-artist">${meta}${item.year ? ' · ' + item.year : ''}</div>
+            <span class="col-item-badge" style="background:${badgeColor}">${formatRating(item.rating)}</span>
+        </div>`;
+
+    card.querySelectorAll('.fmt-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            await setItemFormat(index, btn.dataset.fmt, col);
+        });
+    });
+
+    card.addEventListener('click', () => window.location.href = href);
+    grid.appendChild(card);
+}
+
+function renderArtistItem(ref, index, fmt, grid, col) {
+    const artist = allArtists.find(a => a.name === ref.id);
+    if (!artist) return;
+
+    const card = document.createElement('div');
+    card.className = 'col-item fmt-artist';
+
+    const avatarHtml = artist.photo
+        ? `<img src="${artist.photo}" alt="${artist.name}">`
+        : `<div class="col-item-artist-initials" style="background:var(--accent-red);">${artist.name.charAt(0).toUpperCase()}</div>`;
+
+    card.innerHTML = `
+        <div class="col-item-overlay">
+            <div class="col-item-overlay-actions"></div>
+            <button class="col-item-overlay-remove" onclick="event.stopPropagation();removeFromCollection('${ref.id}','artist')">✖ Quitar</button>
+        </div>
+        ${avatarHtml}
+        <div class="col-item-title" style="text-align:center;">${artist.name}</div>
+        <div class="col-item-artist" style="text-align:center;">Artista</div>`;
+
+    card.addEventListener('click', () => window.location.href = `artist.html?name=${encodeURIComponent(artist.name)}`);
+    grid.appendChild(card);
+}
+
+function formatButtons(currentFmt, index) {
+    const fmts = [
+        { key: 'cover',      label: 'Solo portada',  icon: `<svg viewBox="0 0 16 16" fill="currentColor"><rect x="1" y="1" width="14" height="14" rx="2"/></svg>` },
+        { key: 'title',      label: 'Con título',    icon: `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="14" height="10" rx="1.5"/><line x1="1" y1="13" x2="10" y2="13"/></svg>` },
+        { key: 'full',       label: 'Completo',      icon: `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="14" height="9" rx="1.5"/><line x1="1" y1="12" x2="15" y2="12"/><line x1="1" y1="15" x2="9" y2="15"/></svg>` },
+        { key: 'horizontal', label: 'Horizontal',    icon: `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="3" width="6" height="10" rx="1.5"/><line x1="9" y1="5" x2="15" y2="5"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="9" y1="11" x2="13" y2="11"/></svg>` },
+    ];
+    return fmts.map(f => `
+        <button class="fmt-btn${f.key === currentFmt ? ' active' : ''}" data-fmt="${f.key}" data-index="${index}" title="${f.label}">
+            ${f.icon}
+            <span>${f.label}</span>
+        </button>`).join('');
+}
+
+async function setItemFormat(index, newFmt, col) {
+    col.items[index].format = newFmt;
+    await saveCollectionToDB(col);
+    allCollections = await getAllCollectionsFromDB();
+    const updatedCol = allCollections.find(c => c.id === currentColId);
+    renderDetailGrid(updatedCol);
+}
+
+// ── REMOVE ─────────────────────────────────────────────────────────────────
 window.removeFromCollection = async function(itemId, itemType) {
     const col = allCollections.find(c => c.id === currentColId);
     if (!col) return;
@@ -235,14 +282,11 @@ window.toggleFavorite = async function(id) {
     renderCollectionsList();
 }
 
-
-
 // ── BANNER ─────────────────────────────────────────────────────────────────
 function initBannerUpload() {
     const btn   = document.getElementById('btn-change-banner');
     const input = document.getElementById('input-banner');
     if (!btn || !input) return;
-
     btn.addEventListener('click', (e) => { e.stopPropagation(); input.click(); });
     input.addEventListener('change', async (e) => {
         const file = e.target.files[0];
@@ -254,21 +298,21 @@ function initBannerUpload() {
             col.banner = ev.target.result;
             await saveCollectionToDB(col);
             allCollections = await getAllCollectionsFromDB();
-            const banner = document.getElementById('detail-banner');
-            banner.style.background = `url(${col.banner}) center/cover no-repeat`;
+            document.getElementById('detail-banner').style.background = `url(${col.banner}) center/cover no-repeat`;
         };
         reader.readAsDataURL(file);
         input.value = '';
     });
 }
 
-// ── AÑADIR ITEMS ───────────────────────────────────────────────────────────
+// ── AÑADIR ─────────────────────────────────────────────────────────────────
 function openAddItemModal() {
-    const input = document.getElementById('collection-search-input');
-    input.value = '';
+    currentTab = 'all';
+    document.querySelectorAll('.search-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === 'all'));
+    document.getElementById('collection-search-input').value = '';
     renderSearchResults('');
     document.getElementById('modal-add-item').classList.remove('hidden');
-    setTimeout(() => input.focus(), 100);
+    setTimeout(() => document.getElementById('collection-search-input').focus(), 100);
 }
 
 function renderSearchResults(query) {
@@ -276,30 +320,52 @@ function renderSearchResults(query) {
     const col      = allCollections.find(c => c.id === currentColId);
     const addedIds = new Set((col?.items || []).map(i => `${i.type}_${i.id}`));
 
-    let filtered = allItems;
-    if (query.trim()) {
-        const q = query.toLowerCase();
-        filtered = allItems.filter(item =>
-            (item.title    && item.title.toLowerCase().includes(q)) ||
-            (item.artist   && item.artist.toLowerCase().includes(q)) ||
+    const q = query.toLowerCase().trim();
+
+    // Combinar todos según tab
+    let pool = [];
+    if (currentTab === 'all' || currentTab === 'album' || currentTab === 'movie' || currentTab === 'series') {
+        const types = currentTab === 'all' ? ['album','movie','series'] : [currentTab];
+        pool = allItems.filter(i => types.includes(i._type));
+    }
+    if (currentTab === 'all' || currentTab === 'artist') {
+        pool = [...pool, ...allArtists];
+    }
+
+    if (q) {
+        pool = pool.filter(item =>
+            (item.title  && item.title.toLowerCase().includes(q)) ||
+            (item.name   && item.name.toLowerCase().includes(q)) ||
+            (item.artist && item.artist.toLowerCase().includes(q)) ||
             (item.director && item.director.toLowerCase().includes(q))
         );
     }
 
-    results.innerHTML = filtered.slice(0, 40).map(item => {
-        const key     = `${item._type}_${item.id}`;
-        const isAdded = addedIds.has(key);
-        const meta    = [item.artist || item.director || item.creator, item.year].filter(Boolean).join(' · ');
+    results.innerHTML = pool.slice(0, 50).map(item => {
+        const isArtist = item._type === 'artist';
+        const key      = isArtist ? `artist_${item.name}` : `${item._type}_${item.id}`;
+        const isAdded  = addedIds.has(key);
+        const label    = isArtist ? item.name : item.title;
+        const meta     = isArtist ? 'Artista' : [item.artist || item.director || item.creator, item.year].filter(Boolean).join(' · ');
+        const imgHtml  = isArtist
+            ? (item.photo
+                ? `<img src="${item.photo}" style="border-radius:50%;" alt="${item.name}">`
+                : `<div class="collection-search-item-initials" style="background:var(--accent-red);">${item.name.charAt(0).toUpperCase()}</div>`)
+            : `<img src="${item.coverBase64}" alt="${label}">`;
+
+        const onclickFn = isArtist
+            ? `addToCollection('${item.name}','artist')`
+            : `addToCollection(${item.id},'${item._type}')`;
+
         return `
-            <div class="collection-search-item${isAdded ? ' added' : ''}"
-                onclick="addToCollection(${item.id}, '${item._type}')">
-                <img src="${item.coverBase64}" alt="${item.title}">
+            <div class="collection-search-item${isAdded ? ' added' : ''}" onclick="${onclickFn}">
+                ${imgHtml}
                 <div class="collection-search-item-info">
-                    <div class="collection-search-item-title">${item.title}</div>
+                    <div class="collection-search-item-title">${label}</div>
                     <div class="collection-search-item-meta">${meta}</div>
                 </div>
-                <span class="collection-search-item-type">${item._typeLabel}</span>
-                ${isAdded ? '<span style="font-size:0.7rem; color:var(--accent-red); font-weight:700; flex-shrink:0;">✓</span>' : ''}
+                <span class="collection-search-item-type">${item._typeLabel || 'Artista'}</span>
+                ${isAdded ? '<span style="font-size:0.7rem;color:var(--accent-red);font-weight:700;flex-shrink:0;">✓</span>' : ''}
             </div>`;
     }).join('');
 }
@@ -308,8 +374,14 @@ window.addToCollection = async function(itemId, itemType) {
     const col = allCollections.find(c => c.id === currentColId);
     if (!col) return;
     if (!col.items) col.items = [];
-    if (col.items.find(i => i.id === itemId && i.type === itemType)) return;
-    col.items.push({ id: itemId, type: itemType });
+
+    const key = itemType === 'artist' ? `artist_${itemId}` : `${itemType}_${itemId}`;
+    if (col.items.find(i => {
+        const k = i.type === 'artist' ? `artist_${i.id}` : `${i.type}_${i.id}`;
+        return k === key;
+    })) return;
+
+    col.items.push({ id: itemId, type: itemType, format: itemType === 'artist' ? 'artist' : 'full' });
     await saveCollectionToDB(col);
     allCollections = await getAllCollectionsFromDB();
     renderSearchResults(document.getElementById('collection-search-input')?.value || '');
@@ -321,18 +393,14 @@ function renderColorPicker(currentColor) {
     const picker = document.getElementById('color-picker');
     picker.innerHTML = ACCENT_COLORS.map(color => `
         <div class="color-dot${color === currentColor ? ' selected' : ''}"
-            style="background:${color};"
-            data-color="${color}"
-            onclick="selectColor('${color}')">
-        </div>`).join('');
+            style="background:${color};" data-color="${color}"
+            onclick="selectColor('${color}')"></div>`).join('');
     selectedColor = currentColor || ACCENT_COLORS[0];
 }
 
 window.selectColor = function(color) {
     selectedColor = color;
-    document.querySelectorAll('.color-dot').forEach(d => {
-        d.classList.toggle('selected', d.dataset.color === color);
-    });
+    document.querySelectorAll('.color-dot').forEach(d => d.classList.toggle('selected', d.dataset.color === color));
 }
 
 // ── CRUD ───────────────────────────────────────────────────────────────────
@@ -361,7 +429,7 @@ function initModals() {
             const col = allCollections.find(c => c.id === editingColId);
             if (col) { col.name = name; col.quote = quote; col.color = selectedColor; await saveCollectionToDB(col); }
         } else {
-            await saveCollectionToDB({ id: Date.now(), name, quote, color: selectedColor, items: [], notes: '', favorite: false });
+            await saveCollectionToDB({ id: Date.now(), name, quote, color: selectedColor, items: [], favorite: false });
         }
 
         allCollections = await getAllCollectionsFromDB();
@@ -378,11 +446,22 @@ function initModals() {
     });
 
     document.getElementById('btn-add-to-collection').addEventListener('click', openAddItemModal);
+
     document.getElementById('btn-cancel-add-item').addEventListener('click', () => {
         document.getElementById('modal-add-item').classList.add('hidden');
     });
+
     document.getElementById('collection-search-input').addEventListener('input', (e) => {
         renderSearchResults(e.target.value);
+    });
+
+    // Tabs
+    document.querySelectorAll('.search-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            currentTab = tab.dataset.tab;
+            document.querySelectorAll('.search-tab').forEach(t => t.classList.toggle('active', t === tab));
+            renderSearchResults(document.getElementById('collection-search-input').value);
+        });
     });
 
     document.getElementById('btn-edit-collection').addEventListener('click', () => {
@@ -402,21 +481,21 @@ window.editCollection = function(id) {
 }
 
 window.deleteCollection = async function(id) {
-    if (await brConfirm('Se borrará la colección. Los álbumes y películas no se eliminarán.', '¿Borrar colección?')) {
+    if (await brConfirm('Se borrará la colección. El contenido no se eliminará.', '¿Borrar colección?')) {
         await deleteCollectionFromDB(id);
         allCollections = await getAllCollectionsFromDB();
         renderCollectionsList();
     }
 }
 
-// ── DESDE CARD CON ?add= ───────────────────────────────────────────────────
+// ── DESDE ?add= ────────────────────────────────────────────────────────────
 async function checkAddParam() {
     const urlParams = new URLSearchParams(window.location.search);
     const addParam  = urlParams.get('add');
     if (!addParam) return;
 
-    const [type, idStr] = addParam.split('_');
-    const itemId = parseInt(idStr);
+    const [type, ...rest] = addParam.split('_');
+    const itemId = type === 'artist' ? rest.join('_') : parseInt(rest[0]);
 
     if (allCollections.length === 0) {
         await brAlert('Primero crea una colección.', 'Sin colecciones');
@@ -451,7 +530,7 @@ async function checkAddParam() {
             if (!col) return;
             if (!col.items) col.items = [];
             if (!col.items.find(i => i.id === itemId && i.type === type)) {
-                col.items.push({ id: itemId, type });
+                col.items.push({ id: itemId, type, format: 'full' });
                 await saveCollectionToDB(col);
                 allCollections = await getAllCollectionsFromDB();
             }
