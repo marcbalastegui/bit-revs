@@ -725,24 +725,60 @@ h1 { font-size: 2.8rem; font-weight: 900; margin-bottom: 30px; letter-spacing: -
     box-shadow: 0 8px 24px rgba(0,0,0,0.08);
 }
 
-/* ── SELECTS MEJORADOS ── */
-.controls-bar select,
-.modal-content select {
-    appearance: none;
-    -webkit-appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23626262' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 12px center;
-    background-size: 16px;
-    padding-right: 36px;
-}
-
-.controls-bar select:focus,
-.modal-content select:focus {
-    border-color: var(--accent-red);
-    outline: none;
-}
-
-.modal-content select {
+/* ── MODO GALERÍA ── */
+.gallery-toggle-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    border: 1px solid transparent;
+    background: white;
+    color: var(--text-muted);
     cursor: pointer;
+    transition: all 0.15s;
+    flex-shrink: 0;
+    box-shadow: var(--shadow-subtle);
+}
+.gallery-toggle-btn:hover { color: var(--text-main); border-color: var(--border-color); }
+.gallery-toggle-btn.active { background: var(--text-main); color: white; border-color: var(--text-main); }
+
+/* Grid en modo galería */
+.album-grid.gallery-mode {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 12px;
+}
+
+.album-grid.gallery-mode .album-card {
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.album-grid.gallery-mode .album-info {
+    display: none;
+}
+
+.album-grid.gallery-mode .cover-container {
+    border-radius: 10px;
+    border-bottom: none;
+    aspect-ratio: 1/1;
+}
+
+.album-grid.gallery-mode .cover-container.vertical {
+    aspect-ratio: 2/3;
+}
+
+/* Badge de nota flotante en galería */
+.album-grid.gallery-mode .card-gallery-badge {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-weight: 900;
+    font-size: 0.82rem;
+    color: white;
+    backdrop-filter: blur(4px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
 }

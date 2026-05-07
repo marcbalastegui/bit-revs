@@ -210,3 +210,31 @@ filterInput?.addEventListener('input', processAndRenderMedia);
 sortSelect?.addEventListener('change', processAndRenderMedia);
 
 processAndRenderMedia();
+
+// ── MODO GALERÍA ──────────────────────────────────────────────────────────
+let galleryMode = false;
+const galleryBtn = document.getElementById('gallery-toggle');
+if (galleryBtn) {
+    galleryBtn.addEventListener('click', () => {
+        galleryMode = !galleryMode;
+        galleryBtn.classList.toggle('active', galleryMode);
+        const grid = document.getElementById('media-grid');
+        if (grid) {
+            grid.classList.toggle('gallery-mode', galleryMode);
+            if (galleryMode) {
+                grid.querySelectorAll('.album-card').forEach(card => {
+                    const badge = card.querySelector('.rating-badge');
+                    if (badge && !card.querySelector('.card-gallery-badge')) {
+                        const gb = document.createElement('span');
+                        gb.className = 'card-gallery-badge';
+                        gb.style.background = badge.style.backgroundColor;
+                        gb.textContent = badge.textContent;
+                        card.appendChild(gb);
+                    }
+                });
+            } else {
+                grid.querySelectorAll('.card-gallery-badge').forEach(b => b.remove());
+            }
+        }
+    });
+}

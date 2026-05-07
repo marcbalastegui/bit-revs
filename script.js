@@ -317,3 +317,35 @@ if (globalSinglesToggle) globalSinglesToggle.addEventListener('change', processA
     await populateGenreFilter();
     await processAndRenderAlbums();
 })();
+
+// ── MODO GALERÍA ──────────────────────────────────────────────────────────
+let galleryMode = false;
+const galleryBtn = document.getElementById('gallery-toggle');
+if (galleryBtn) {
+    galleryBtn.addEventListener('click', () => {
+        galleryMode = !galleryMode;
+        galleryBtn.classList.toggle('active', galleryMode);
+        const grid = document.getElementById('album-grid');
+        if (grid) grid.classList.toggle('gallery-mode', galleryMode);
+        // Add/remove gallery badges on cards
+        toggleGalleryBadges(grid);
+    });
+}
+
+function toggleGalleryBadges(grid) {
+    if (!grid) return;
+    if (galleryMode) {
+        grid.querySelectorAll('.album-card').forEach(card => {
+            const badge = card.querySelector('.rating-badge');
+            if (badge && !card.querySelector('.card-gallery-badge')) {
+                const galleryBadge = document.createElement('span');
+                galleryBadge.className = 'card-gallery-badge';
+                galleryBadge.style.background = badge.style.backgroundColor;
+                galleryBadge.textContent = badge.textContent;
+                card.appendChild(galleryBadge);
+            }
+        });
+    } else {
+        grid.querySelectorAll('.card-gallery-badge').forEach(b => b.remove());
+    }
+}
