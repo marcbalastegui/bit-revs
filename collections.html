@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&display=swap" rel="stylesheet">
     <style>
-        /* ── COLLECTIONS PAGE ── */
+        /* ── COLLECTIONS LIST ── */
         .collections-hero {
             padding: 60px 20px 40px;
             max-width: 1400px;
@@ -18,25 +18,15 @@
             border-bottom: 1px solid var(--border-color);
             margin-bottom: 48px;
         }
-
         .collections-hero h1 {
             font-family: 'Playfair Display', Georgia, serif;
-            font-size: 3.5rem;
-            font-weight: 900;
-            letter-spacing: -2px;
-            margin-bottom: 6px;
+            font-size: 3.5rem; font-weight: 900; letter-spacing: -2px; margin-bottom: 6px;
         }
+        .collections-hero p { color: var(--text-muted); font-size: 0.95rem; margin: 0; }
 
-        .collections-hero p {
-            color: var(--text-muted);
-            font-size: 0.95rem;
-            margin: 0;
-        }
-
-        /* ── COLLECTIONS GRID ── */
         .collections-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
             gap: 24px;
             max-width: 1400px;
             margin: 0 auto;
@@ -45,217 +35,199 @@
 
         /* ── COLLECTION CARD ── */
         .collection-card {
-            border-radius: 16px;
+            border-radius: 20px;
+            overflow: hidden;
             border: 1px solid var(--border-color);
             background: white;
             box-shadow: var(--shadow-subtle);
             cursor: pointer;
             transition: transform 0.2s, box-shadow 0.2s;
-            overflow: hidden;
+            position: relative;
             animation: fadeUp 0.4s ease both;
         }
+        .collection-card:hover { transform: translateY(-6px); box-shadow: 0 12px 32px rgba(0,0,0,0.1); }
 
         @keyframes fadeUp {
             from { opacity: 0; transform: translateY(12px); }
             to   { opacity: 1; transform: translateY(0); }
         }
 
-        .collection-card:hover {
-            transform: translateY(-6px);
-            box-shadow: 0 12px 32px rgba(0,0,0,0.08);
+        /* Collage dinámico */
+        .collection-collage {
+            height: 200px;
+            position: relative;
+            overflow: hidden;
         }
 
-        /* Mosaico de portadas */
-        .collection-covers {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            grid-template-rows: 1fr 1fr;
-            height: 180px;
-            background: var(--bg-secondary);
-        }
-
-        .collection-covers img {
-            width: 100%;
-            height: 100%;
+        .collage-img {
+            position: absolute;
             object-fit: cover;
-            display: block;
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
         }
 
-        .collection-covers-empty {
-            height: 180px;
-            background: var(--bg-secondary);
-            display: flex;
-            align-items: center;
-            justify-content: center;
+        .collection-collage-empty {
+            height: 200px;
+            display: flex; align-items: center; justify-content: center;
         }
 
-        .collection-covers-empty svg {
-            width: 40px;
-            height: 40px;
-            color: var(--border-color);
-        }
-
-        .collection-info {
+        /* Info de la card */
+        .collection-card-info {
             padding: 16px 18px 18px;
         }
 
-        .collection-name {
-            font-size: 1.1rem;
-            font-weight: 800;
-            margin-bottom: 4px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+        .collection-card-name {
+            font-size: 1.1rem; font-weight: 800; margin-bottom: 4px;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         }
 
-        .collection-desc {
-            font-size: 0.8rem;
-            color: var(--text-muted);
-            margin-bottom: 10px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+        .collection-card-quote {
+            font-size: 0.82rem; color: var(--text-muted);
+            font-style: italic; margin-bottom: 8px;
+            display: -webkit-box; -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical; overflow: hidden;
         }
 
-        .collection-count {
-            font-size: 0.75rem;
-            font-weight: 700;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+        .collection-card-footer {
+            display: flex; justify-content: space-between; align-items: center;
         }
+
+        .collection-card-count {
+            font-size: 0.72rem; font-weight: 700; color: var(--text-muted);
+            text-transform: uppercase; letter-spacing: 0.5px;
+        }
+
+        .collection-fav-star {
+            font-size: 1rem; cursor: pointer; transition: transform 0.2s;
+            background: none; border: none; padding: 0; line-height: 1;
+        }
+        .collection-fav-star:hover { transform: scale(1.2); }
 
         .collection-card-actions {
-            display: flex;
-            gap: 6px;
-            position: absolute;
-            top: 10px; right: 10px;
-            opacity: 0;
-            transition: opacity 0.2s;
-            z-index: 10;
+            position: absolute; top: 10px; right: 10px;
+            display: flex; gap: 6px; opacity: 0; transition: opacity 0.2s; z-index: 10;
         }
         .collection-card:hover .collection-card-actions { opacity: 1; }
 
         /* ── COLLECTION DETAIL ── */
-        .collection-detail { display: none; }
-        .collection-detail.open { display: block; }
+        #view-detail { display: none; }
 
-        .collection-detail-header {
-            max-width: 1400px;
-            margin: 0 auto 32px;
-            padding: 0 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            gap: 20px;
+        .collection-detail-banner {
+            width: 100%; height: 280px;
+            background: #1a1a1a;
+            background-size: cover; background-position: center;
+            position: relative; cursor: pointer;
+            border-radius: 0 0 0 0;
         }
 
-        .collection-detail-title {
+        .collection-detail-banner::after {
+            content: '';
+            position: absolute; inset: 0;
+            background: linear-gradient(to bottom, rgba(0,0,0,0) 30%, rgba(0,0,0,0.85) 100%);
+        }
+
+        .collection-banner-change-btn {
+            position: absolute; top: 12px; right: 12px; z-index: 4;
+            background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
+            color: white; border: none; border-radius: 8px;
+            padding: 6px 12px; font-size: 0.72rem; font-weight: 700;
+            cursor: pointer; font-family: 'Inter', sans-serif;
+            opacity: 0; transition: opacity 0.2s; letter-spacing: 0.5px;
+        }
+        .collection-detail-banner:hover .collection-banner-change-btn { opacity: 1; }
+
+        .collection-detail-hero-content {
+            position: absolute; bottom: 0; left: 0; right: 0;
+            padding: 0 40px 28px; z-index: 2;
+        }
+
+        .collection-detail-name {
             font-family: 'Playfair Display', Georgia, serif;
-            font-size: 2.5rem;
-            font-weight: 900;
-            letter-spacing: -1px;
-            margin-bottom: 4px;
+            font-size: 2.8rem; font-weight: 900; letter-spacing: -1.5px;
+            color: white; margin-bottom: 6px; line-height: 1.1;
+            text-shadow: 0 2px 12px rgba(0,0,0,0.5);
         }
 
-        .collection-detail-desc {
-            color: var(--text-muted);
-            font-size: 0.9rem;
+        .collection-detail-quote-display {
+            font-size: 1rem; color: rgba(255,255,255,0.8);
+            font-style: italic; max-width: 600px; line-height: 1.5;
         }
 
-        /* Search inside collection */
+        /* Barra de acciones del detalle */
+        .collection-detail-actions {
+            max-width: 1400px; margin: 24px auto 0;
+            padding: 0 20px;
+            display: flex; justify-content: space-between; align-items: center; gap: 16px;
+        }
+
+        /* Notas privadas */
+        .collection-notes-section {
+            max-width: 1400px; margin: 24px auto 0; padding: 0 20px;
+        }
+
+        .collection-notes-textarea {
+            width: 100%; padding: 16px 20px;
+            border-radius: 14px; border: 1px solid var(--border-color);
+            background: var(--bg-secondary); font-family: 'Inter', sans-serif;
+            font-size: 0.9rem; line-height: 1.7; color: var(--text-muted);
+            resize: none; transition: border-color 0.2s, background 0.2s;
+            min-height: 60px;
+        }
+        .collection-notes-textarea:focus {
+            border-color: var(--accent-red); outline: none;
+            background: white; color: var(--text-main);
+        }
+        .collection-notes-textarea::placeholder { font-style: italic; }
+
+        /* Color accent dot */
+        .color-dot {
+            width: 20px; height: 20px; border-radius: 50%;
+            border: 2px solid rgba(255,255,255,0.3);
+            cursor: pointer; transition: transform 0.15s;
+            flex-shrink: 0;
+        }
+        .color-dot:hover { transform: scale(1.2); }
+        .color-dot.selected { border-color: white; transform: scale(1.15); box-shadow: 0 0 0 2px rgba(0,0,0,0.3); }
+
+        /* Search modal */
         .collection-search-modal {
-            background: white;
-            border-radius: 20px;
-            width: 100%;
-            max-width: 560px;
-            max-height: 80vh;
-            display: flex;
-            flex-direction: column;
+            background: white; border-radius: 20px; width: 100%; max-width: 560px;
+            max-height: 80vh; display: flex; flex-direction: column;
             box-shadow: 0 20px 60px rgba(0,0,0,0.2);
-            animation: modalFadeIn 0.3s ease;
-            overflow: hidden;
+            animation: modalFadeIn 0.3s ease; overflow: hidden;
         }
-
         @keyframes modalFadeIn {
             from { opacity: 0; transform: translateY(16px); }
             to   { opacity: 1; transform: translateY(0); }
         }
-
-        .collection-search-header {
-            padding: 24px 24px 16px;
-            border-bottom: 1px solid var(--border-color);
-            flex-shrink: 0;
-        }
-
-        .collection-search-header h2 {
-            font-size: 1.3rem;
-            font-weight: 900;
-            margin-bottom: 12px;
-        }
-
+        .collection-search-header { padding: 24px 24px 16px; border-bottom: 1px solid var(--border-color); flex-shrink: 0; }
+        .collection-search-header h2 { font-size: 1.3rem; font-weight: 900; margin-bottom: 12px; }
         .collection-search-input {
-            width: 100%;
-            padding: 12px 16px;
-            border-radius: 10px;
-            border: 1px solid var(--border-color);
-            background: var(--bg-secondary);
-            font-family: 'Inter', sans-serif;
-            font-size: 0.95rem;
-            color: var(--text-main);
+            width: 100%; padding: 12px 16px; border-radius: 10px;
+            border: 1px solid var(--border-color); background: var(--bg-secondary);
+            font-family: 'Inter', sans-serif; font-size: 0.95rem; color: var(--text-main);
         }
         .collection-search-input:focus { border-color: var(--accent-red); outline: none; }
-
-        .collection-search-results {
-            flex: 1;
-            overflow-y: auto;
-            padding: 8px;
-        }
-
+        .collection-search-results { flex: 1; overflow-y: auto; padding: 8px; }
         .collection-search-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 10px 12px;
-            border-radius: 10px;
-            cursor: pointer;
-            transition: background 0.15s;
+            display: flex; align-items: center; gap: 12px; padding: 10px 12px;
+            border-radius: 10px; cursor: pointer; transition: background 0.15s;
         }
         .collection-search-item:hover { background: var(--bg-secondary); }
         .collection-search-item.added { opacity: 0.4; pointer-events: none; }
-
-        .collection-search-item img {
-            width: 40px; height: 40px;
-            border-radius: 6px; object-fit: cover; flex-shrink: 0;
-        }
-
+        .collection-search-item img { width: 40px; height: 40px; border-radius: 6px; object-fit: cover; flex-shrink: 0; }
         .collection-search-item-info { flex: 1; min-width: 0; }
-        .collection-search-item-title {
-            font-size: 0.9rem; font-weight: 700;
-            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-        }
-        .collection-search-item-meta {
-            font-size: 0.75rem; color: var(--text-muted);
-        }
-
-        .collection-search-item-type {
-            font-size: 0.65rem; font-weight: 800;
-            text-transform: uppercase; letter-spacing: 0.5px;
-            color: var(--text-muted); flex-shrink: 0;
-        }
-
-        .collection-search-footer {
-            padding: 12px 24px;
-            border-top: 1px solid var(--border-color);
-            display: flex;
-            justify-content: flex-end;
-            flex-shrink: 0;
-        }
+        .collection-search-item-title { font-size: 0.9rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .collection-search-item-meta { font-size: 0.75rem; color: var(--text-muted); }
+        .collection-search-item-type { font-size: 0.65rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); flex-shrink: 0; }
+        .collection-search-footer { padding: 12px 24px; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; flex-shrink: 0; }
 
         @media (max-width: 600px) {
             .collections-hero { flex-direction: column; align-items: flex-start; gap: 16px; }
             .collections-hero h1 { font-size: 2.5rem; }
-            .collections-grid { grid-template-columns: 1fr 1fr; gap: 14px; }
+            .collections-grid { grid-template-columns: 1fr; }
+            .collection-detail-name { font-size: 2rem; }
+            .collection-detail-hero-content { padding: 0 20px 20px; }
         }
     </style>
 </head>
@@ -269,18 +241,18 @@
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
         </a>
         <div class="nav-dropdown">
-            <span class="nav-dropdown-trigger">Reviews
+            <span class="nav-dropdown-trigger active">Reviews
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="nav-dropdown-arrow"><polyline points="6 9 12 15 18 9"/></svg>
             </span>
             <div class="nav-dropdown-menu">
                 <a href="movies.html">Películas</a>
                 <a href="series.html">Series</a>
                 <a href="music.html">Music</a>
+                <a href="collections.html" class="active">Colecciones</a>
             </div>
         </div>
         <a href="top.html">Top Canciones</a>
         <a href="wrapped.html">Wrapped</a>
-        <a href="collections.html" class="active">Colecciones</a>
     </nav>
     <div class="header-right">
         <button style="visibility:hidden;" class="save-btn">+</button>
@@ -290,7 +262,7 @@
 
 <main style="padding:0;">
 
-    <!-- VISTA: LISTA DE COLECCIONES -->
+    <!-- VISTA: LISTA -->
     <div id="view-list">
         <div class="collections-hero">
             <div>
@@ -302,20 +274,36 @@
         <div class="collections-grid" id="collections-grid"></div>
     </div>
 
-    <!-- VISTA: DETALLE DE UNA COLECCIÓN -->
-    <div id="view-detail" style="display:none; padding:40px 0 0;">
-        <div class="collection-detail-header">
-            <div>
-                <button onclick="backToList()" style="background:none; border:none; cursor:pointer; color:var(--text-muted); font-size:0.88rem; font-weight:700; font-family:'Inter',sans-serif; padding:0; margin-bottom:12px; display:flex; align-items:center; gap:4px; transition:color 0.2s;" onmouseover="this.style.color='var(--accent-red)'" onmouseout="this.style.color='var(--text-muted)'">← Volver</button>
-                <h1 class="collection-detail-title" id="detail-title">Colección</h1>
-                <p class="collection-detail-desc" id="detail-desc"></p>
+    <!-- VISTA: DETALLE -->
+    <div id="view-detail">
+        <!-- Banner -->
+        <div class="collection-detail-banner" id="detail-banner">
+            <button class="collection-banner-change-btn" id="btn-change-banner">Cambiar banner</button>
+            <div class="collection-detail-hero-content">
+                <div class="collection-detail-name" id="detail-name">Colección</div>
+                <div class="collection-detail-quote-display" id="detail-quote-display"></div>
             </div>
-            <div style="display:flex; gap:10px; align-items:center; flex-shrink:0;">
+        </div>
+        <input type="file" id="input-banner" accept="image/*" style="display:none;">
+
+        <!-- Acciones -->
+        <div class="collection-detail-actions">
+            <button onclick="backToList()" style="background:none; border:none; cursor:pointer; color:var(--text-muted); font-size:0.88rem; font-weight:700; font-family:'Inter',sans-serif; padding:0; display:flex; align-items:center; gap:4px; transition:color 0.2s;" onmouseover="this.style.color='var(--accent-red)'" onmouseout="this.style.color='var(--text-muted)'">← Volver</button>
+            <div style="display:flex; gap:10px; align-items:center;">
                 <button class="album-review-btn" id="btn-add-to-collection">+ Añadir</button>
                 <button class="album-review-btn" id="btn-edit-collection">✎ Editar</button>
             </div>
         </div>
-        <div style="max-width:1400px; margin:0 auto; padding:0 20px 60px;">
+
+        <!-- Notas privadas -->
+        <div class="collection-notes-section">
+            <textarea class="collection-notes-textarea" id="collection-notes"
+                placeholder="Notas privadas… escribe lo que quieras sobre esta colección"
+                rows="2"></textarea>
+        </div>
+
+        <!-- Grid de items -->
+        <div style="max-width:1400px; margin:24px auto 0; padding:0 20px 60px;">
             <div class="album-grid" id="detail-grid"></div>
         </div>
     </div>
@@ -324,13 +312,18 @@
 
 <!-- MODAL: NUEVA/EDITAR COLECCIÓN -->
 <div id="modal-collection" class="modal hidden">
-    <div class="modal-content" style="max-width:440px;">
+    <div class="modal-content" style="max-width:480px;">
         <h2 id="collection-modal-title">Nueva colección</h2>
         <form id="collection-form">
             <label>Nombre:</label>
             <input type="text" id="collection-name" required placeholder="Ej: Películas de lluvia">
-            <label>Descripción (opcional):</label>
-            <input type="text" id="collection-desc" placeholder="Ej: Para ver cuando llueve">
+
+            <label>Frase (opcional):</label>
+            <input type="text" id="collection-quote" placeholder="Ej: Las que me salvaron el verano de 2023">
+
+            <label>Color de acento:</label>
+            <div id="color-picker" style="display:flex; gap:10px; flex-wrap:wrap; margin-top:6px; padding:4px 0;"></div>
+
             <div class="modal-actions">
                 <button type="button" id="btn-cancel-collection">Cancelar</button>
                 <button type="submit" class="save-btn">Guardar</button>
