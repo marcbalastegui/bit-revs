@@ -98,11 +98,17 @@ function creditsSVG(active) {
 }
 
 function buildTrackArtistDisplay(track) {
-    if (!track.artist || track.artist.trim() === '') return currentAlbum.artist;
+    const artistLink = (name) =>
+        `<a href="artist.html?name=${encodeURIComponent(name)}" style="color:var(--text-muted);text-decoration:none;font-weight:500;transition:color 0.2s;" onmouseover="this.style.color='var(--accent-red)'" onmouseout="this.style.color='var(--text-muted)'">${name}</a>`;
+
+    if (!track.artist || track.artist.trim() === '') return artistLink(currentAlbum.artist);
+
     const guests = track.artist.split(',').map(a => a.trim())
         .filter(a => a !== '' && a.toLowerCase() !== currentAlbum.artist.toLowerCase());
-    if (guests.length === 0) return currentAlbum.artist;
-    return `${currentAlbum.artist} ft. ${guests.join(', ')}`;
+
+    if (guests.length === 0) return artistLink(currentAlbum.artist);
+
+    return `${artistLink(currentAlbum.artist)} ft. ${guests.map(artistLink).join(', ')}`;
 }
 
 // ── RENDER PRINCIPAL ──────────────────────────────────────────────────────
@@ -131,7 +137,7 @@ function renderAlbumContent() {
                 </div>
                 <div class="track-actions">
                     <button class="track-review-btn${trackHasReview ? ' has-review' : ''}" onclick="openReview('track', ${index})" title="${trackHasReview ? 'Ver review' : 'Escribir review'}">${reviewPenSVG(trackHasReview)}</button>
-                    <button class="track-review-btn" onclick="openCredits('track', ${index})" title="Créditos">${creditsSVG(false)}</button>
+                    <button class="track-review-btn" onclick="openCredits('track', ${index})" title="Créditos" style="opacity:0;" class="track-credits-btn">${creditsSVG(false)}</button>
                     <button class="track-btn edit"   onclick="editTrack(${index})"   title="Editar">✎</button>
                     <button class="track-btn delete" onclick="deleteTrack(${index})" title="Borrar">✖</button>
                 </div>
