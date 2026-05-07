@@ -114,6 +114,26 @@ async function loadHome() {
         }
     }
 
+    // ── LÍNEA DE TIEMPO ──────────────────────────────────────────────────────
+    const allWithDate = [
+        ...albums.filter(a => a.reviewDate).map(a => ({ ...a, _type: 'album' })),
+        ...allMovies.filter(m => m.reviewDate).map(m => ({ ...m, _type: 'movie' })),
+        ...allSeries.filter(s => s.reviewDate).map(s => ({ ...s, _type: 'series' })),
+    ].sort((a, b) => b.reviewDate.localeCompare(a.reviewDate));
+
+    renderTimeline(allWithDate, 'all');
+
+    // Filter buttons
+    document.querySelectorAll('.timeline-filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.timeline-filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            const type = btn.dataset.type;
+            const filtered = type === 'all' ? allWithDate : allWithDate.filter(i => i._type === type);
+            renderTimeline(filtered, type);
+        });
+    });
+
     // ── ALEATORIO ─────────────────────────────────────────────────────────
     renderRandom(albums);
     document.getElementById('btn-shuffle')?.addEventListener('click', () => renderRandom(albums));
@@ -200,3 +220,68 @@ async function artistCard(artist) {
 }
 
 loadHome();
+
+
+// ── TIMELINE ──────────────────────────────────────────────────────────────
+function renderTimeline(items, filter) {
+    const container = document.getElementById('timeline-container');
+    if (!container) return;
+
+    if (items.length === 0) {
+        container.innerHTML = `<p class="home-empty">
+            ${filter === 'all'
+                ? 'Añade fechas de puntuación a tus reviews para ver la línea de tiempo.'
+                : 'No hay items de esta categoría con fecha de puntuación.'}
+        </p>`;
+        return;
+    }
+
+    const MONTHS = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+    // Agrupar por año → mes
+    const grouped = {};
+    items.forEach(item => {
+        const parts = item.reviewDate.split('-');
+        const year  = parts[0];
+        const month = parseInt(parts[1]) - 1;
+        if (!grouped[year]) grouped[year] = {};
+        if (!grouped[year][month]) grouped[year][month] = [];
+        grouped[year][month].push(item);
+    });
+
+    const years = Object.keys(grouped).sort((a, b) => b - a);
+
+    container.innerHTML = years.map(year => {
+        const months = Object.keys(grouped[year]).sort((a, b) => b - a);
+        const monthsHtml = months.map(month => {
+            const monthItems = grouped[year][month];
+            const cardsHtml  = monthItems.map(item => {
+                const isVertical = item._type !== 'album';
+                const badgeColor = getColorByRating(item.rating);
+                const href = item._type === 'album'
+                    ? `album.html?id=${item.id}`
+                    : `media-detail.html?type=${item._type === 'movie' ? 'movies' : 'series'}&id=${item.id}`;
+                return `
+                    <div class="timeline-card${isVertical ? ' vertical' : ''}" onclick="window.location.href='${href}'">
+                        <img src="${item.coverBase64}" alt="${item.title}">
+                        <div class="timeline-card-info">
+                            <div class="timeline-card-title">${item.title}</div>
+                            <span class="timeline-card-badge" style="background:${badgeColor}">${formatRating(item.rating)}</span>
+                        </div>
+                    </div>`;
+            }).join('');
+
+            return `
+                <div class="timeline-month-group">
+                    <div class="timeline-month-label">${MONTHS[parseInt(month)]} · ${monthItems.length} review${monthItems.length !== 1 ? 's' : ''}</div>
+                    <div class="timeline-row">${cardsHtml}</div>
+                </div>`;
+        }).join('');
+
+        return `
+            <div class="timeline-year-group">
+                <div class="timeline-year-label">${year}</div>
+                ${monthsHtml}
+            </div>`;
+    }).join('');
+}
