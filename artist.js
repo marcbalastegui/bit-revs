@@ -1,410 +1,312 @@
-// album.js - Gestión detallada del álbum, canciones, reviews y créditos
+// artist.js - Estadísticas por artista (incluye colaboraciones)
 
-let currentAlbum = null;
-let editingTrackIndex = null;
-let reviewBlocks  = [];
-let reviewTarget  = null;
-let creditsTarget = null;
-let creditsEditMode = false; // false = vista lectura, true = edición
+async function loadArtistStats() {
+    const params = new URLSearchParams(window.location.search);
+    const artistName = params.get('name');
 
-async function loadAlbumDetails() {
-    const params  = new URLSearchParams(window.location.search);
-    const albumId = params.get('id');
-    if (!albumId) return;
-
-    currentAlbum = await getAlbumByIdFromDB(albumId);
-    if (!currentAlbum) return;
-    if (!currentAlbum.tracks) currentAlbum.tracks = [];
-
-    renderAlbumContent();
-    initReviewModal();
-    initCreditsModal();
-}
-
-// ── MEDIA ─────────────────────────────────────────────────────────────────
-function recalculateAlbumRating() {
-    if (!currentAlbum?.tracks?.length) { currentAlbum.rating = 0; return; }
-    let total = 0, count = 0;
-    currentAlbum.tracks.forEach(t => {
-        if (!t.isInterlude && !isNaN(parseFloat(t.rating))) { total += parseFloat(t.rating); count++; }
-    });
-    currentAlbum.rating = count === 0 ? 0 : (total / count).toFixed(1);
-}
-
-// ── FAVORITOS ─────────────────────────────────────────────────────────────
-window.toggleAlbumFavorite = async function() {
-    currentAlbum.favorite = !currentAlbum.favorite;
-    await saveAlbumToDB(currentAlbum);
-    const btn = document.getElementById('btn-album-favorite');
-    if (btn) btn.classList.toggle('active', currentAlbum.favorite);
-}
-
-// ── BORRAR / EDITAR TRACK ─────────────────────────────────────────────────
-window.deleteTrack = async function(index) {
-    if (await brConfirm("Esta acción no se puede deshacer.", "¿Borrar canción?")) {
-        currentAlbum.tracks.splice(index, 1);
-        recalculateAlbumRating();
-        await saveAlbumToDB(currentAlbum);
-        renderAlbumContent();
-    }
-}
-
-window.editTrack = function(index) {
-    editingTrackIndex = index;
-    const track = currentAlbum.tracks[index];
-    document.getElementById('track-title').value  = track.title;
-    document.getElementById('track-artist').value = track.artist || "";
-    document.getElementById('track-interlude').checked = track.isInterlude;
-    document.getElementById('track-rating').value = track.rating || "";
-    document.getElementById('rating-container').style.display = track.isInterlude ? 'none' : 'block';
-    const modalTitle = document.querySelector('#modal-track h2');
-    if (modalTitle) modalTitle.textContent = "Editar Canción";
-    document.getElementById('modal-track').classList.remove('hidden');
-}
-
-// ── DRAG & DROP ───────────────────────────────────────────────────────────
-let dragSrcIndex = null;
-
-function addDragListeners(item, index) {
-    item.setAttribute('draggable', 'true');
-    item.addEventListener('dragstart', (e) => { dragSrcIndex = index; item.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; });
-    item.addEventListener('dragend',   () => { item.classList.remove('dragging'); document.querySelectorAll('.track-item').forEach(el => el.classList.remove('drag-over')); });
-    item.addEventListener('dragover',  (e) => { e.preventDefault(); document.querySelectorAll('.track-item').forEach(el => el.classList.remove('drag-over')); item.classList.add('drag-over'); });
-    item.addEventListener('dragleave', () => item.classList.remove('drag-over'));
-    item.addEventListener('drop', async (e) => {
-        e.preventDefault(); item.classList.remove('drag-over');
-        if (dragSrcIndex === null || dragSrcIndex === index) return;
-        const moved = currentAlbum.tracks.splice(dragSrcIndex, 1)[0];
-        currentAlbum.tracks.splice(index, 0, moved);
-        dragSrcIndex = null;
-        await saveAlbumToDB(currentAlbum);
-        renderAlbumContent();
-    });
-}
-
-// ── SVG HELPERS ───────────────────────────────────────────────────────────
-function heartSVG() {
-    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`;
-}
-
-function reviewPenSVG(active) {
-    const color = active ? 'var(--accent-red)' : 'currentColor';
-    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
-}
-
-function creditsSVG(active) {
-    const color = active ? 'var(--accent-red)' : 'currentColor';
-    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a6 6 0 0 1 12 0v2"/></svg>`;
-}
-
-function buildTrackArtistDisplay(track) {
-    const artistLink = (name) =>
-        `<a href="artist.html?name=${encodeURIComponent(name)}" style="color:var(--text-muted);text-decoration:none;font-weight:500;transition:color 0.2s;" onmouseover="this.style.color='var(--accent-red)'" onmouseout="this.style.color='var(--text-muted)'">${name}</a>`;
-
-    if (!track.artist || track.artist.trim() === '') return artistLink(currentAlbum.artist);
-
-    const guests = track.artist.split(',').map(a => a.trim())
-        .filter(a => a !== '' && a.toLowerCase() !== currentAlbum.artist.toLowerCase());
-
-    if (guests.length === 0) return artistLink(currentAlbum.artist);
-
-    return `${artistLink(currentAlbum.artist)} ft. ${guests.map(artistLink).join(', ')}`;
-}
-
-// ── RENDER PRINCIPAL ──────────────────────────────────────────────────────
-function renderAlbumContent() {
-    const container  = document.getElementById('album-detail-container');
-    const badgeColor = getColorByRating(currentAlbum.rating);
-    const typeText   = currentAlbum.type || 'Álbum';
-    const isFav      = currentAlbum.favorite || false;
-    const albumHasReview  = currentAlbum.review  && currentAlbum.review.length > 0;
-    const albumHasCredits = currentAlbum.credits && (currentAlbum.credits.produced || currentAlbum.credits.written);
-
-    let tracksHtml = '';
-    currentAlbum.tracks.forEach((track, index) => {
-        const trackColor     = track.isInterlude ? '#4D4D4D' : getColorByRating(track.rating);
-        const displayRating  = track.isInterlude ? 'INTERLUDE' : formatRating(track.rating);
-        const badgeClass     = track.isInterlude ? 'rating-badge album-tag' : 'rating-badge';
-        const trackHasReview = track.review && track.review.length > 0;
-        const artistDisplay  = buildTrackArtistDisplay(track);
-
-        tracksHtml += `
-            <div class="track-item" data-index="${index}">
-                <span class="drag-handle" title="Arrastra para reordenar">⠿</span>
-                <div class="track-info">
-                    <h4>${track.title}</h4>
-                    <p>${artistDisplay}</p>
-                </div>
-                <div class="track-actions">
-                    <button class="track-review-btn${trackHasReview ? ' has-review' : ''}" onclick="openReview('track', ${index})" title="${trackHasReview ? 'Ver review' : 'Escribir review'}">${reviewPenSVG(trackHasReview)}</button>
-                    <button class="track-review-btn" onclick="openCredits('track', ${index})" title="Créditos" style="opacity:0;" class="track-credits-btn">${creditsSVG(false)}</button>
-                    <button class="track-btn edit"   onclick="editTrack(${index})"   title="Editar">✎</button>
-                    <button class="track-btn delete" onclick="deleteTrack(${index})" title="Borrar">✖</button>
-                </div>
-                <span class="${badgeClass}" style="background-color: ${trackColor}; font-size: ${track.isInterlude ? '0.7rem' : '1rem'}">${displayRating}</span>
-            </div>
-        `;
-    });
-
-    let displayAlbumRating = "-";
-    if (currentAlbum.tracks.length > 0) displayAlbumRating = formatRating(currentAlbum.rating);
-
-    container.innerHTML = `
-        <div class="album-header-banner">
-            <img src="${currentAlbum.coverBase64}" alt="${currentAlbum.title}" class="detail-cover">
-            <div class="detail-info">
-                <span class="detail-type">${typeText} • ${currentAlbum.year}</span>
-                <h1 class="detail-title">${currentAlbum.title}</h1>
-                <h2 class="detail-artist">${currentAlbum.artist}</h2>
-                <div style="display:flex; align-items:center; gap:12px; margin-top:auto; flex-wrap:wrap;">
-                    <div class="rating-big" style="background-color: ${badgeColor};">${displayAlbumRating}</div>
-                    <button id="btn-album-favorite" class="album-fav-btn${isFav ? ' active' : ''}" onclick="toggleAlbumFavorite()">${heartSVG()}</button>
-                    <button class="album-review-btn${albumHasReview ? ' has-review' : ''}" onclick="openReview('album')">
-                        ${reviewPenSVG(albumHasReview)} ${albumHasReview ? 'Ver review' : 'Escribir review'}
-                    </button>
-                    <button class="album-review-btn${albumHasCredits ? ' has-review' : ''}" onclick="openCredits('album')">
-                        ${creditsSVG(albumHasCredits)} ${albumHasCredits ? 'Créditos' : 'Créditos'}
-                    </button>
-                </div>
-            </div>
-        </div>
-        <div class="tracklist-section">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-                <h2>Canciones</h2>
-                <button class="btn" style="background-color:var(--text-main); color:var(--bg-primary);" id="btn-add-track">+ Añadir Canción</button>
-            </div>
-            <div id="tracks-list">${tracksHtml}</div>
-        </div>
-    `;
-
-    document.querySelectorAll('.track-item').forEach((el, index) => addDragListeners(el, index));
-    document.getElementById('btn-add-track').addEventListener('click', () => {
-        editingTrackIndex = null;
-        const modalTitle = document.querySelector('#modal-track h2');
-        if (modalTitle) modalTitle.textContent = "Añadir Canción";
-        document.getElementById('track-form').reset();
-        document.getElementById('rating-container').style.display = 'block';
-        document.getElementById('modal-track').classList.remove('hidden');
-    });
-}
-
-// ── CREDITS MODAL ─────────────────────────────────────────────────────────
-
-function renderCreditsModal(target, editMode) {
-    const modal   = document.getElementById('modal-credits');
-    const titleEl = document.getElementById('credits-modal-title');
-    const body    = document.getElementById('credits-modal-body');
-
-    let credits = {};
-    if (target.type === 'album') {
-        titleEl.textContent = currentAlbum.title;
-        credits = currentAlbum.credits || {};
-    } else {
-        const track = currentAlbum.tracks[target.index];
-        titleEl.textContent = track.title;
-        credits = track.credits || {};
+    if (!artistName) {
+        document.getElementById('artist-grid').innerHTML = `
+            <div class="stat-card col-12" style="text-align:center; color:var(--text-muted);">
+                <p>No se especificó un artista.</p>
+            </div>`;
+        return;
     }
 
-    const hasCredits = credits.produced || credits.written;
+    const albums = await getAllAlbumsFromDB();
 
-    if (!editMode && hasCredits) {
-        // VISTA DE SOLO LECTURA
-        body.innerHTML = `
-            <div class="credits-view">
-                <button class="credits-edit-trigger" id="btn-credits-edit" title="Editar créditos">✎</button>
-                <div class="credits-view-row">
-                    ${credits.produced ? `
-                        <div class="credits-view-item">
-                            <span class="credits-view-label">Producido por</span>
-                            <span class="credits-view-value">${credits.produced}</span>
-                        </div>` : ''}
-                    ${credits.written ? `
-                        <div class="credits-view-item">
-                            <span class="credits-view-label">Escrito por</span>
-                            <span class="credits-view-value">${credits.written}</span>
-                        </div>` : ''}
-                </div>
-            </div>
-            <div class="modal-actions">
-                <button type="button" id="btn-cancel-credits">Cerrar</button>
-            </div>
-        `;
-        document.getElementById('btn-credits-edit').addEventListener('click', () => {
-            renderCreditsModal(target, true);
-        });
-        document.getElementById('btn-cancel-credits').addEventListener('click', () => {
-            modal.classList.add('hidden');
-        });
-    } else {
-        // MODO EDICIÓN
-        body.innerHTML = `
-            <form id="credits-form">
-                <label for="credits-produced">Producido por:</label>
-                <input type="text" id="credits-produced" placeholder="Ej: Metro Boomin, Pharrell" value="${credits.produced || ''}">
-                <label for="credits-written">Escrito por:</label>
-                <input type="text" id="credits-written" placeholder="Ej: Drake, 40" value="${credits.written || ''}">
-                <div class="modal-actions">
-                    <button type="button" id="btn-cancel-credits">${hasCredits ? 'Cancelar' : 'Cancelar'}</button>
-                    <button type="submit" class="save-btn">Guardar Créditos</button>
-                </div>
-            </form>
-        `;
-        document.getElementById('btn-cancel-credits').addEventListener('click', () => {
-            if (hasCredits) {
-                renderCreditsModal(target, false); // volver a vista lectura
-            } else {
-                modal.classList.add('hidden');
-            }
-        });
-        document.getElementById('credits-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const newCredits = {
-                produced: document.getElementById('credits-produced').value.trim(),
-                written:  document.getElementById('credits-written').value.trim()
+    // Encontrar álbumes donde el artista es principal O colaborador
+    const artistAlbums = albums.filter(a => {
+        const isPrincipal = a.artist && a.artist.toLowerCase() === artistName.toLowerCase();
+        const isFeatured = a.featuredArtists && a.featuredArtists.some(f => f.toLowerCase() === artistName.toLowerCase());
+        return isPrincipal || isFeatured;
+    });
+
+    if (artistAlbums.length === 0) {
+        document.getElementById('artist-grid').innerHTML = `
+            <div class="stat-card col-12" style="text-align:center; color:var(--text-muted);">
+                <p>No hay álbumes de este artista.</p>
+            </div>`;
+        return;
+    }
+
+    // Actualizar hero
+    document.getElementById('artist-name').textContent = artistName;
+    document.getElementById('artist-initial').textContent = artistName.charAt(0).toUpperCase();
+
+    // Cargar foto del artista si existe
+    const artistData = await getArtistFromDB(artistName);
+    if (artistData && artistData.photo) {
+        applyArtistPhoto(artistData.photo);
+    }
+
+    // Click en avatar → subir foto
+    const avatarContainer = document.getElementById('artist-avatar-container');
+    const inputPhoto      = document.getElementById('input-artist-photo');
+    if (avatarContainer && inputPhoto) {
+        avatarContainer.addEventListener('click', () => inputPhoto.click());
+        inputPhoto.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file || !file.type.startsWith('image/')) return;
+            const reader = new FileReader();
+            reader.onload = async (ev) => {
+                const photoData = ev.target.result;
+                await saveArtistToDB({ name: artistName, photo: photoData });
+                applyArtistPhoto(photoData);
             };
-            if (target.type === 'album') {
-                currentAlbum.credits = newCredits;
-            } else {
-                currentAlbum.tracks[target.index].credits = newCredits;
+            reader.readAsDataURL(file);
+        });
+    }
+
+    // ── EXTRAER DATOS ─────────────────────────────────────────────────────
+
+    // Canciones donde el artista aparece:
+    // 1. Álbumes donde es principal → todas las canciones
+    // 2. Cualquier álbum donde aparece en track.artist (feature a nivel de canción)
+    const allTracks = [];
+    const principalAlbums = artistAlbums.filter(a => a.artist && a.artist.toLowerCase() === artistName.toLowerCase());
+
+    // Canciones de álbumes propios
+    principalAlbums.forEach(album => {
+        if (!album.tracks) return;
+        album.tracks.forEach(track => {
+            if (!track.isInterlude && parseFloat(track.rating) > 0) {
+                allTracks.push({ ...track, albumId: album.id, albumTitle: album.title, albumCover: album.coverBase64 });
             }
-            await saveAlbumToDB(currentAlbum);
-            modal.classList.add('hidden');
-            renderAlbumContent();
         });
-    }
-
-    modal.classList.remove('hidden');
-}
-
-window.openCredits = function(type, index) {
-    creditsTarget  = type === 'album' ? { type: 'album' } : { type: 'track', index };
-    creditsEditMode = false;
-    const target   = creditsTarget;
-    const credits  = type === 'album' ? (currentAlbum.credits || {}) : (currentAlbum.tracks[index]?.credits || {});
-    const hasCredits = credits.produced || credits.written;
-    renderCreditsModal(target, !hasCredits); // si no hay créditos, abrir en modo edición directamente
-}
-
-function initCreditsModal() {
-    // El modal se gestiona dinámicamente desde renderCreditsModal
-}
-
-// ── REVIEW MODAL ──────────────────────────────────────────────────────────
-window.openReview = function(type, index) {
-    if (type === 'album') {
-        reviewTarget = { type: 'album' };
-        reviewBlocks = currentAlbum.review ? JSON.parse(JSON.stringify(currentAlbum.review)) : [];
-        document.getElementById('review-modal-title').textContent = `Review: ${currentAlbum.title}`;
-    } else {
-        reviewTarget = { type: 'track', index };
-        const track  = currentAlbum.tracks[index];
-        reviewBlocks = track.review ? JSON.parse(JSON.stringify(track.review)) : [];
-        document.getElementById('review-modal-title').textContent = `Review: ${track.title}`;
-    }
-    if (reviewBlocks.length === 0) reviewBlocks = [{ type: 'text', content: '' }];
-    renderReviewEditor();
-    document.getElementById('modal-review').classList.remove('hidden');
-}
-
-function renderReviewEditor() {
-    const editor = document.getElementById('review-editor');
-    editor.innerHTML = '';
-    reviewBlocks.forEach((block, i) => {
-        const wrapper = document.createElement('div');
-        wrapper.className = 'review-block-wrapper';
-        const deleteBtn = document.createElement('button');
-        deleteBtn.className = 'review-block-delete';
-        deleteBtn.innerHTML = '✖';
-        deleteBtn.addEventListener('click', () => {
-            if (reviewBlocks.length === 1) { reviewBlocks[0].content = ''; renderReviewEditor(); return; }
-            reviewBlocks.splice(i, 1);
-            renderReviewEditor();
-        });
-        const textarea = document.createElement('textarea');
-        textarea.className = `review-block review-block-${block.type}`;
-        textarea.placeholder = block.type === 'lyrics' ? 'Pega aquí los lyrics…' : 'Escribe tu análisis…';
-        textarea.value = block.content;
-        textarea.addEventListener('input', () => {
-            reviewBlocks[i].content = textarea.value;
-            textarea.style.height = 'auto';
-            textarea.style.height = textarea.scrollHeight + 'px';
-        });
-        setTimeout(() => { textarea.style.height = 'auto'; textarea.style.height = textarea.scrollHeight + 'px'; }, 0);
-        wrapper.appendChild(deleteBtn);
-        wrapper.appendChild(textarea);
-        editor.appendChild(wrapper);
-        const insertBar = document.createElement('div');
-        insertBar.className = 'review-insert-bar';
-        insertBar.innerHTML = `
-            <button class="review-insert-btn" data-type="text" data-after="${i}">+ Texto</button>
-            <button class="review-insert-btn lyrics" data-type="lyrics" data-after="${i}">♪ Lyrics</button>
-        `;
-        insertBar.querySelectorAll('.review-insert-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                reviewBlocks.splice(parseInt(btn.dataset.after) + 1, 0, { type: btn.dataset.type, content: '' });
-                renderReviewEditor();
-                setTimeout(() => { const tas = document.querySelectorAll('.review-block'); if (tas[parseInt(btn.dataset.after) + 1]) tas[parseInt(btn.dataset.after) + 1].focus(); }, 50);
-            });
-        });
-        editor.appendChild(insertBar);
     });
+
+    // Canciones en otros álbumes donde aparece como feature en track.artist
+    albums.forEach(album => {
+        // Saltamos álbumes donde ya es principal (ya los hemos contado)
+        if (album.artist && album.artist.toLowerCase() === artistName.toLowerCase()) return;
+        if (!album.tracks) return;
+        album.tracks.forEach(track => {
+            if (!track.isInterlude && parseFloat(track.rating) > 0 && track.artist) {
+                const guests = track.artist.split(',').map(a => a.trim());
+                const isFeature = guests.some(g => g.toLowerCase() === artistName.toLowerCase());
+                if (isFeature) {
+                    // Evitar duplicados
+                    const exists = allTracks.find(t => t.title === track.title && t.albumId === album.id);
+                    if (!exists) {
+                        allTracks.push({ ...track, albumId: album.id, albumTitle: album.title, albumCover: album.coverBase64 });
+                    }
+                }
+            }
+        });
+    });
+
+    // Media de álbumes (como principal)
+    const albumsWithRating = principalAlbums.filter(a => parseFloat(a.rating) > 0);
+    const avgAlbumRating = albumsWithRating.length > 0
+        ? albumsWithRating.reduce((sum, a) => sum + parseFloat(a.rating), 0) / albumsWithRating.length
+        : 0;
+
+    // Media de canciones
+    const avgTrackRating = allTracks.length > 0
+        ? allTracks.reduce((sum, t) => sum + parseFloat(t.rating), 0) / allTracks.length
+        : 0;
+
+    // Mejor álbum (como principal)
+    const bestAlbum = [...albumsWithRating].sort((a, b) => parseFloat(b.rating) - parseFloat(a.rating))[0];
+
+    // Mejor canción
+    const bestTrack = [...allTracks].sort((a, b) => {
+        const diff = parseFloat(b.rating) - parseFloat(a.rating);
+        if (diff !== 0) return diff;
+        const albumA = albums.find(al => al.id === a.albumId);
+        const albumB = albums.find(al => al.id === b.albumId);
+        return parseFloat(albumB?.rating || 0) - parseFloat(albumA?.rating || 0);
+    })[0];
+
+    // Géneros (de todos sus álbumes, principal y featured)
+    const genreSet = new Set();
+    artistAlbums.forEach(a => {
+        if (a.genres) a.genres.forEach(g => genreSet.add(g));
+    });
+
+    // Distribución de notas
+    const ranges = [
+        { label: '0-2', min: 0,  max: 2  },
+        { label: '2-4', min: 2,  max: 4  },
+        { label: '4-5', min: 4,  max: 5  },
+        { label: '5-6', min: 5,  max: 6  },
+        { label: '6-7', min: 6,  max: 7  },
+        { label: '7-8', min: 7,  max: 8  },
+        { label: '8-9', min: 8,  max: 9  },
+        { label: '9-10', min: 9, max: 10.1 },
+    ];
+
+    const distribution = ranges.map(r => ({
+        label: r.label,
+        count: allTracks.filter(t => {
+            const v = parseFloat(t.rating);
+            return v >= r.min && v < r.max;
+        }).length
+    }));
+
+    const maxCount = Math.max(...distribution.map(d => d.count), 1);
+
+    // Separar álbumes propios de colaboraciones
+    const ownAlbums = artistAlbums.filter(a => a.artist && a.artist.toLowerCase() === artistName.toLowerCase());
+    const collaborations = artistAlbums.filter(a => !ownAlbums.includes(a));
+
+    // ── CONSTRUIR HTML ────────────────────────────────────────────────────
+
+    let html = '';
+
+    // Media de álbumes
+    html += `
+        <div class="stat-card col-4">
+            <div class="stat-label">Media de álbumes</div>
+            <div class="stat-value-big">${formatRating(avgAlbumRating)}</div>
+            <div class="stat-value-sub">${albumsWithRating.length} álbum${albumsWithRating.length !== 1 ? 'es' : ''}</div>
+        </div>`;
+
+    // Total de álbumes
+    html += `
+        <div class="stat-card col-4">
+            <div class="stat-label">Total de álbumes</div>
+            <div class="stat-value-big">${ownAlbums.length}</div>
+            <div class="stat-value-sub">${collaborations.length} colaboraciones</div>
+        </div>`;
+
+    // Total de canciones
+    html += `
+        <div class="stat-card col-4">
+            <div class="stat-label">Canciones puntuadas</div>
+            <div class="stat-value-big">${allTracks.length}</div>
+            <div class="stat-value-sub">media: ${formatRating(avgTrackRating)}</div>
+        </div>`;
+
+    // Mejor álbum
+    if (bestAlbum) {
+        const badgeColor = getColorByRating(bestAlbum.rating);
+        html += `
+            <div class="stat-card col-6">
+                <div class="stat-label">Mejor álbum</div>
+                <div class="highlight-card">
+                    <img class="highlight-cover" src="${bestAlbum.coverBase64}" alt="${bestAlbum.title}">
+                    <div class="highlight-info">
+                        <div class="highlight-title">${bestAlbum.title}</div>
+                        <div class="highlight-meta">${bestAlbum.year}</div>
+                        <span class="highlight-badge" style="background:${badgeColor}">${formatRating(bestAlbum.rating)}</span>
+                    </div>
+                </div>
+            </div>`;
+    }
+
+    // Mejor canción
+    if (bestTrack) {
+        const badgeColor = getColorByRating(bestTrack.rating);
+        html += `
+            <div class="stat-card col-6">
+                <div class="stat-label">Mejor canción</div>
+                <div class="highlight-card">
+                    <img class="highlight-cover" src="${bestTrack.albumCover}" alt="${bestTrack.albumTitle}">
+                    <div class="highlight-info">
+                        <div class="highlight-title">${bestTrack.title}</div>
+                        <div class="highlight-meta">${bestTrack.albumTitle}</div>
+                        <span class="highlight-badge" style="background:${badgeColor}">${formatRating(bestTrack.rating)}</span>
+                    </div>
+                </div>
+            </div>`;
+    }
+
+    // Géneros
+    if (genreSet.size > 0) {
+        const genresHtml = [...genreSet].sort().map(g => `<span class="genre-pill">${g}</span>`).join('');
+        html += `
+            <div class="stat-card col-6">
+                <div class="stat-label">Géneros</div>
+                <div class="genres-list">${genresHtml}</div>
+            </div>`;
+    }
+
+    // Distribución de notas
+    const barsHtml = distribution.map(d => {
+        const heightPct = maxCount > 0 ? Math.round((d.count / maxCount) * 100) : 0;
+        const barColor = d.label === '9-10' ? '#B533FF'
+                       : d.label === '8-9'  ? '#3366FF'
+                       : d.label === '7-8'  ? '#66CC33'
+                       : d.label === '6-7'  ? '#FFD11A'
+                       : d.label === '5-6'  ? '#FF8533'
+                       : '#FF3333';
+        return `
+            <div class="chart-bar-wrap">
+                <div class="chart-bar" style="height:${heightPct}%; background:${barColor};">
+                    ${d.count > 0 ? `<span class="chart-bar-count">${d.count}</span>` : ''}
+                </div>
+                <span class="chart-label">${d.label}</span>
+            </div>`;
+    }).join('');
+
+    html += `
+        <div class="stat-card col-6">
+            <div class="stat-label">Distribución de notas</div>
+            <div class="chart-container">${barsHtml}</div>
+        </div>`;
+
+    // Lista de álbumes propios
+    const albumsListHtml = ownAlbums
+        .filter(a => parseFloat(a.rating) > 0)
+        .sort((a, b) => parseFloat(b.rating) - parseFloat(a.rating))
+        .map(album => {
+            const badgeColor = getColorByRating(album.rating);
+            return `
+                <div class="album-row">
+                    <img class="album-row-cover" src="${album.coverBase64}" alt="${album.title}">
+                    <div class="album-row-info">
+                        <div class="album-row-title">${album.title}</div>
+                        <div class="album-row-meta">${album.year}</div>
+                    </div>
+                    <span class="album-row-badge" style="background:${badgeColor}">${formatRating(album.rating)}</span>
+                </div>`;
+        }).join('');
+
+    html += `
+        <div class="stat-card col-12">
+            <div class="stat-label">Todos los álbumes</div>
+            <div class="albums-list">${albumsListHtml}</div>
+        </div>`;
+
+    // Lista de colaboraciones
+    if (collaborations.length > 0) {
+        const collabsListHtml = collaborations
+            .filter(a => parseFloat(a.rating) > 0)
+            .sort((a, b) => parseFloat(b.rating) - parseFloat(a.rating))
+            .map(album => {
+                const badgeColor = getColorByRating(album.rating);
+                const roleText = album.artist === artistName ? 'Principal' : 'Feat.';
+                return `
+                    <div class="album-row">
+                        <img class="album-row-cover" src="${album.coverBase64}" alt="${album.title}">
+                        <div class="album-row-info">
+                            <div class="album-row-title">${album.title}</div>
+                            <div class="album-row-meta">${album.artist}${album.featuredArtists && album.featuredArtists.length > 0 ? ' ft. ' + album.featuredArtists.join(', ') : ''}</div>
+                        </div>
+                        <span class="album-row-badge" style="background:${badgeColor}">${formatRating(album.rating)}</span>
+                    </div>`;
+            }).join('');
+
+        html += `
+            <div class="stat-card col-12">
+                <div class="stat-label">Colaboraciones</div>
+                <div class="albums-list">${collabsListHtml}</div>
+            </div>`;
+    }
+
+    document.getElementById('artist-grid').innerHTML = html;
 }
 
-function initReviewModal() {
-    document.getElementById('btn-close-review').addEventListener('click', () => {
-        document.getElementById('modal-review').classList.add('hidden');
-    });
-    document.getElementById('btn-save-review').addEventListener('click', async () => {
-        const cleaned = reviewBlocks.filter((b, i) => b.content.trim() !== '' || i === 0).map(b => ({ ...b, content: b.content.trim() }));
-        if (reviewTarget.type === 'album') {
-            currentAlbum.review = cleaned;
-        } else {
-            currentAlbum.tracks[reviewTarget.index].review = cleaned;
-        }
-        await saveAlbumToDB(currentAlbum);
-        document.getElementById('modal-review').classList.add('hidden');
-        renderAlbumContent();
-    });
+loadArtistStats();
+
+
+// ── HELPER: aplicar foto al avatar ───────────────────────────────────────
+function applyArtistPhoto(photoData) {
+    const initial   = document.getElementById('artist-initial');
+    const photoEl   = document.getElementById('artist-photo');
+    const container = document.getElementById('artist-avatar-container');
+    if (initial)   initial.style.display = 'none';
+    if (photoEl)   { photoEl.src = photoData; photoEl.style.display = 'block'; }
+    if (container) container.style.background = 'transparent';
 }
-
-// ── EVENTOS MODAL CANCIÓN ─────────────────────────────────────────────────
-document.getElementById('track-interlude').addEventListener('change', (e) => {
-    document.getElementById('rating-container').style.display = e.target.checked ? 'none' : 'block';
-    if (e.target.checked) document.getElementById('track-rating').removeAttribute('required');
-    else document.getElementById('track-rating').setAttribute('required', 'true');
-});
-
-document.getElementById('btn-cancel-track').addEventListener('click', () => {
-    document.getElementById('modal-track').classList.add('hidden');
-});
-
-document.getElementById('track-form').addEventListener('submit', async function(e) {
-    e.preventDefault();
-    const title       = document.getElementById('track-title').value;
-    const artist      = document.getElementById('track-artist').value;
-    const isInterlude = document.getElementById('track-interlude').checked;
-    let rating = "";
-    if (!isInterlude) {
-        rating = document.getElementById('track-rating').value.replace(',', '.');
-        if (isNaN(rating) || rating < 0 || rating > 10 || rating.trim() === "") {
-            await brAlert("Introduce una nota válida entre 0 y 10.", "Nota inválida");
-            return;
-        }
-        rating = parseFloat(rating).toFixed(1);
-    }
-    const newTrack = { title, artist, isInterlude, rating };
-    if (editingTrackIndex !== null) {
-        newTrack.review   = currentAlbum.tracks[editingTrackIndex].review;
-        newTrack.favorite = currentAlbum.tracks[editingTrackIndex].favorite;
-        newTrack.credits  = currentAlbum.tracks[editingTrackIndex].credits;
-        currentAlbum.tracks[editingTrackIndex] = newTrack;
-    } else {
-        currentAlbum.tracks.push(newTrack);
-    }
-    recalculateAlbumRating();
-    await saveAlbumToDB(currentAlbum);
-    document.getElementById('modal-track').classList.add('hidden');
-    renderAlbumContent();
-});
-
-loadAlbumDetails();
