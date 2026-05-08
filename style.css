@@ -782,26 +782,20 @@ h1 { font-size: 2.8rem; font-weight: 900; margin-bottom: 30px; letter-spacing: -
     backdrop-filter: blur(4px);
     box-shadow: 0 2px 8px rgba(0,0,0,0.3);
 }
-#btn-cancel-collection {
-    background: var(--bg-secondary);
-    color: var(--text-main);
-    border: 1px solid var(--border-color);
-    padding: 10px 20px;
-    border-radius: 10px;
-    font-weight: 700;
-    cursor: pointer;
-    font-family: 'Inter', sans-serif;
-    font-size: 0.95rem;
-    transition: background 0.2s;
-}
-#btn-cancel-collection:hover { background: #e0e0e0; }
 
-/* Fix gallery mode badges */
-.album-grid.gallery-mode .album-card {
-    overflow: hidden;
+/* ── GALLERY MODE FIXES ── */
+.album-grid.gallery-mode .rating-badge {
+    display: none;
 }
-
-.album-grid.gallery-mode .cover-container {
-    aspect-ratio: 1/1 !important;
-    border-radius: 10px !important;
+.album-grid.gallery-mode .card-gallery-badge {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-weight: 900;
+    font-size: 0.82rem;
+    color: white;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    z-index: 10;
 }
