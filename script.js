@@ -242,6 +242,7 @@ async function processAndRenderAlbums() {
 
 function renderAlbums(albumsToRender, gridElement) {
     gridElement.innerHTML = '';
+    gridElement.classList.toggle('gallery-mode', galleryMode);
     if (albumsToRender.length === 0) {
         gridElement.innerHTML = '<p style="color: var(--text-muted); grid-column: 1 / -1; margin-top: 20px;">No se encontraron álbumes.</p>';
         return;
@@ -284,6 +285,7 @@ function renderAlbums(albumsToRender, gridElement) {
                 ${genresHtml}
             </div>
         `;
+        if (galleryMode) addGalleryBadge(card, album.rating);
         gridElement.appendChild(card);
     });
 }
@@ -323,33 +325,25 @@ if (globalSinglesToggle) globalSinglesToggle.addEventListener('change', processA
 let galleryMode = false;
 const galleryBtn = document.getElementById('gallery-toggle');
 if (galleryBtn) {
-    galleryBtn.addEventListener('click', () => {
+    galleryBtn.addEventListener('click', async () => {
         galleryMode = !galleryMode;
         galleryBtn.classList.toggle('active', galleryMode);
-        const grid = document.getElementById('album-grid');
-        if (grid) grid.classList.toggle('gallery-mode', galleryMode);
-        // Add/remove gallery badges on cards
-        toggleGalleryBadges(grid);
+        // Re-render con el modo nuevo — es la forma más limpia
+        await processAndRenderAlbums();
     });
 }
 
-function toggleGalleryBadges(grid) {
-    if (!grid) return;
-    if (galleryMode) {
-        grid.querySelectorAll('.album-card').forEach(card => {
-            const badge = card.querySelector('.rating-badge');
-            if (!badge || card.querySelector('.card-gallery-badge')) return;
-            const text = badge.textContent.trim();
-            if (!text || text === '-') return;
-            const gb = document.createElement('span');
-            gb.className = 'card-gallery-badge';
-            gb.style.background = window.getComputedStyle(badge).backgroundColor;
-            gb.textContent = text;
-            card.appendChild(gb);
-        });
-    } else {
-        grid.querySelectorAll('.card-gallery-badge').forEach(b => b.remove());
-    }
+// Se llama desde renderAlbums cuando galleryMode está activo
+function addGalleryBadge(card, rating) {
+    if (!galleryMode) return;
+    if (!rating || parseFloat(rating) <= 0) return;
+    const existing = card.querySelector('.card-gallery-badge');
+    if (existing) existing.remove();
+    const gb = document.createElement('span');
+    gb.className = 'card-gallery-badge';
+    gb.style.background = getColorByRating(rating);
+    gb.textContent = formatRating(rating);
+    card.appendChild(gb);
 }
 
 
