@@ -338,13 +338,14 @@ function toggleGalleryBadges(grid) {
     if (galleryMode) {
         grid.querySelectorAll('.album-card').forEach(card => {
             const badge = card.querySelector('.rating-badge');
-            if (badge && !card.querySelector('.card-gallery-badge')) {
-                const galleryBadge = document.createElement('span');
-                galleryBadge.className = 'card-gallery-badge';
-                galleryBadge.style.background = badge.style.backgroundColor;
-                galleryBadge.textContent = badge.textContent;
-                card.appendChild(galleryBadge);
-            }
+            if (!badge || card.querySelector('.card-gallery-badge')) return;
+            const text = badge.textContent.trim();
+            if (!text || text === '-') return;
+            const gb = document.createElement('span');
+            gb.className = 'card-gallery-badge';
+            gb.style.background = window.getComputedStyle(badge).backgroundColor;
+            gb.textContent = text;
+            card.appendChild(gb);
         });
     } else {
         grid.querySelectorAll('.card-gallery-badge').forEach(b => b.remove());
