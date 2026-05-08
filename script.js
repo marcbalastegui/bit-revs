@@ -339,11 +339,12 @@ function toggleGalleryBadges(grid) {
         grid.querySelectorAll('.album-card').forEach(card => {
             const badge = card.querySelector('.rating-badge');
             if (badge && !card.querySelector('.card-gallery-badge')) {
-                const galleryBadge = document.createElement('span');
-                galleryBadge.className = 'card-gallery-badge';
-                galleryBadge.style.background = badge.style.backgroundColor;
-                galleryBadge.textContent = badge.textContent;
-                card.appendChild(galleryBadge);
+                const gb = document.createElement('span');
+                gb.className = 'card-gallery-badge';
+                // Leer el color computado real, no el valor del atributo style
+                gb.style.background = window.getComputedStyle(badge).backgroundColor;
+                gb.textContent = badge.textContent;
+                card.appendChild(gb);
             }
         });
     } else {

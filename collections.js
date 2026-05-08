@@ -192,11 +192,11 @@ function renderMediaItem(item, ref, index, fmt, grid, col) {
     const meta = item.artist || item.director || item.creator || '';
 
     card.innerHTML = `
-        <div class="col-item-overlay">
-            <div class="col-item-overlay-actions">
-                ${formatButtons(fmt, index)}
-            </div>
-            <button class="col-item-overlay-remove" onclick="event.stopPropagation();removeFromCollection(${item.id},'${item._type}')">✖ Quitar</button>
+        <button class="col-item-menu-btn" title="Opciones">⋯</button>
+        <div class="col-item-dropdown">
+            ${mediaFormatOptions(fmt)}
+            <div class="fmt-option-divider"></div>
+            <button class="fmt-option fmt-option-remove">✖ Quitar de la colección</button>
         </div>
         <img src="${item.coverBase64}" alt="${item.title}">
         <div class="col-item-info">
@@ -205,11 +205,30 @@ function renderMediaItem(item, ref, index, fmt, grid, col) {
             <span class="col-item-badge" style="background:${badgeColor}">${formatRating(item.rating)}</span>
         </div>`;
 
-    card.querySelectorAll('.fmt-btn').forEach(btn => {
-        btn.addEventListener('click', async (e) => {
+    // Menu button
+    const menuBtn  = card.querySelector('.col-item-menu-btn');
+    const dropdown = card.querySelector('.col-item-dropdown');
+    menuBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        // Close all other dropdowns
+        document.querySelectorAll('.col-item-dropdown.open').forEach(d => { if (d !== dropdown) d.classList.remove('open'); });
+        dropdown.classList.toggle('open');
+    });
+
+    // Format options
+    dropdown.querySelectorAll('.fmt-option[data-fmt]').forEach(opt => {
+        opt.addEventListener('click', async (e) => {
             e.stopPropagation();
-            await setItemFormat(index, btn.dataset.fmt, col);
+            dropdown.classList.remove('open');
+            await setItemFormat(index, opt.dataset.fmt, col);
         });
+    });
+
+    // Remove
+    dropdown.querySelector('.fmt-option-remove').addEventListener('click', async (e) => {
+        e.stopPropagation();
+        dropdown.classList.remove('open');
+        await removeFromCollection(item.id, item._type);
     });
 
     card.addEventListener('click', () => window.location.href = href);
@@ -220,37 +239,104 @@ function renderArtistItem(ref, index, fmt, grid, col) {
     const artist = allArtists.find(a => a.name === ref.id);
     if (!artist) return;
 
+    // Artist format: avatar, avatar-name, banner, banner-avatar
+    const artistFmt = ref.format && ref.format.startsWith('artist-') ? ref.format : 'artist-avatar-name';
+
     const card = document.createElement('div');
-    card.className = 'col-item fmt-artist';
+    card.className = 'col-item';
+    card.style.overflow = 'hidden';
 
     const avatarHtml = artist.photo
-        ? `<img src="${artist.photo}" alt="${artist.name}">`
-        : `<div class="col-item-artist-initials" style="background:var(--accent-red);">${artist.name.charAt(0).toUpperCase()}</div>`;
+        ? `<img src="${artist.photo}" style="width:80px;height:80px;border-radius:50%;object-fit:cover;margin:0 auto;display:block;" alt="${artist.name}">`
+        : `<div style="width:80px;height:80px;border-radius:50%;background:var(--accent-red);display:flex;align-items:center;justify-content:center;font-size:1.8rem;font-weight:900;color:white;margin:0 auto;">${artist.name.charAt(0).toUpperCase()}</div>`;
+
+    let innerHtml = '';
+    if (artistFmt === 'artist-avatar') {
+        innerHtml = `<div style="padding:20px 16px;text-align:center;">${avatarHtml}</div>`;
+    } else if (artistFmt === 'artist-avatar-name') {
+        innerHtml = `<div style="padding:20px 16px;text-align:center;">${avatarHtml}<div style="margin-top:10px;font-size:0.88rem;font-weight:700;">${artist.name}</div></div>`;
+    } else if (artistFmt === 'artist-banner') {
+        const bannerStyle = artist.banner
+            ? `background:url(${artist.banner}) center/cover no-repeat;`
+            : `background:linear-gradient(135deg,var(--accent-red)cc,var(--accent-red)66);`;
+        innerHtml = `<div style="${bannerStyle}height:100px;border-radius:8px;margin:8px;"></div>
+            <div style="padding:4px 12px 12px;font-size:0.88rem;font-weight:700;">${artist.name}</div>`;
+    } else if (artistFmt === 'artist-banner-avatar') {
+        const bannerStyle = artist.banner
+            ? `background:url(${artist.banner}) center/cover no-repeat;`
+            : `background:linear-gradient(135deg,var(--accent-red)cc,var(--accent-red)44);`;
+        innerHtml = `
+            <div style="position:relative;">
+                <div style="${bannerStyle}height:90px;"></div>
+                <div style="position:absolute;bottom:-24px;left:50%;transform:translateX(-50%);">
+                    ${artist.photo
+                        ? `<img src="${artist.photo}" style="width:48px;height:48px;border-radius:50%;object-fit:cover;border:3px solid white;" alt="${artist.name}">`
+                        : `<div style="width:48px;height:48px;border-radius:50%;background:var(--accent-red);display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:900;color:white;border:3px solid white;">${artist.name.charAt(0).toUpperCase()}</div>`}
+                </div>
+            </div>
+            <div style="padding:28px 12px 12px;text-align:center;font-size:0.88rem;font-weight:700;">${artist.name}</div>`;
+    }
 
     card.innerHTML = `
-        <div class="col-item-overlay">
-            <div class="col-item-overlay-actions"></div>
-            <button class="col-item-overlay-remove" onclick="event.stopPropagation();removeFromCollection('${ref.id}','artist')">✖ Quitar</button>
+        <button class="col-item-menu-btn" title="Opciones">⋯</button>
+        <div class="col-item-dropdown">
+            ${artistFormatOptions(artistFmt)}
+            <div class="fmt-option-divider"></div>
+            <button class="fmt-option fmt-option-remove">✖ Quitar de la colección</button>
         </div>
-        ${avatarHtml}
-        <div class="col-item-title" style="text-align:center;">${artist.name}</div>
-        <div class="col-item-artist" style="text-align:center;">Artista</div>`;
+        ${innerHtml}`;
+
+    const menuBtn  = card.querySelector('.col-item-menu-btn');
+    const dropdown = card.querySelector('.col-item-dropdown');
+    menuBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        document.querySelectorAll('.col-item-dropdown.open').forEach(d => { if (d !== dropdown) d.classList.remove('open'); });
+        dropdown.classList.toggle('open');
+    });
+
+    dropdown.querySelectorAll('.fmt-option[data-fmt]').forEach(opt => {
+        opt.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            dropdown.classList.remove('open');
+            await setItemFormat(index, opt.dataset.fmt, col);
+        });
+    });
+
+    dropdown.querySelector('.fmt-option-remove').addEventListener('click', async (e) => {
+        e.stopPropagation();
+        dropdown.classList.remove('open');
+        await removeFromCollection(ref.id, 'artist');
+    });
 
     card.addEventListener('click', () => window.location.href = `artist.html?name=${encodeURIComponent(artist.name)}`);
     grid.appendChild(card);
 }
 
-function formatButtons(currentFmt, index) {
+function mediaFormatOptions(currentFmt) {
     const fmts = [
-        { key: 'cover',      label: 'Solo portada',  icon: `<svg viewBox="0 0 16 16" fill="currentColor"><rect x="1" y="1" width="14" height="14" rx="2"/></svg>` },
-        { key: 'title',      label: 'Con título',    icon: `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="14" height="10" rx="1.5"/><line x1="1" y1="13" x2="10" y2="13"/></svg>` },
-        { key: 'full',       label: 'Completo',      icon: `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="14" height="9" rx="1.5"/><line x1="1" y1="12" x2="15" y2="12"/><line x1="1" y1="15" x2="9" y2="15"/></svg>` },
-        { key: 'horizontal', label: 'Horizontal',    icon: `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="3" width="6" height="10" rx="1.5"/><line x1="9" y1="5" x2="15" y2="5"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="9" y1="11" x2="13" y2="11"/></svg>` },
+        { key: 'cover',      label: 'Solo portada' },
+        { key: 'title',      label: 'Portada + título' },
+        { key: 'full',       label: 'Portada + título + artista' },
+        { key: 'horizontal', label: 'Horizontal' },
     ];
     return fmts.map(f => `
-        <button class="fmt-btn${f.key === currentFmt ? ' active' : ''}" data-fmt="${f.key}" data-index="${index}" title="${f.label}">
-            ${f.icon}
-            <span>${f.label}</span>
+        <button class="fmt-option${f.key === currentFmt ? ' active' : ''}" data-fmt="${f.key}">
+            ${f.key === currentFmt ? '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" style="width:12px;height:12px;flex-shrink:0;"><polyline points="2 8 6 12 14 4"/></svg>' : '<span style="width:12px;height:12px;flex-shrink:0;display:inline-block;"></span>'}
+            ${f.label}
+        </button>`).join('');
+}
+
+function artistFormatOptions(currentFmt) {
+    const fmts = [
+        { key: 'artist-avatar',        label: 'Solo avatar' },
+        { key: 'artist-avatar-name',   label: 'Avatar + nombre' },
+        { key: 'artist-banner',        label: 'Banner + nombre' },
+        { key: 'artist-banner-avatar', label: 'Banner + avatar' },
+    ];
+    return fmts.map(f => `
+        <button class="fmt-option${f.key === currentFmt ? ' active' : ''}" data-fmt="${f.key}">
+            ${f.key === currentFmt ? '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" style="width:12px;height:12px;flex-shrink:0;"><polyline points="2 8 6 12 14 4"/></svg>' : '<span style="width:12px;height:12px;flex-shrink:0;display:inline-block;"></span>'}
+            ${f.label}
         </button>`).join('');
 }
 
@@ -545,5 +631,10 @@ async function checkAddParam() {
         history.replaceState({}, '', 'collections.html');
     });
 }
+
+// Close dropdowns on outside click
+document.addEventListener('click', () => {
+    document.querySelectorAll('.col-item-dropdown.open').forEach(d => d.classList.remove('open'));
+});
 
 initCollections().then(() => checkAddParam());

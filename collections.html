@@ -143,35 +143,51 @@
         .col-item-badge { display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 900; color: white; margin-top: 4px; }
 
         /* ── FORMAT SELECTOR ── */
-        .col-item-overlay {
-            position: absolute; inset: 0; border-radius: 14px;
-            background: rgba(0,0,0,0.6);
+        .col-item-menu-btn {
+            position: absolute; top: 8px; right: 8px; z-index: 30;
+            width: 28px; height: 28px; border-radius: 50%;
+            background: rgba(0,0,0,0.55); backdrop-filter: blur(4px);
+            border: none; color: white; cursor: pointer;
+            font-size: 1rem; font-weight: 900; letter-spacing: 1px;
             display: flex; align-items: center; justify-content: center;
-            opacity: 0; transition: opacity 0.2s; z-index: 20;
-            flex-direction: column; gap: 10px;
+            opacity: 0; transition: opacity 0.2s;
+            font-family: 'Inter', sans-serif; line-height: 1;
         }
-        .col-item:hover .col-item-overlay { opacity: 1; }
+        .col-item:hover .col-item-menu-btn { opacity: 1; }
+        .col-item-menu-btn:hover { background: rgba(0,0,0,0.8); }
 
-        .col-item-overlay-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+        /* Dropdown menu */
+        .col-item-dropdown {
+            position: absolute; top: 40px; right: 8px; z-index: 50;
+            background: white; border-radius: 12px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+            padding: 6px; min-width: 160px;
+            display: none; flex-direction: column; gap: 2px;
+        }
+        .col-item-dropdown.open { display: flex; }
 
-        .fmt-btn {
-            background: rgba(255,255,255,0.15); backdrop-filter: blur(4px);
-            border: 1.5px solid rgba(255,255,255,0.3); border-radius: 8px;
-            padding: 6px 10px; cursor: pointer; color: white;
-            font-family: 'Inter', sans-serif; font-size: 0.68rem; font-weight: 700;
-            transition: all 0.15s; display: flex; flex-direction: column; align-items: center; gap: 3px;
+        .fmt-option {
+            display: flex; align-items: center; gap: 8px;
+            padding: 8px 10px; border-radius: 8px;
+            cursor: pointer; border: none; background: none;
+            font-family: 'Inter', sans-serif; font-size: 0.82rem;
+            font-weight: 600; color: var(--text-muted); width: 100%;
+            text-align: left; transition: background 0.15s;
         }
-        .fmt-btn:hover, .fmt-btn.active {
-            background: white; color: var(--text-main);
-            border-color: white;
-        }
-        .fmt-btn svg { width: 16px; height: 16px; }
+        .fmt-option:hover { background: var(--bg-secondary); color: var(--text-main); }
+        .fmt-option.active { color: var(--accent-red); font-weight: 800; }
+        .fmt-option svg { width: 14px; height: 14px; flex-shrink: 0; }
 
-        .col-item-overlay-remove {
-            background: rgba(230,57,70,0.8); border: none; border-radius: 6px;
-            color: white; font-size: 0.7rem; font-weight: 700;
-            padding: 4px 10px; cursor: pointer; font-family: 'Inter', sans-serif;
+        .fmt-option-divider {
+            height: 1px; background: var(--border-color);
+            margin: 4px 0;
         }
+
+        .fmt-option-remove {
+            color: var(--accent-red) !important;
+        }
+        .fmt-option-remove:hover { background: rgba(230,57,70,0.08) !important; }
 
         /* Color dot */
         .color-dot { width: 20px; height: 20px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.3); cursor: pointer; transition: transform 0.15s; flex-shrink: 0; }
