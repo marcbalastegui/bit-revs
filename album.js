@@ -24,13 +24,15 @@ async function loadAlbumDetails() {
 // ── MEDIA ─────────────────────────────────────────────────────────────────
 function recalculateAlbumRating() {
     const prevRating = parseFloat(currentAlbum.rating) || 0;
+    const hadRealRating = prevRating > 0;
     if (!currentAlbum?.tracks?.length) { currentAlbum.rating = 0; return; }
     let total = 0, count = 0;
     currentAlbum.tracks.forEach(t => {
         if (!t.isInterlude && !isNaN(parseFloat(t.rating))) { total += parseFloat(t.rating); count++; }
     });
     const newRating = count === 0 ? 0 : parseFloat((total / count).toFixed(1));
-    if (count > 0 && newRating !== prevRating) {
+    // Solo registrar si ya había una nota real antes (no al añadir la primera canción)
+    if (hadRealRating && count > 0 && newRating !== prevRating) {
         if (!currentAlbum.ratingHistory) currentAlbum.ratingHistory = [];
         currentAlbum.ratingHistory.push({ date: new Date().toISOString(), from: prevRating, to: newRating });
     }
