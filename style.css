@@ -700,7 +700,8 @@ div.album-tag {
 }
 .compare-cell.winner {
     border-color: var(--accent-red);
-    box-shadow: 0 0 0 2px rgba(230, 57, 70, 0.12);
+    border-width: 2px;
+    box-shadow: 0 6px 20px rgba(230, 57, 70, 0.15);
 }
 .compare-winner-badge {
     display: inline-block; font-size: 0.65rem; font-weight: 800;

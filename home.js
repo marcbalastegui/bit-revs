@@ -117,8 +117,8 @@ async function loadHome() {
     // ── LÍNEA DE TIEMPO ──────────────────────────────────────────────────────
     const allWithDate = [
         ...albums.filter(a => a.reviewDate).map(a => ({ ...a, _type: 'album' })),
-        ...allMovies.filter(m => m.reviewDate).map(m => ({ ...m, _type: 'movie' })),
-        ...allSeries.filter(s => s.reviewDate).map(s => ({ ...s, _type: 'series' })),
+        ...movies.filter(m => m.reviewDate).map(m => ({ ...m, _type: 'movie' })),
+        ...series.filter(s => s.reviewDate).map(s => ({ ...s, _type: 'series' })),
     ].sort((a, b) => b.reviewDate.localeCompare(a.reviewDate));
 
     renderTimeline(allWithDate, 'all');

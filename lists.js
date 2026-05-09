@@ -30,7 +30,6 @@ async function initLists() {
     document.getElementById('btn-new-list').addEventListener('click', () => openListModal(null));
     document.getElementById('list-modal-cancel').addEventListener('click', closeListModal);
     document.getElementById('list-modal-form').addEventListener('submit', saveListMeta);
-    document.getElementById('btn-add-item').addEventListener('click', () => openAddItemModal());
     document.getElementById('add-item-search').addEventListener('input', renderAddItemResults);
     document.getElementById('add-item-cancel').addEventListener('click', closeAddItemModal);
 }
@@ -108,6 +107,7 @@ function renderListDetail(list) {
         <div id="list-items-container">${itemsHtml}</div>`;
 
     // Eventos
+    detail.querySelector('#btn-add-item').addEventListener('click', () => openAddItemModal());
     detail.querySelector('#btn-edit-list').addEventListener('click', () => openListModal(list));
     detail.querySelector('#btn-delete-list').addEventListener('click', () => deleteCurrentList());
     detail.querySelectorAll('.list-row-remove').forEach(btn => {
