@@ -1,7 +1,7 @@
 // db.js - Gestión de Base de Datos para Álbumes, Películas, Series y Perfil
 
 const DB_NAME = 'BitRevsDB';
-const DB_VERSION = 7;
+const DB_VERSION = 8;
 const STORE_ALBUMS = 'albums';
 const STORE_MOVIES = 'movies';
 const STORE_SERIES = 'series';
@@ -19,6 +19,7 @@ function openDB() {
             if (!db.objectStoreNames.contains(STORE_PROFILE)) db.createObjectStore(STORE_PROFILE, { keyPath: 'key' });
             if (!db.objectStoreNames.contains('artists')) db.createObjectStore('artists', { keyPath: 'name' });
             if (!db.objectStoreNames.contains('collections')) db.createObjectStore('collections', { keyPath: 'id' });
+            if (!db.objectStoreNames.contains('lists')) db.createObjectStore('lists', { keyPath: 'id' });
         };
 
         request.onsuccess = (event) => resolve(event.target.result);

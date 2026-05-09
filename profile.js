@@ -227,8 +227,9 @@ async function exportData() {
         const profile     = await getUserProfileFromDB();
         const artists     = await getAllItemsFromDB('artists');
         const collections = await getAllItemsFromDB('collections');
+        const lists       = await getAllItemsFromDB('lists');
 
-        const backup = { _version: 2, _exportedAt: new Date().toISOString(), albums, movies, series, profile, artists, collections };
+        const backup = { _version: 3, _exportedAt: new Date().toISOString(), albums, movies, series, profile, artists, collections, lists };
         const json   = JSON.stringify(backup, null, 2);
         const blob   = new Blob([json], { type: 'application/json' });
         const url    = URL.createObjectURL(blob);
@@ -259,6 +260,7 @@ async function importData(file) {
         if (backup.profile)                       await saveUserProfileToDB(backup.profile);
         if (backup.artists?.length)               for (const artist of backup.artists)         await saveItemToDB('artists', artist);
         if (backup.collections?.length)           for (const col of backup.collections)        await saveItemToDB('collections', col);
+        if (backup.lists?.length)                 for (const list of backup.lists)             await saveItemToDB('lists', list);
 
         showBackupMessage('Backup importado correctamente. Recargando…', 'success');
         setTimeout(() => window.location.reload(), 1500);

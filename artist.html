@@ -347,9 +347,10 @@
         </div>
         <a href="top.html">Top Canciones</a>
         <a href="wrapped.html">Wrapped</a>
+        <a href="lists.html">Listas</a>
     </nav>
     <div class="header-right">
-        <button style="visibility:hidden;" class="save-btn">+</button>
+        <button class="save-btn" id="btn-compare-artist" title="Comparar con otro artista" style="font-size:0.82rem;">⇄ Comparar</button>
         <a href="profile.html" class="header-avatar" id="global-header-avatar" title="Mi Perfil">U</a>
     </div>
 </header>
@@ -404,6 +405,20 @@
     // Stop banner click from propagating to avatar
     const bannerEl = document.getElementById('artist-banner');
     if (bannerEl) bannerEl.addEventListener('click', (e) => e.stopPropagation());
+
+    // Botón comparar artistas
+    const btnCompare = document.getElementById('btn-compare-artist');
+    if (btnCompare) {
+        const params     = new URLSearchParams(window.location.search);
+        const artistName = params.get('name');
+        if (artistName) {
+            btnCompare.addEventListener('click', () => {
+                window.location.href = `compare-artists.html?a=${encodeURIComponent(artistName)}`;
+            });
+        } else {
+            btnCompare.style.display = 'none';
+        }
+    }
 </script>
 </body>
 </html>
