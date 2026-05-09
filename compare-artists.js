@@ -135,13 +135,21 @@ function getArtistStats(name) {
         });
     });
 
-    return { ownAlbums, ratedAlbums, avgAlbum, bestAlbum, allTracks, avgTrack, bestTrack, perfects, genres, featCount };
+    const worstAlbum = [...ratedAlbums].sort((a, b) => parseFloat(a.rating) - parseFloat(b.rating))[0] || null;
+
+    return { ownAlbums, ratedAlbums, avgAlbum, bestAlbum, worstAlbum, allTracks, avgTrack, bestTrack, perfects, genres, featCount };
 }
 
-function renderArtistComparison(nameA, nameB) {
+async function renderArtistComparison(nameA, nameB) {
     const sA = getArtistStats(nameA);
     const sB = getArtistStats(nameB);
     const results = document.getElementById('compare-artists-results');
+
+    // Cargar fotos de perfil de los artistas
+    const artistDataA = await getArtistFromDB(nameA);
+    const artistDataB = await getArtistFromDB(nameB);
+    sA._photo = artistDataA?.photo || '';
+    sB._photo = artistDataB?.photo || '';
 
     let html = '';
 
@@ -164,6 +172,10 @@ function renderArtistComparison(nameA, nameB) {
     html += `<div class="compare-row" style="margin-top:12px;">
         ${bestAlbumCell(sA.bestAlbum, sB.bestAlbum)}
         ${bestAlbumCell(sB.bestAlbum, sA.bestAlbum)}
+    </div>`;
+    html += `<div class="compare-row" style="margin-top:12px;">
+        ${worstAlbumCell(sA.worstAlbum, sB.worstAlbum)}
+        ${worstAlbumCell(sB.worstAlbum, sA.worstAlbum)}
     </div>`;
 
     // Canciones
@@ -207,10 +219,14 @@ function renderArtistComparison(nameA, nameB) {
 
 // ── HELPERS ───────────────────────────────────────────────────────────────
 function artistHeaderHtml(name, stats) {
-    const cover = stats.bestAlbum?.coverBase64 || '';
+    const photo = stats._photo || '';
+    const initials = name.charAt(0).toUpperCase();
+    const avatarHtml = photo
+        ? `<img class="compare-cover" src="${photo}" alt="${name}" onerror="this.style.visibility='hidden'" loading="lazy" style="border-radius:50%; object-fit:cover;">`
+        : `<div class="compare-cover" style="border-radius:50%; background:${getColorByRating(stats.avgAlbum)}; display:flex; align-items:center; justify-content:center; color:white; font-size:2.5rem; font-weight:900;">${initials}</div>`;
     return `
         <div class="compare-album-header">
-            <img class="compare-cover" src="${cover}" alt="${name}" onerror="this.style.visibility='hidden'" loading="lazy">
+            ${avatarHtml}
             <div class="compare-album-info">
                 <div class="compare-album-title">${name}</div>
                 <div class="compare-album-meta">${stats.ownAlbums.length} álbum${stats.ownAlbums.length !== 1 ? 'es' : ''} · ${stats.allTracks.length} canciones</div>
@@ -226,7 +242,7 @@ function sectionTitle(text) {
 function statCell(label, value, isWinner) {
     return `
         <div class="compare-cell${isWinner ? ' winner' : ''}">
-            ${isWinner ? `<span class="compare-winner-badge">▲ Mejor</span>` : ''}
+            <span class="compare-winner-badge" style="visibility:${isWinner ? 'visible' : 'hidden'};">▲ Mejor</span>
             <div class="compare-stat-label">${label}</div>
             <div class="compare-stat-value accent">${value ?? '–'}</div>
         </div>`;
@@ -234,12 +250,33 @@ function statCell(label, value, isWinner) {
 
 function bestAlbumCell(album, other) {
     const isWinner = album && other ? parseFloat(album.rating) > parseFloat(other.rating) : !!album;
-    if (!album) return `<div class="compare-cell"><div class="compare-stat-label">Mejor álbum</div><div style="color:var(--text-muted);">Sin álbumes</div></div>`;
+    if (!album) return `<div class="compare-cell"><span class="compare-winner-badge" style="visibility:hidden;">▲ Mejor</span><div class="compare-stat-label">Mejor álbum</div><div style="color:var(--text-muted);">Sin álbumes</div></div>`;
     const color = getColorByRating(album.rating);
     return `
         <div class="compare-cell${isWinner ? ' winner' : ''}">
-            ${isWinner ? `<span class="compare-winner-badge">▲ Mejor</span>` : ''}
+            <span class="compare-winner-badge" style="visibility:${isWinner ? 'visible' : 'hidden'};">▲ Mejor</span>
             <div class="compare-stat-label">Mejor álbum</div>
+            <div class="compare-track-item" style="gap:10px;">
+                <img src="${album.coverBase64 || ''}" alt="${album.title}" onerror="this.style.display='none'" loading="lazy"
+                    style="width:40px;height:40px;border-radius:6px;object-fit:cover;flex-shrink:0;">
+                <div class="compare-track-info">
+                    <div class="compare-track-title">${album.title}</div>
+                    <div style="font-size:0.78rem;color:var(--text-muted);">${album.year || ''}</div>
+                </div>
+                <span class="compare-track-badge" style="background:${color}">${formatRating(album.rating)}</span>
+            </div>
+        </div>`;
+}
+
+function worstAlbumCell(album, other) {
+    // "Ganador" = el que tiene el peor álbum menos malo (nota más alta)
+    const isWinner = album && other ? parseFloat(album.rating) > parseFloat(other.rating) : !!album;
+    if (!album) return `<div class="compare-cell"><span class="compare-winner-badge" style="visibility:hidden;">▲ Mejor</span><div class="compare-stat-label">Peor álbum</div><div style="color:var(--text-muted);">Sin álbumes</div></div>`;
+    const color = getColorByRating(album.rating);
+    return `
+        <div class="compare-cell${isWinner ? ' winner' : ''}">
+            <span class="compare-winner-badge" style="visibility:${isWinner ? 'visible' : 'hidden'};">▲ Mejor</span>
+            <div class="compare-stat-label">Peor álbum</div>
             <div class="compare-track-item" style="gap:10px;">
                 <img src="${album.coverBase64 || ''}" alt="${album.title}" onerror="this.style.display='none'" loading="lazy"
                     style="width:40px;height:40px;border-radius:6px;object-fit:cover;flex-shrink:0;">
@@ -254,11 +291,11 @@ function bestAlbumCell(album, other) {
 
 function bestTrackCell(track, other) {
     const isWinner = track && other ? parseFloat(track.rating) > parseFloat(other.rating) : !!track;
-    if (!track) return `<div class="compare-cell"><div class="compare-stat-label">Mejor canción</div><div style="color:var(--text-muted);">Sin canciones</div></div>`;
+    if (!track) return `<div class="compare-cell"><span class="compare-winner-badge" style="visibility:hidden;">▲ Mejor</span><div class="compare-stat-label">Mejor canción</div><div style="color:var(--text-muted);">Sin canciones</div></div>`;
     const color = getColorByRating(track.rating);
     return `
         <div class="compare-cell${isWinner ? ' winner' : ''}">
-            ${isWinner ? `<span class="compare-winner-badge">▲ Mejor</span>` : ''}
+            <span class="compare-winner-badge" style="visibility:${isWinner ? 'visible' : 'hidden'};">▲ Mejor</span>
             <div class="compare-stat-label">Mejor canción</div>
             <div class="compare-track-item">
                 <div class="compare-track-info">
