@@ -221,12 +221,14 @@ function processImageFile(file, type) {
 // ── EXPORTAR / IMPORTAR ───────────────────────────────────────────────────
 async function exportData() {
     try {
-        const albums  = await getAllAlbumsFromDB();
-        const movies  = await getAllItemsFromDB('movies');
-        const series  = await getAllItemsFromDB('series');
-        const profile = await getUserProfileFromDB();
+        const albums      = await getAllAlbumsFromDB();
+        const movies      = await getAllItemsFromDB('movies');
+        const series      = await getAllItemsFromDB('series');
+        const profile     = await getUserProfileFromDB();
+        const artists     = await getAllItemsFromDB('artists');
+        const collections = await getAllItemsFromDB('collections');
 
-        const backup = { _version: 1, _exportedAt: new Date().toISOString(), albums, movies, series, profile };
+        const backup = { _version: 2, _exportedAt: new Date().toISOString(), albums, movies, series, profile, artists, collections };
         const json   = JSON.stringify(backup, null, 2);
         const blob   = new Blob([json], { type: 'application/json' });
         const url    = URL.createObjectURL(blob);
@@ -251,10 +253,12 @@ async function importData(file) {
         const backup = JSON.parse(text);
         if (!backup.albums || !backup.movies || !backup.series) throw new Error("Archivo no válido.");
 
-        for (const album of backup.albums) await saveAlbumToDB(album);
-        for (const movie of backup.movies) await saveItemToDB('movies', movie);
-        for (const serie of backup.series) await saveItemToDB('series', serie);
-        if (backup.profile) await saveUserProfileToDB(backup.profile);
+        for (const album of backup.albums)       await saveAlbumToDB(album);
+        for (const movie of backup.movies)        await saveItemToDB('movies', movie);
+        for (const serie of backup.series)        await saveItemToDB('series', serie);
+        if (backup.profile)                       await saveUserProfileToDB(backup.profile);
+        if (backup.artists?.length)               for (const artist of backup.artists)         await saveItemToDB('artists', artist);
+        if (backup.collections?.length)           for (const col of backup.collections)        await saveItemToDB('collections', col);
 
         showBackupMessage('Backup importado correctamente. Recargando…', 'success');
         setTimeout(() => window.location.reload(), 1500);
