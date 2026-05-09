@@ -22,17 +22,15 @@ async function loadAlbumDetails() {
 }
 
 // ── MEDIA ─────────────────────────────────────────────────────────────────
-function recalculateAlbumRating() {
+function recalculateAlbumRating(recordHistory = false) {
     const prevRating = parseFloat(currentAlbum.rating) || 0;
-    const hadRealRating = prevRating > 0;
     if (!currentAlbum?.tracks?.length) { currentAlbum.rating = 0; return; }
     let total = 0, count = 0;
     currentAlbum.tracks.forEach(t => {
         if (!t.isInterlude && !isNaN(parseFloat(t.rating))) { total += parseFloat(t.rating); count++; }
     });
     const newRating = count === 0 ? 0 : parseFloat((total / count).toFixed(1));
-    // Solo registrar si ya había una nota real antes (no al añadir la primera canción)
-    if (hadRealRating && count > 0 && newRating !== prevRating) {
+    if (recordHistory && prevRating > 0 && count > 0 && newRating !== prevRating) {
         if (!currentAlbum.ratingHistory) currentAlbum.ratingHistory = [];
         currentAlbum.ratingHistory.push({ date: new Date().toISOString(), from: prevRating, to: newRating });
     }
@@ -145,7 +143,7 @@ function renderAlbumContent() {
                 </div>
                 <div class="track-actions">
                     <button class="track-review-btn${trackHasReview ? ' has-review' : ''}" onclick="openReview('track', ${index})" title="${trackHasReview ? 'Ver review' : 'Escribir review'}">${reviewPenSVG(trackHasReview)}</button>
-                    <button class="track-review-btn" onclick="openCredits('track', ${index})" title="Créditos" style="opacity:0;" class="track-credits-btn">${creditsSVG(false)}</button>
+                    <button class="track-credits-btn track-review-btn" onclick="openCredits('track', ${index})" title="Créditos">${creditsSVG(false)}</button>
                     <button class="track-btn edit"   onclick="editTrack(${index})"   title="Editar">✎</button>
                     <button class="track-btn delete" onclick="deleteTrack(${index})" title="Borrar">✖</button>
                 </div>
@@ -402,7 +400,8 @@ document.getElementById('track-form').addEventListener('submit', async function(
         rating = parseFloat(rating).toFixed(1);
     }
     const newTrack = { title, artist, isInterlude, rating };
-    if (editingTrackIndex !== null) {
+    const isEditing = editingTrackIndex !== null;
+    if (isEditing) {
         newTrack.review   = currentAlbum.tracks[editingTrackIndex].review;
         newTrack.favorite = currentAlbum.tracks[editingTrackIndex].favorite;
         newTrack.credits  = currentAlbum.tracks[editingTrackIndex].credits;
@@ -410,7 +409,7 @@ document.getElementById('track-form').addEventListener('submit', async function(
     } else {
         currentAlbum.tracks.push(newTrack);
     }
-    recalculateAlbumRating();
+    recalculateAlbumRating(isEditing);
     await saveAlbumToDB(currentAlbum);
     document.getElementById('modal-track').classList.add('hidden');
     renderAlbumContent();
