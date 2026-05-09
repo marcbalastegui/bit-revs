@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BitRevs - Mis Listas</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .lists-layout {
+            display: grid;
+            grid-template-columns: 260px 1fr;
+            gap: 24px;
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 20px 60px;
+        }
+        .lists-panel {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 20px;
+            height: fit-content;
+            position: sticky;
+            top: 20px;
+        }
+        .lists-panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        .lists-panel-header h3 {
+            font-size: 0.85rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            color: var(--text-muted);
+            margin: 0;
+        }
+        .list-sidebar-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 12px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background 0.15s;
+            margin-bottom: 4px;
+        }
+        .list-sidebar-item:hover { background: var(--bg-secondary); }
+        .list-sidebar-item.active { background: var(--accent-red); }
+        .list-sidebar-item.active .list-sidebar-name,
+        .list-sidebar-item.active .list-sidebar-count { color: white; }
+        .list-sidebar-name { font-size: 0.9rem; font-weight: 600; color: var(--text-main); }
+        .list-sidebar-count {
+            font-size: 0.75rem; font-weight: 700;
+            background: var(--bg-secondary);
+            color: var(--text-muted);
+            padding: 2px 8px; border-radius: 20px;
+        }
+        .list-sidebar-item.active .list-sidebar-count { background: rgba(255,255,255,0.2); }
+
+        /* Detail */
+        #list-detail { min-height: 300px; }
+        .list-detail-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 24px;
+        }
+        .list-detail-title { font-size: 1.8rem; font-weight: 900; margin: 0 0 6px; }
+        .list-detail-desc  { color: var(--text-muted); font-size: 0.9rem; margin: 0; }
+
+        /* Rows */
+        .list-row {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 12px;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 8px;
+            cursor: grab;
+            background: var(--card-bg);
+            transition: background 0.15s, box-shadow 0.15s;
+        }
+        .list-row:hover { background: var(--bg-secondary); }
+        .list-row.dragging { opacity: 0.4; }
+        .list-row.drag-over { box-shadow: 0 0 0 2px var(--accent-red); background: var(--bg-secondary); }
+        .list-row-pos {
+            font-size: 1.1rem; font-weight: 900;
+            color: var(--text-muted); min-width: 28px;
+            text-align: center;
+        }
+        .list-row-cover {
+            width: 48px; height: 48px;
+            border-radius: 6px;
+            object-fit: cover;
+            flex-shrink: 0;
+        }
+        .list-row-info { flex: 1; min-width: 0; }
+        .list-row-title {
+            font-size: 0.95rem; font-weight: 700;
+            color: var(--text-main);
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .list-row-meta { font-size: 0.8rem; color: var(--text-muted); margin-top: 2px; }
+        .list-row-remove {
+            background: none; border: none; cursor: pointer;
+            color: var(--text-muted); font-size: 0.8rem;
+            padding: 4px 6px; border-radius: 6px;
+            opacity: 0; transition: opacity 0.15s, color 0.15s;
+        }
+        .list-row:hover .list-row-remove { opacity: 1; }
+        .list-row-remove:hover { color: var(--accent-red); }
+
+        /* Add item modal */
+        .add-item-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 8px;
+            background: var(--card-bg);
+            transition: background 0.15s;
+        }
+        .add-item-row:hover { background: var(--bg-secondary); }
+
+        @media (max-width: 700px) {
+            .lists-layout { grid-template-columns: 1fr; }
+            .lists-panel { position: static; }
+        }
+    </style>
+</head>
+<body>
+<header>
+    <div class="header-left">
+        <a href="home.html" class="logo">BitRevs</a>
+    </div>
+    <nav>
+        <a href="home.html" class="nav-home-icon" title="Inicio">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        </a>
+        <div class="nav-dropdown">
+            <span class="nav-dropdown-trigger">Reviews
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="nav-dropdown-arrow"><polyline points="6 9 12 15 18 9"/></svg>
+            </span>
+            <div class="nav-dropdown-menu">
+                <a href="movies.html">Películas</a>
+                <a href="series.html">Series</a>
+                <a href="music.html">Music</a>
+                <a href="collections.html">Colecciones</a>
+            </div>
+        </div>
+        <a href="top.html">Top Canciones</a>
+        <a href="wrapped.html">Wrapped</a>
+        <a href="lists.html" class="active">Listas</a>
+    </nav>
+    <div class="header-right">
+        <button style="visibility:hidden;" class="save-btn">+</button>
+        <a href="profile.html" class="header-avatar" id="global-header-avatar" title="Mi Perfil">U</a>
+    </div>
+</header>
+
+<main>
+    <div style="max-width:1100px; margin:0 auto; padding:0 20px 24px; display:flex; justify-content:space-between; align-items:center;">
+        <h1>Mis Listas</h1>
+        <button class="save-btn" id="btn-new-list">+ Nueva lista</button>
+    </div>
+    <div class="lists-layout">
+        <div class="lists-panel">
+            <div class="lists-panel-header">
+                <h3>Listas</h3>
+            </div>
+            <div id="lists-sidebar"></div>
+        </div>
+        <div id="list-detail"></div>
+    </div>
+</main>
+
+<!-- Modal nueva/editar lista -->
+<div id="list-modal" class="modal hidden">
+    <div class="modal-content">
+        <h2 id="list-modal-title">Nueva lista</h2>
+        <form id="list-modal-form">
+            <label>Nombre:</label>
+            <input type="text" id="list-modal-name" required placeholder="Ej: Top 10 álbumes de mi vida">
+            <label>Descripción (opcional):</label>
+            <input type="text" id="list-modal-desc" placeholder="Ej: Los mejores discos que he escuchado">
+            <div class="modal-actions">
+                <button type="button" id="list-modal-cancel">Cancelar</button>
+                <button type="submit" class="save-btn">Guardar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal añadir elemento -->
+<div id="add-item-modal" class="modal hidden">
+    <div class="modal-content" style="max-width:560px;">
+        <h2>Añadir a la lista</h2>
+        <input type="text" id="add-item-search" placeholder="Buscar álbum, película o serie…" style="margin-bottom:16px;">
+        <div id="add-item-results" style="max-height:360px; overflow-y:auto;"></div>
+        <div class="modal-actions">
+            <button type="button" id="add-item-cancel">Cerrar</button>
+        </div>
+    </div>
+</div>
+
+<script src="bitrevs-ui.js"></script>
+<script src="db.js"></script>
+<script src="lists.js"></script>
+</body>
+</html>

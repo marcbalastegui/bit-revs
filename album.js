@@ -23,11 +23,17 @@ async function loadAlbumDetails() {
 
 // ── MEDIA ─────────────────────────────────────────────────────────────────
 function recalculateAlbumRating() {
+    const prevRating = parseFloat(currentAlbum.rating) || 0;
     if (!currentAlbum?.tracks?.length) { currentAlbum.rating = 0; return; }
     let total = 0, count = 0;
     currentAlbum.tracks.forEach(t => {
         if (!t.isInterlude && !isNaN(parseFloat(t.rating))) { total += parseFloat(t.rating); count++; }
     });
+    const newRating = count === 0 ? 0 : parseFloat((total / count).toFixed(1));
+    if (count > 0 && newRating !== prevRating) {
+        if (!currentAlbum.ratingHistory) currentAlbum.ratingHistory = [];
+        currentAlbum.ratingHistory.push({ date: new Date().toISOString(), from: prevRating, to: newRating });
+    }
     currentAlbum.rating = count === 0 ? 0 : (total / count).toFixed(1);
 }
 
@@ -175,6 +181,7 @@ function renderAlbumContent() {
             </div>
             <div id="tracks-list">${tracksHtml}</div>
         </div>
+        ${buildRatingHistoryHtml()}
     `;
 
     document.querySelectorAll('.track-item').forEach((el, index) => addDragListeners(el, index));
@@ -406,5 +413,35 @@ document.getElementById('track-form').addEventListener('submit', async function(
     document.getElementById('modal-track').classList.add('hidden');
     renderAlbumContent();
 });
+
+// ── HISTORIAL DE NOTAS ────────────────────────────────────────────────────
+function buildRatingHistoryHtml() {
+    const history = currentAlbum.ratingHistory;
+    if (!history || history.length === 0) return '';
+
+    const rows = [...history].reverse().map(entry => {
+        const date     = new Date(entry.date);
+        const dateStr  = date.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
+        const fromColor = getColorByRating(entry.from);
+        const toColor   = getColorByRating(entry.to);
+        const diff      = parseFloat(entry.to) - parseFloat(entry.from);
+        const diffSign  = diff > 0 ? '+' : '';
+        const diffColor = diff > 0 ? '#66CC33' : '#FF3333';
+        return `
+            <div style="display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid var(--border-color);">
+                <span style="color:var(--text-muted); font-size:0.8rem; min-width:100px;">${dateStr}</span>
+                <span class="rating-badge" style="background:${fromColor}; font-size:0.8rem; padding:2px 8px;">${formatRating(entry.from)}</span>
+                <span style="color:var(--text-muted);">→</span>
+                <span class="rating-badge" style="background:${toColor}; font-size:0.8rem; padding:2px 8px;">${formatRating(entry.to)}</span>
+                <span style="font-size:0.8rem; font-weight:700; color:${diffColor};">${diffSign}${formatRating(diff)}</span>
+            </div>`;
+    }).join('');
+
+    return `
+        <div class="tracklist-section" style="margin-top:32px;">
+            <h2 style="margin-bottom:20px;">Historial de notas</h2>
+            <div>${rows}</div>
+        </div>`;
+}
 
 loadAlbumDetails();
