@@ -216,7 +216,24 @@
 <div id="add-item-modal" class="modal hidden">
     <div class="modal-content" style="max-width:560px;">
         <h2>Añadir a la lista</h2>
-        <input type="text" id="add-item-search" placeholder="Buscar álbum, película o serie…" style="margin-bottom:16px;">
+        <input type="text" id="add-item-search" placeholder="Buscar álbum, película o serie…" style="margin-bottom:10px;">
+        <div style="display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap;">
+            <select id="add-item-type" style="flex:1; min-width:120px; padding:7px 10px; border-radius:8px; border:1px solid var(--border-color); font-family:'Inter',sans-serif; font-size:0.82rem; font-weight:600; background:var(--bg-secondary); color:var(--text-main); cursor:pointer;">
+                <option value="">Todo</option>
+                <option value="album">Álbumes</option>
+                <option value="movie">Películas</option>
+                <option value="series">Series</option>
+            </select>
+            <select id="add-item-sort" style="flex:1; min-width:150px; padding:7px 10px; border-radius:8px; border:1px solid var(--border-color); font-family:'Inter',sans-serif; font-size:0.82rem; font-weight:600; background:var(--bg-secondary); color:var(--text-main); cursor:pointer;">
+                <option value="default">Orden por defecto</option>
+                <option value="rating-desc">Nota (Mayor a Menor)</option>
+                <option value="rating-asc">Nota (Menor a Mayor)</option>
+                <option value="year-desc">Año (Más reciente)</option>
+                <option value="year-asc">Año (Más antiguo)</option>
+                <option value="title-asc">Título (A-Z)</option>
+                <option value="artist-asc">Artista (A-Z)</option>
+            </select>
+        </div>
         <div id="add-item-results" style="max-height:360px; overflow-y:auto;"></div>
         <div class="modal-actions">
             <button type="button" id="add-item-cancel">Cerrar</button>

@@ -31,6 +31,8 @@ async function initLists() {
     document.getElementById('list-modal-cancel').addEventListener('click', closeListModal);
     document.getElementById('list-modal-form').addEventListener('submit', saveListMeta);
     document.getElementById('add-item-search').addEventListener('input', renderAddItemResults);
+    document.getElementById('add-item-type').addEventListener('change', renderAddItemResults);
+    document.getElementById('add-item-sort').addEventListener('change', renderAddItemResults);
     document.getElementById('add-item-cancel').addEventListener('click', closeAddItemModal);
 }
 
@@ -213,6 +215,8 @@ async function deleteCurrentList() {
 function openAddItemModal() {
     document.getElementById('add-item-modal').classList.remove('hidden');
     document.getElementById('add-item-search').value = '';
+    document.getElementById('add-item-type').value = '';
+    document.getElementById('add-item-sort').value = 'default';
     renderAddItemResults();
 }
 
@@ -222,16 +226,29 @@ function closeAddItemModal() {
 
 function renderAddItemResults() {
     const query   = document.getElementById('add-item-search').value.toLowerCase().trim();
+    const typeFilter = document.getElementById('add-item-type').value;
+    const sort    = document.getElementById('add-item-sort').value;
     const list    = allLists.find(l => l.id === currentListId);
     const inList  = new Set((list?.items || []).map(r => `${r.type}_${r.id}`));
 
     let results = allItems.filter(item => {
         if (inList.has(`${item._type}_${item.id}`)) return false;
+        if (typeFilter && item._type !== typeFilter) return false;
         if (!query) return true;
         return (item.title || '').toLowerCase().includes(query)
             || (item.artist || '').toLowerCase().includes(query)
             || (item.director || '').toLowerCase().includes(query);
-    }).slice(0, 30);
+    });
+
+    // Ordenar
+    if (sort === 'rating-desc') results.sort((a, b) => parseFloat(b.rating || 0) - parseFloat(a.rating || 0));
+    else if (sort === 'rating-asc') results.sort((a, b) => parseFloat(a.rating || 0) - parseFloat(b.rating || 0));
+    else if (sort === 'year-desc') results.sort((a, b) => (parseInt(b.year) || 0) - (parseInt(a.year) || 0));
+    else if (sort === 'year-asc')  results.sort((a, b) => (parseInt(a.year) || 0) - (parseInt(b.year) || 0));
+    else if (sort === 'title-asc') results.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
+    else if (sort === 'artist-asc') results.sort((a, b) => (a.artist || a.director || '').localeCompare(b.artist || b.director || ''));
+
+    results = results.slice(0, 40);
 
     const container = document.getElementById('add-item-results');
     if (results.length === 0) {
