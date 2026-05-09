@@ -229,7 +229,7 @@ async function loadArtistStats() {
             <div class="stat-card col-6">
                 <div class="stat-label">Mejor álbum</div>
                 <div class="highlight-card">
-                    <img class="highlight-cover" src="${bestAlbum.coverBase64}" alt="${bestAlbum.title}">
+                    <img class="highlight-cover" src="${bestAlbum.coverBase64 || ''}" alt="${bestAlbum.title}" loading="lazy" onerror="this.style.visibility='hidden'">
                     <div class="highlight-info">
                         <div class="highlight-title">${bestAlbum.title}</div>
                         <div class="highlight-meta">${bestAlbum.year}</div>
@@ -246,7 +246,7 @@ async function loadArtistStats() {
             <div class="stat-card col-6">
                 <div class="stat-label">Mejor canción</div>
                 <div class="highlight-card">
-                    <img class="highlight-cover" src="${bestTrack.albumCover}" alt="${bestTrack.albumTitle}">
+                    <img class="highlight-cover" src="${bestTrack.albumCover || ''}" alt="${bestTrack.albumTitle}" loading="lazy" onerror="this.style.visibility='hidden'">
                     <div class="highlight-info">
                         <div class="highlight-title">${bestTrack.title}</div>
                         <div class="highlight-meta">${bestTrack.albumTitle}</div>
@@ -298,7 +298,7 @@ async function loadArtistStats() {
             const badgeColor = getColorByRating(album.rating);
             return `
                 <div class="album-row">
-                    <img class="album-row-cover" src="${album.coverBase64}" alt="${album.title}">
+                    <img class="album-row-cover" src="${album.coverBase64 || ''}" alt="${album.title}" loading="lazy" onerror="this.style.visibility='hidden'">
                     <div class="album-row-info">
                         <div class="album-row-title">${album.title}</div>
                         <div class="album-row-meta">${album.year}</div>
@@ -323,7 +323,7 @@ async function loadArtistStats() {
                 const roleText = album.artist === artistName ? 'Principal' : 'Feat.';
                 return `
                     <div class="album-row">
-                        <img class="album-row-cover" src="${album.coverBase64}" alt="${album.title}">
+                        <img class="album-row-cover" src="${album.coverBase64 || ''}" alt="${album.title}" loading="lazy" onerror="this.style.visibility='hidden'">
                         <div class="album-row-info">
                             <div class="album-row-title">${album.title}</div>
                             <div class="album-row-meta">${album.artist}${album.featuredArtists && album.featuredArtists.length > 0 ? ' ft. ' + album.featuredArtists.join(', ') : ''}</div>
