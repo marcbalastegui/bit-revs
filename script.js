@@ -272,7 +272,10 @@ function renderAlbums(albumsToRender, gridElement) {
             </div>
             <button class="card-fav-btn${isFav ? ' active' : ''}" data-id="${album.id}" onclick="toggleAlbumFavoriteCard(event, ${album.id})" title="${isFav ? 'Quitar de favoritos' : 'Añadir a favoritos'}">${heartSVG()}</button>
             <div class="cover-container">
-                <img src="${album.coverBase64}" alt="${album.title || 'Álbum'}">
+                ${album.coverBase64
+                    ? `<img src="${album.coverBase64}" alt="${album.title || 'Álbum'}" loading="lazy" onerror="this.style.display='none'; this.parentElement.classList.add('no-cover')">`
+                    : `<div class="cover-placeholder">🎵</div>`
+                }
             </div>
             <div class="album-info">
                 <div class="title-row">

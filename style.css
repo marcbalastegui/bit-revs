@@ -197,7 +197,33 @@ h1 { font-size: 2.8rem; font-weight: 900; margin-bottom: 30px; letter-spacing: -
     aspect-ratio: 1 / 1;
 }
 .cover-container.vertical { aspect-ratio: 2 / 3; }
-.cover-container img { width: 100%; height: 100%; object-fit: cover; }
+.cover-container img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.cover-container.no-cover,
+.cover-placeholder {
+    width: 100%; height: 100%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 3rem; opacity: 0.25;
+    background: var(--card-bg, #1e1e1e);
+}
+
+/* ── MODO GALERÍA ─────────────────────────────────────────────────────── */
+.album-grid.gallery-mode {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 8px;
+}
+.album-grid.gallery-mode .album-card {
+    border-radius: 10px;
+    overflow: hidden;
+}
+.album-grid.gallery-mode .album-info,
+.album-grid.gallery-mode .card-actions,
+.album-grid.gallery-mode .card-fav-btn {
+    display: none;
+}
+.album-grid.gallery-mode .cover-container {
+    border-radius: 10px;
+    border-bottom: none;
+}
 
 .card-actions {
     position: absolute; top: 10px; right: 10px;
