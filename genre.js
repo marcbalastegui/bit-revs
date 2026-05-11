@@ -20,7 +20,7 @@ async function loadGenrePage() {
     document.getElementById('genre-meta').textContent =
         `${genreAlbums.length} álbum${genreAlbums.length !== 1 ? 'es' : ''} · ${ratedAlbums.length} puntuados`;
 
-    // ── MEJORES ÁLBUMES (top 12) ─────────────────────────────────────────────
+    // ── MEJORES ÁLBUMES! (top 12) ─────────────────────────────────────────────
     const bestGrid = document.getElementById('grid-best-albums');
     if (ratedAlbums.length === 0) {
         bestGrid.innerHTML = `<p class="genre-empty">No hay álbumes puntuados en este género.</p>`;

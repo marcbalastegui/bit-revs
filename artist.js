@@ -346,7 +346,7 @@ async function loadArtistStats() {
 loadArtistStats();
 
 
-// ── HELPERS: aplicar foto y banner ───────────────────────────────────────
+// ── HELPERS: aplicar foto y banner! ───────────────────────────────────────
 function applyArtistPhoto(photoData) {
     const initial   = document.getElementById('artist-initial');
     const photoEl   = document.getElementById('artist-photo');

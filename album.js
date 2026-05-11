@@ -161,7 +161,12 @@ function renderAlbumContent() {
             <div class="detail-info">
                 <span class="detail-type">${typeText} • ${currentAlbum.year}</span>
                 <h1 class="detail-title">${currentAlbum.title}</h1>
-                <h2 class="detail-artist">${currentAlbum.artist}</h2>
+                <h2 class="detail-artist">
+                    <a href="artist.html?name=${encodeURIComponent(currentAlbum.artist)}"
+                       style="color:inherit; text-decoration:none; transition:color 0.2s;"
+                       onmouseover="this.style.color='var(--accent-red)'"
+                       onmouseout="this.style.color='inherit'">${currentAlbum.artist}</a>
+                </h2>
                 <div style="display:flex; align-items:center; gap:12px; margin-top:auto; flex-wrap:wrap;">
                     <div class="rating-big" style="background-color: ${badgeColor};">${displayAlbumRating}</div>
                     <button id="btn-album-favorite" class="album-fav-btn${isFav ? ' active' : ''}" onclick="toggleAlbumFavorite()">${heartSVG()}</button>
