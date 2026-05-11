@@ -282,7 +282,7 @@ function sectionTitle(text) {
 }
 
 function winnerBadgeHtml(isWinner) {
-    return isWinner ? `<span class="compare-winner-badge">▲ Mejor</span>` : '';
+    return `<span class="compare-winner-badge" style="visibility:${isWinner ? 'visible' : 'hidden'}">▲ Mejor</span>`;
 }
 
 function statCell(label, value, isWinner) {

@@ -30,7 +30,8 @@ function recalculateAlbumRating(recordHistory = false, trackChange = null) {
         if (!t.isInterlude && !isNaN(parseFloat(t.rating))) { total += parseFloat(t.rating); count++; }
     });
     const newRating = count === 0 ? 0 : parseFloat((total / count).toFixed(1));
-    if (recordHistory && prevRating > 0 && count > 0 && newRating !== prevRating) {
+    const ratingActuallyChanged = prevRating > 0 && count > 0 && newRating !== prevRating;
+    if (recordHistory && (trackChange || ratingActuallyChanged)) {
         if (!currentAlbum.ratingHistory) currentAlbum.ratingHistory = [];
         currentAlbum.ratingHistory.push({
             date: new Date().toISOString(),
@@ -440,9 +441,12 @@ function buildRatingHistoryHtml() {
         const dateStr   = date.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
         const fromColor = getColorByRating(entry.from);
         const toColor   = getColorByRating(entry.to);
-        const diff      = parseFloat(entry.to) - parseFloat(entry.from);
+        const diff      = parseFloat((parseFloat(entry.to) - parseFloat(entry.from)).toFixed(1));
         const diffSign  = diff > 0 ? '+' : '';
-        const diffColor = diff > 0 ? '#66CC33' : '#FF3333';
+        const diffColor = diff > 0 ? '#66CC33' : (diff < 0 ? '#FF3333' : 'var(--text-muted)');
+        const diffHtml  = diff === 0
+            ? `<span style="font-size:0.78rem; color:var(--text-muted); font-style:italic;">sin cambio en nota del álbum</span>`
+            : `<span style="font-size:0.8rem; font-weight:700; color:${diffColor};">${diffSign}${formatRating(diff)}</span>`;
 
         let detailsBtn = '';
         if (entry.trackChange) {
@@ -474,7 +478,7 @@ function buildRatingHistoryHtml() {
                 <span class="rating-badge" style="background:${fromColor}; font-size:0.8rem; padding:2px 8px;">${formatRating(entry.from)}</span>
                 <span style="color:var(--text-muted);">→</span>
                 <span class="rating-badge" style="background:${toColor}; font-size:0.8rem; padding:2px 8px;">${formatRating(entry.to)}</span>
-                <span style="font-size:0.8rem; font-weight:700; color:${diffColor};">${diffSign}${formatRating(diff)}</span>
+                ${diffHtml}
                 ${detailsBtn}
             </div>`;
     }).join('');
