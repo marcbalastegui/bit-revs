@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BitRevs - Género</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .genre-hero {
+            padding: 48px 0 32px;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 40px;
+        }
+        .genre-hero-label {
+            font-size: 0.75rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--accent-red);
+            margin-bottom: 10px;
+        }
+        .genre-hero-title {
+            font-size: clamp(2.2rem, 5vw, 3.8rem);
+            font-weight: 900;
+            letter-spacing: -2px;
+            color: var(--text-main);
+            margin: 0 0 8px;
+        }
+        .genre-hero-meta {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        /* Secciones */
+        .genre-section { margin-bottom: 48px; }
+        .genre-section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 18px;
+        }
+        .genre-section-title {
+            font-size: 1.1rem;
+            font-weight: 900;
+            letter-spacing: -0.3px;
+        }
+
+        /* Grid de álbumes (top) */
+        .genre-album-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 16px;
+        }
+        .genre-album-card {
+            border-radius: 12px;
+            background: white;
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .genre-album-card:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(0,0,0,0.08); }
+        .genre-album-card img {
+            width: 100%; aspect-ratio: 1/1; object-fit: cover; display: block;
+        }
+        .genre-album-card-info { padding: 10px 12px; }
+        .genre-album-card-title {
+            font-size: 0.82rem; font-weight: 700;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            margin-bottom: 2px;
+        }
+        .genre-album-card-meta {
+            font-size: 0.72rem; color: var(--text-muted);
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .genre-album-card-badge {
+            display: inline-block; margin-top: 6px;
+            padding: 2px 8px; border-radius: 6px;
+            font-size: 0.75rem; font-weight: 900; color: white;
+        }
+
+        /* Listas */
+        .genre-list-row {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 14px 16px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: background 0.15s;
+            background: white;
+        }
+        .genre-list-row:hover { background: var(--bg-secondary); }
+        .genre-list-covers {
+            display: flex;
+            gap: 3px;
+            flex-shrink: 0;
+        }
+        .genre-list-covers img {
+            width: 36px; height: 36px;
+            border-radius: 6px; object-fit: cover;
+        }
+        .genre-list-name { font-size: 0.95rem; font-weight: 700; flex: 1; }
+        .genre-list-count { font-size: 0.8rem; color: var(--text-muted); font-weight: 600; }
+
+        /* Top canciones */
+        .genre-track-row {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 10px 14px;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 6px;
+            cursor: pointer;
+            transition: background 0.15s;
+            background: white;
+        }
+        .genre-track-row:hover { background: var(--bg-secondary); }
+        .genre-track-pos {
+            font-size: 1rem; font-weight: 900;
+            color: var(--text-muted); min-width: 24px; text-align: center;
+        }
+        .genre-track-cover {
+            width: 40px; height: 40px;
+            border-radius: 6px; object-fit: cover; flex-shrink: 0;
+        }
+        .genre-track-info { flex: 1; min-width: 0; }
+        .genre-track-title {
+            font-size: 0.9rem; font-weight: 700;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .genre-track-meta { font-size: 0.78rem; color: var(--text-muted); margin-top: 1px; }
+
+        /* Sección "Todo" colapsable */
+        .genre-todo-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            padding: 14px 0;
+            border-top: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 0;
+            user-select: none;
+        }
+        .genre-todo-header:hover .genre-todo-chevron { color: var(--text-main); }
+        .genre-todo-chevron {
+            color: var(--text-muted);
+            transition: transform 0.25s;
+            display: flex; align-items: center;
+        }
+        .genre-todo-chevron.open { transform: rotate(180deg); }
+        .genre-todo-body {
+            overflow: hidden;
+            max-height: 0;
+            transition: max-height 0.35s ease;
+        }
+        .genre-todo-body.open { max-height: 9999px; }
+        .genre-todo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 16px;
+            padding: 20px 0;
+        }
+
+        .genre-empty {
+            color: var(--text-muted); font-size: 0.88rem;
+            font-style: italic; padding: 16px 0;
+        }
+    </style>
+</head>
+<body>
+<header>
+    <div class="header-left">
+        <a href="home.html" class="logo">BitRevs</a>
+    </div>
+    <nav>
+        <a href="home.html" class="nav-home-icon" title="Inicio">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        </a>
+        <div class="nav-dropdown">
+            <span class="nav-dropdown-trigger active">Reviews
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="nav-dropdown-arrow"><polyline points="6 9 12 15 18 9"/></svg>
+            </span>
+            <div class="nav-dropdown-menu">
+                <a href="movies.html">Películas</a>
+                <a href="series.html">Series</a>
+                <a href="music.html" class="active">Music</a>
+                <a href="collections.html">Colecciones</a>
+            </div>
+        </div>
+        <a href="top.html">Top Canciones</a>
+        <a href="wrapped.html">Wrapped</a>
+        <a href="lists.html">Listas</a>
+    </nav>
+    <div class="header-right">
+        <button style="visibility:hidden;" class="save-btn">+</button>
+        <a href="profile.html" class="header-avatar" id="global-header-avatar" title="Mi Perfil">U</a>
+    </div>
+</header>
+
+<main>
+    <div class="genre-hero">
+        <div class="genre-hero-label">Género</div>
+        <h1 class="genre-hero-title" id="genre-title">—</h1>
+        <div class="genre-hero-meta" id="genre-meta"></div>
+    </div>
+
+    <!-- Mejores álbumes -->
+    <div class="genre-section" id="section-best">
+        <div class="genre-section-header">
+            <span class="genre-section-title">Mejores álbumes</span>
+            <a href="music.html" class="home-section-link" style="font-size:0.82rem; font-weight:700; color:var(--accent-red); text-decoration:none;">Ver todos →</a>
+        </div>
+        <div class="genre-album-grid" id="grid-best-albums"></div>
+    </div>
+
+    <!-- Listas con este género -->
+    <div class="genre-section" id="section-lists">
+        <div class="genre-section-header">
+            <span class="genre-section-title">Listas con este género</span>
+        </div>
+        <div id="grid-lists"></div>
+    </div>
+
+    <!-- Top canciones -->
+    <div class="genre-section" id="section-tracks">
+        <div class="genre-section-header">
+            <span class="genre-section-title">Mejores canciones</span>
+        </div>
+        <div id="grid-tracks"></div>
+    </div>
+
+    <!-- Todo (colapsable) -->
+    <div class="genre-section" id="section-all">
+        <div class="genre-todo-header" id="todo-toggle">
+            <span class="genre-section-title">Todo</span>
+            <span class="genre-todo-chevron" id="todo-chevron">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px;"><polyline points="6 9 12 15 18 9"/></svg>
+            </span>
+        </div>
+        <div class="genre-todo-body" id="todo-body">
+            <div class="genre-todo-grid" id="grid-all-albums"></div>
+        </div>
+    </div>
+</main>
+
+<script src="bitrevs-ui.js"></script>
+<script src="db.js"></script>
+<script src="genre.js"></script>
+</body>
+</html>

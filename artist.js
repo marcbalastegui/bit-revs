@@ -226,7 +226,7 @@ async function loadArtistStats() {
     if (bestAlbum) {
         const badgeColor = getColorByRating(bestAlbum.rating);
         html += `
-            <div class="stat-card col-6">
+            <div class="stat-card col-6" onclick="window.location.href='album.html?id=${bestAlbum.id}'" style="cursor:pointer;">
                 <div class="stat-label">Mejor álbum</div>
                 <div class="highlight-card">
                     <img class="highlight-cover" src="${bestAlbum.coverBase64 || ''}" alt="${bestAlbum.title}" loading="lazy" onerror="this.style.visibility='hidden'">
@@ -243,7 +243,7 @@ async function loadArtistStats() {
     if (bestTrack) {
         const badgeColor = getColorByRating(bestTrack.rating);
         html += `
-            <div class="stat-card col-6">
+            <div class="stat-card col-6" onclick="window.location.href='album.html?id=${bestTrack.albumId}'" style="cursor:pointer;">
                 <div class="stat-label">Mejor canción</div>
                 <div class="highlight-card">
                     <img class="highlight-cover" src="${bestTrack.albumCover || ''}" alt="${bestTrack.albumTitle}" loading="lazy" onerror="this.style.visibility='hidden'">
@@ -258,7 +258,9 @@ async function loadArtistStats() {
 
     // Géneros
     if (genreSet.size > 0) {
-        const genresHtml = [...genreSet].sort().map(g => `<span class="genre-pill">${g}</span>`).join('');
+        const genresHtml = [...genreSet].sort().map(g =>
+            `<span class="genre-pill" onclick="window.location.href='genre.html?g=${encodeURIComponent(g)}'" style="cursor:pointer;" title="Ver género">${g}</span>`
+        ).join('');
         html += `
             <div class="stat-card col-6">
                 <div class="stat-label">Géneros</div>
@@ -297,7 +299,7 @@ async function loadArtistStats() {
         .map(album => {
             const badgeColor = getColorByRating(album.rating);
             return `
-                <div class="album-row">
+                <div class="album-row" onclick="window.location.href='album.html?id=${album.id}'" style="cursor:pointer;">
                     <img class="album-row-cover" src="${album.coverBase64 || ''}" alt="${album.title}" loading="lazy" onerror="this.style.visibility='hidden'">
                     <div class="album-row-info">
                         <div class="album-row-title">${album.title}</div>
@@ -320,9 +322,8 @@ async function loadArtistStats() {
             .sort((a, b) => parseFloat(b.rating) - parseFloat(a.rating))
             .map(album => {
                 const badgeColor = getColorByRating(album.rating);
-                const roleText = album.artist === artistName ? 'Principal' : 'Feat.';
                 return `
-                    <div class="album-row">
+                    <div class="album-row" onclick="window.location.href='album.html?id=${album.id}'" style="cursor:pointer;">
                         <img class="album-row-cover" src="${album.coverBase64 || ''}" alt="${album.title}" loading="lazy" onerror="this.style.visibility='hidden'">
                         <div class="album-row-info">
                             <div class="album-row-title">${album.title}</div>
