@@ -44,13 +44,23 @@ async function loadWrapped() {
 
     const topAlbum = [...scoredAlbums].sort((a, b) => parseFloat(b.rating) - parseFloat(a.rating))[0];
 
+    const { albumBoost, trackBoost } = await computeTopBoost();
+
     const sortedBest = [...allTracks].sort((a, b) => {
         const diff = parseFloat(b.rating) - parseFloat(a.rating);
-        return diff !== 0 ? diff : b.albumRating - a.albumRating;
+        if (diff !== 0) return diff;
+        const boostDiff = getTrackBoostScore(b.albumId, b.title, albumBoost, trackBoost)
+                        - getTrackBoostScore(a.albumId, a.title, albumBoost, trackBoost);
+        if (boostDiff !== 0) return boostDiff;
+        return b.albumRating - a.albumRating;
     });
     const sortedWorst = [...allTracks].sort((a, b) => {
         const diff = parseFloat(a.rating) - parseFloat(b.rating);
-        return diff !== 0 ? diff : a.albumRating - b.albumRating;
+        if (diff !== 0) return diff;
+        const boostDiff = getTrackBoostScore(a.albumId, a.title, albumBoost, trackBoost)
+                        - getTrackBoostScore(b.albumId, b.title, albumBoost, trackBoost);
+        if (boostDiff !== 0) return boostDiff;
+        return a.albumRating - b.albumRating;
     });
 
     const topTrack   = sortedBest[0];

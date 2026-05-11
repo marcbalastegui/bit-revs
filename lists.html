@@ -204,9 +204,22 @@
             <input type="text" id="list-modal-name" required placeholder="Ej: Top 10 álbumes de mi vida">
             <label>Descripción (opcional):</label>
             <input type="text" id="list-modal-desc" placeholder="Ej: Los mejores discos que he escuchado">
+            <label>Tipo de elementos:</label>
+            <div style="display:flex; gap:10px; margin-bottom:4px;">
+                <label style="display:flex; align-items:center; gap:6px; font-weight:600; cursor:pointer;">
+                    <input type="radio" name="list-item-type" id="list-type-albums" value="album" checked style="width:auto;"> Álbumes
+                </label>
+                <label style="display:flex; align-items:center; gap:6px; font-weight:600; cursor:pointer;">
+                    <input type="radio" name="list-item-type" id="list-type-tracks" value="track" style="width:auto;"> Canciones
+                </label>
+            </div>
             <label>Género (opcional):</label>
             <input type="text" id="list-modal-genre" placeholder="Ej: R&B/Soul" list="genre-datalist" autocomplete="off">
             <datalist id="genre-datalist"></datalist>
+            <div style="display:flex; align-items:center; gap:10px; margin:12px 0 4px;">
+                <input type="checkbox" id="list-modal-istop" style="width:auto; margin:0;">
+                <label for="list-modal-istop" style="margin:0; font-weight:700; cursor:pointer;">Lista tipo "Top" <span style="font-size:0.75rem; color:var(--text-muted); font-weight:500;">(afecta al desempate en rankings)</span></label>
+            </div>
             <div class="modal-actions">
                 <button type="button" id="list-modal-cancel">Cancelar</button>
                 <button type="submit" class="save-btn">Guardar</button>

@@ -142,9 +142,13 @@ async function loadArtistStats() {
     const bestAlbum = [...albumsWithRating].sort((a, b) => parseFloat(b.rating) - parseFloat(a.rating))[0];
 
     // Mejor canción
+    const { albumBoost, trackBoost } = await computeTopBoost();
     const bestTrack = [...allTracks].sort((a, b) => {
         const diff = parseFloat(b.rating) - parseFloat(a.rating);
         if (diff !== 0) return diff;
+        const boostDiff = getTrackBoostScore(b.albumId, b.title, albumBoost, trackBoost)
+                        - getTrackBoostScore(a.albumId, a.title, albumBoost, trackBoost);
+        if (boostDiff !== 0) return boostDiff;
         const albumA = albums.find(al => al.id === a.albumId);
         const albumB = albums.find(al => al.id === b.albumId);
         return parseFloat(albumB?.rating || 0) - parseFloat(albumA?.rating || 0);

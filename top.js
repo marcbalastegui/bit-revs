@@ -31,6 +31,7 @@ function buildUid(albumId, trackTitle) {
 // ── BUILD RANKING ─────────────────────────────────────────────────────────
 async function buildRanking(mode, tiebreaker, dir) {
     const albums = await getAllAlbumsFromDB();
+    const { albumBoost, trackBoost } = await computeTopBoost();
     const allTracks = [];
 
     albums.forEach((album, albumIndex) => {
@@ -55,6 +56,7 @@ async function buildRanking(mode, tiebreaker, dir) {
             allTracks.push({
                 _uid:        buildUid(album.id, track.title),
                 _addedIndex: albumIndex,
+                _boost:      getTrackBoostScore(album.id, track.title, albumBoost, trackBoost),
                 title:       track.title,
                 artist:      artistDisplay,
                 albumTitle:  album.title,
@@ -68,29 +70,26 @@ async function buildRanking(mode, tiebreaker, dir) {
     });
 
     allTracks.sort((a, b) => {
-        // Orden principal: nota de canción
+        // 1. Nota de canción
         const primaryDiff = mode === 'best'
             ? b.rating - a.rating
             : a.rating - b.rating;
-
         if (primaryDiff !== 0) return primaryDiff;
 
-        // Desempate según criterio y dirección
-        if (tiebreaker === 'album-rating') {
-            // Nota del álbum: siempre el mejor álbum primero (no tiene dir)
-            return b.albumRating - a.albumRating;
-        }
+        // 2. Boost de listas Top (automático, siempre)
+        const boostDiff = b._boost - a._boost;
+        if (boostDiff !== 0) return boostDiff;
 
+        // 3. Desempate manual según criterio
+        if (tiebreaker === 'album-rating') return b.albumRating - a.albumRating;
         if (tiebreaker === 'alphabetical') {
             const cmp = a.title.localeCompare(b.title);
             return dir === 'asc' ? cmp : -cmp;
         }
-
         if (tiebreaker === 'added') {
             const cmp = a._addedIndex - b._addedIndex;
             return dir === 'asc' ? cmp : -cmp;
         }
-
         return a.title.localeCompare(b.title);
     });
 

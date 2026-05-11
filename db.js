@@ -143,6 +143,36 @@ async function saveArtistToDB(artistData) {
         request.onerror = (e) => reject(e.target.error);
     });
 }
+// ── TOP BOOST (desempate por listas Top) ─────────────────────────────────
+// Devuelve { albumBoost: {albumId→count}, trackBoost: {key→count} }
+// key = `${albumId}__${trackTitle.toLowerCase().trim()}`
+async function computeTopBoost() {
+    try {
+        const allLists = await getAllItemsFromDB('lists');
+        const topLists = allLists.filter(l => l.isTop);
+        const albumBoost = {};
+        const trackBoost = {};
+        topLists.forEach(list => {
+            (list.items || []).forEach(item => {
+                if (item.type === 'track') {
+                    const key = `${item.albumId}__${(item.trackTitle || '').toLowerCase().trim()}`;
+                    trackBoost[key] = (trackBoost[key] || 0) + 1;
+                } else {
+                    // álbum (item.type === 'album' o sin type por compatibilidad)
+                    const id = item.id ?? item.albumId;
+                    if (id != null) albumBoost[id] = (albumBoost[id] || 0) + 1;
+                }
+            });
+        });
+        return { albumBoost, trackBoost };
+    } catch { return { albumBoost: {}, trackBoost: {} }; }
+}
+
+function getTrackBoostScore(albumId, trackTitle, albumBoost, trackBoost) {
+    const key = `${albumId}__${(trackTitle || '').toLowerCase().trim()}`;
+    return (albumBoost[albumId] || 0) + (trackBoost[key] || 0);
+}
+
 // --- CARGA DE AVATAR GLOBAL EN CABECERA ---
 document.addEventListener('DOMContentLoaded', async () => {
     const headerAvatar = document.getElementById('global-header-avatar');
