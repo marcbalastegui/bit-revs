@@ -25,12 +25,15 @@ async function loadGenrePage() {
     if (ratedAlbums.length === 0) {
         bestGrid.innerHTML = `<p class="genre-empty">No hay álbumes puntuados en este género.</p>`;
     } else {
-        bestGrid.innerHTML = ratedAlbums.slice(0, 12).map(album => albumCard(album)).join('');
+        bestGrid.innerHTML = ratedAlbums.slice(0, 8).map(album => albumCard(album)).join('');
     }
 
     // ── LISTAS ───────────────────────────────────────────────────────────────
     const genreAlbumIds = new Set(genreAlbums.map(a => a.id));
     const relatedLists = allLists.filter(list =>
+        // Listas etiquetadas con este género explícitamente
+        (list.genre && list.genre.toLowerCase() === genre.toLowerCase()) ||
+        // O listas que contienen álbumes de este género
         (list.items || []).some(ref => ref.type === 'album' && genreAlbumIds.has(ref.id))
     );
 

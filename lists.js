@@ -23,6 +23,12 @@ async function initLists() {
         ...series.map(s => ({ ...s, _type: 'series', _label: 'Serie' })),
     ];
 
+    // Poblar datalist de géneros
+    const genreSet = new Set();
+    albums.forEach(a => { if (a.genres) a.genres.forEach(g => genreSet.add(g)); });
+    const datalist = document.getElementById('genre-datalist');
+    if (datalist) datalist.innerHTML = [...genreSet].sort().map(g => `<option value="${g}">`).join('');
+
     renderListsSidebar();
     if (allLists.length > 0) openList(allLists[0].id);
     else renderEmptyState();
@@ -99,6 +105,7 @@ function renderListDetail(list) {
             <div>
                 <h2 class="list-detail-title">${list.name}</h2>
                 ${list.description ? `<p class="list-detail-desc">${list.description}</p>` : ''}
+                ${list.genre ? `<a href="genre.html?g=${encodeURIComponent(list.genre)}" style="display:inline-block; margin-top:6px; padding:3px 10px; border-radius:20px; background:var(--bg-secondary); border:1px solid var(--border-color); font-size:0.75rem; font-weight:700; color:var(--text-muted); text-decoration:none; transition:all 0.2s;" onmouseover="this.style.color='var(--accent-red)';this.style.borderColor='var(--accent-red)';" onmouseout="this.style.color='var(--text-muted)';this.style.borderColor='var(--border-color)';">${list.genre}</a>` : ''}
             </div>
             <div style="display:flex; gap:8px;">
                 <button class="save-btn" id="btn-add-item">+ Añadir</button>
@@ -164,8 +171,9 @@ function initDragDrop(list) {
 function openListModal(list) {
     const modal = document.getElementById('list-modal');
     document.getElementById('list-modal-title').textContent = list ? 'Editar lista' : 'Nueva lista';
-    document.getElementById('list-modal-name').value = list?.name || '';
-    document.getElementById('list-modal-desc').value = list?.description || '';
+    document.getElementById('list-modal-name').value  = list?.name || '';
+    document.getElementById('list-modal-desc').value  = list?.description || '';
+    document.getElementById('list-modal-genre').value = list?.genre || '';
     modal.dataset.editId = list?.id || '';
     modal.classList.remove('hidden');
 }
@@ -176,16 +184,17 @@ function closeListModal() {
 
 async function saveListMeta(e) {
     e.preventDefault();
-    const name = document.getElementById('list-modal-name').value.trim();
-    const desc = document.getElementById('list-modal-desc').value.trim();
+    const name  = document.getElementById('list-modal-name').value.trim();
+    const desc  = document.getElementById('list-modal-desc').value.trim();
+    const genre = document.getElementById('list-modal-genre').value.trim();
     const editId = parseInt(document.getElementById('list-modal').dataset.editId);
     if (!name) return;
 
     if (editId) {
         const list = allLists.find(l => l.id === editId);
-        if (list) { list.name = name; list.description = desc; await saveListToDB(list); }
+        if (list) { list.name = name; list.description = desc; list.genre = genre || null; await saveListToDB(list); }
     } else {
-        const newList = { id: Date.now(), name, description: desc, createdAt: new Date().toISOString(), items: [] };
+        const newList = { id: Date.now(), name, description: desc, genre: genre || null, createdAt: new Date().toISOString(), items: [] };
         await saveListToDB(newList);
         currentListId = newList.id;
     }

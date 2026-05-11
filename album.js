@@ -22,7 +22,7 @@ async function loadAlbumDetails() {
 }
 
 // ── MEDIA ─────────────────────────────────────────────────────────────────
-function recalculateAlbumRating(recordHistory = false) {
+function recalculateAlbumRating(recordHistory = false, trackChange = null) {
     const prevRating = parseFloat(currentAlbum.rating) || 0;
     if (!currentAlbum?.tracks?.length) { currentAlbum.rating = 0; return; }
     let total = 0, count = 0;
@@ -32,7 +32,12 @@ function recalculateAlbumRating(recordHistory = false) {
     const newRating = count === 0 ? 0 : parseFloat((total / count).toFixed(1));
     if (recordHistory && prevRating > 0 && count > 0 && newRating !== prevRating) {
         if (!currentAlbum.ratingHistory) currentAlbum.ratingHistory = [];
-        currentAlbum.ratingHistory.push({ date: new Date().toISOString(), from: prevRating, to: newRating });
+        currentAlbum.ratingHistory.push({
+            date: new Date().toISOString(),
+            from: prevRating,
+            to: newRating,
+            trackChange  // { title, fromRating, toRating } o null
+        });
     }
     currentAlbum.rating = count === 0 ? 0 : (total / count).toFixed(1);
 }
@@ -406,15 +411,20 @@ document.getElementById('track-form').addEventListener('submit', async function(
     }
     const newTrack = { title, artist, isInterlude, rating };
     const isEditing = editingTrackIndex !== null;
+    let trackChange = null;
     if (isEditing) {
-        newTrack.review   = currentAlbum.tracks[editingTrackIndex].review;
-        newTrack.favorite = currentAlbum.tracks[editingTrackIndex].favorite;
-        newTrack.credits  = currentAlbum.tracks[editingTrackIndex].credits;
+        const oldTrack = currentAlbum.tracks[editingTrackIndex];
+        if (parseFloat(oldTrack.rating) !== parseFloat(newTrack.rating)) {
+            trackChange = { title: oldTrack.title, fromRating: parseFloat(oldTrack.rating), toRating: parseFloat(newTrack.rating) };
+        }
+        newTrack.review   = oldTrack.review;
+        newTrack.favorite = oldTrack.favorite;
+        newTrack.credits  = oldTrack.credits;
         currentAlbum.tracks[editingTrackIndex] = newTrack;
     } else {
         currentAlbum.tracks.push(newTrack);
     }
-    recalculateAlbumRating(isEditing);
+    recalculateAlbumRating(isEditing, trackChange);
     await saveAlbumToDB(currentAlbum);
     document.getElementById('modal-track').classList.add('hidden');
     renderAlbumContent();
@@ -425,14 +435,39 @@ function buildRatingHistoryHtml() {
     const history = currentAlbum.ratingHistory;
     if (!history || history.length === 0) return '';
 
-    const rows = [...history].reverse().map(entry => {
-        const date     = new Date(entry.date);
-        const dateStr  = date.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
+    const rows = [...history].reverse().map((entry, idx) => {
+        const date      = new Date(entry.date);
+        const dateStr   = date.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
         const fromColor = getColorByRating(entry.from);
         const toColor   = getColorByRating(entry.to);
         const diff      = parseFloat(entry.to) - parseFloat(entry.from);
         const diffSign  = diff > 0 ? '+' : '';
         const diffColor = diff > 0 ? '#66CC33' : '#FF3333';
+
+        let detailsBtn = '';
+        if (entry.trackChange) {
+            const tc = entry.trackChange;
+            const tcFrom = getColorByRating(tc.fromRating);
+            const tcTo   = getColorByRating(tc.toRating);
+            detailsBtn = `
+                <div style="position:relative; margin-left:auto;">
+                    <button class="history-dots-btn" data-idx="${idx}"
+                        style="background:none; border:1px solid var(--border-color); border-radius:8px; padding:3px 9px; cursor:pointer; font-size:0.85rem; font-weight:900; color:var(--text-muted); font-family:'Inter',sans-serif; line-height:1; transition:all 0.15s;"
+                        onmouseover="this.style.background='var(--bg-secondary)'" onmouseout="this.style.background='none'">···</button>
+                    <div class="history-popover hidden" id="popover-${idx}"
+                        style="position:absolute; right:0; top:calc(100% + 6px); background:white; border:1px solid var(--border-color); border-radius:12px; padding:14px 16px; box-shadow:0 8px 24px rgba(0,0,0,0.1); z-index:100; min-width:220px; white-space:nowrap;">
+                        <div style="font-size:0.7rem; font-weight:800; text-transform:uppercase; letter-spacing:1px; color:var(--text-muted); margin-bottom:10px;">Canción modificada</div>
+                        <div style="font-size:0.88rem; font-weight:700; margin-bottom:10px; white-space:normal; word-break:break-word;">${tc.title}</div>
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <span class="rating-badge" style="background:${tcFrom}; font-size:0.8rem; padding:2px 8px;">${formatRating(tc.fromRating)}</span>
+                            <span style="color:var(--text-muted); font-size:0.9rem;">→</span>
+                            <span class="rating-badge" style="background:${tcTo}; font-size:0.8rem; padding:2px 8px;">${formatRating(tc.toRating)}</span>
+                            <span style="font-size:0.8rem; font-weight:700; color:${tc.toRating > tc.fromRating ? '#66CC33' : '#FF3333'};">${tc.toRating > tc.fromRating ? '+' : ''}${formatRating(tc.toRating - tc.fromRating)}</span>
+                        </div>
+                    </div>
+                </div>`;
+        }
+
         return `
             <div style="display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid var(--border-color);">
                 <span style="color:var(--text-muted); font-size:0.8rem; min-width:100px;">${dateStr}</span>
@@ -440,14 +475,33 @@ function buildRatingHistoryHtml() {
                 <span style="color:var(--text-muted);">→</span>
                 <span class="rating-badge" style="background:${toColor}; font-size:0.8rem; padding:2px 8px;">${formatRating(entry.to)}</span>
                 <span style="font-size:0.8rem; font-weight:700; color:${diffColor};">${diffSign}${formatRating(diff)}</span>
+                ${detailsBtn}
             </div>`;
     }).join('');
 
     return `
         <div class="tracklist-section" style="margin-top:32px;">
             <h2 style="margin-bottom:20px;">Historial de notas</h2>
-            <div>${rows}</div>
+            <div id="history-rows">${rows}</div>
         </div>`;
 }
+
+// Delegación de clicks para los popovers del historial
+document.addEventListener('click', (e) => {
+    const btn = e.target.closest('.history-dots-btn');
+    if (btn) {
+        e.stopPropagation();
+        const idx     = btn.dataset.idx;
+        const popover = document.getElementById(`popover-${idx}`);
+        // Cierra todos los demás
+        document.querySelectorAll('.history-popover').forEach(p => {
+            if (p !== popover) p.classList.add('hidden');
+        });
+        popover?.classList.toggle('hidden');
+        return;
+    }
+    // Click fuera → cierra todos
+    document.querySelectorAll('.history-popover').forEach(p => p.classList.add('hidden'));
+});
 
 loadAlbumDetails();
