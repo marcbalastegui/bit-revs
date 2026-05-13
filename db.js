@@ -1,164 +1,139 @@
-// db.js - Gestión de Base de Datos para Álbumes, Películas, Series y Perfil
+// db.js - Base de datos con Firebase Firestore
 
-const DB_NAME = 'BitRevsDB';
-const DB_VERSION = 8;
-const STORE_ALBUMS = 'albums';
-const STORE_MOVIES = 'movies';
-const STORE_SERIES = 'series';
-const STORE_PROFILE = 'userProfile';
-
-function openDB() {
+// ── AUTH HELPER ───────────────────────────────────────────────────────────
+function waitForAuth() {
     return new Promise((resolve, reject) => {
-        const request = indexedDB.open(DB_NAME, DB_VERSION);
-
-        request.onupgradeneeded = (event) => {
-            const db = event.target.result;
-            if (!db.objectStoreNames.contains(STORE_ALBUMS)) db.createObjectStore(STORE_ALBUMS, { keyPath: 'id' });
-            if (!db.objectStoreNames.contains(STORE_MOVIES)) db.createObjectStore(STORE_MOVIES, { keyPath: 'id' });
-            if (!db.objectStoreNames.contains(STORE_SERIES)) db.createObjectStore(STORE_SERIES, { keyPath: 'id' });
-            if (!db.objectStoreNames.contains(STORE_PROFILE)) db.createObjectStore(STORE_PROFILE, { keyPath: 'key' });
-            if (!db.objectStoreNames.contains('artists')) db.createObjectStore('artists', { keyPath: 'name' });
-            if (!db.objectStoreNames.contains('collections')) db.createObjectStore('collections', { keyPath: 'id' });
-            if (!db.objectStoreNames.contains('lists')) db.createObjectStore('lists', { keyPath: 'id' });
-        };
-
-        request.onsuccess = (event) => resolve(event.target.result);
-        request.onerror = (event) => reject(event.target.error);
+        if (brAuth.currentUser) { resolve(brAuth.currentUser); return; }
+        const unsub = brAuth.onAuthStateChanged(user => {
+            unsub();
+            if (user) resolve(user);
+            else reject(new Error('No autenticado'));
+        }, reject);
     });
 }
 
-// --- FUNCIONES GENÉRICAS ---
-async function saveItemToDB(storeName, item) {
-    const db = await openDB();
-    return new Promise((resolve, reject) => {
-        const transaction = db.transaction(storeName, 'readwrite');
-        const store = transaction.objectStore(storeName);
-        const request = store.put(item);
-        request.onsuccess = () => resolve(request.result);
-        request.onerror = (e) => reject(e.target.error);
+function userCol(storeName) {
+    const uid = brAuth.currentUser?.uid;
+    if (!uid) throw new Error('No autenticado');
+    return brDB.collection('users').doc(uid).collection(storeName);
+}
+
+async function getNextId(storeName) {
+    const uid = brAuth.currentUser?.uid;
+    if (!uid) throw new Error('No autenticado');
+    const counterRef = brDB.collection('users').doc(uid).collection('_meta').doc('counters');
+    return brDB.runTransaction(async tx => {
+        const snap = await tx.get(counterRef);
+        const prev = snap.exists ? (snap.data()[storeName] || 0) : 0;
+        const next = prev + 1;
+        tx.set(counterRef, { [storeName]: next }, { merge: true });
+        return next;
     });
+}
+
+function artistDocId(name) {
+    return (name || 'unknown').replace(/\//g, '|').substring(0, 200);
+}
+
+// ── FUNCIONES GENÉRICAS ───────────────────────────────────────────────────
+async function saveItemToDB(storeName, item) {
+    await waitForAuth();
+    let docId;
+    if (storeName === 'userProfile') {
+        docId = item.key || 'config';
+    } else if (storeName === 'artists') {
+        docId = artistDocId(item.name);
+    } else {
+        if (!item.id) {
+            item.id = await getNextId(storeName);
+        }
+        docId = String(item.id);
+    }
+    await userCol(storeName).doc(docId).set(item);
+    return item.id;
 }
 
 async function getAllItemsFromDB(storeName) {
-    const db = await openDB();
-    return new Promise((resolve, reject) => {
-        const transaction = db.transaction(storeName, 'readonly');
-        const request = transaction.objectStore(storeName).getAll();
-        request.onsuccess = () => resolve(request.result);
-        request.onerror = (e) => reject(e.target.error);
-    });
+    try {
+        await waitForAuth();
+        const snap = await userCol(storeName).get();
+        return snap.docs.map(d => d.data());
+    } catch { return []; }
 }
 
 async function getItemByIdFromDB(storeName, id) {
-    const db = await openDB();
-    return new Promise((resolve, reject) => {
-        const transaction = db.transaction(storeName, 'readonly');
-        const request = transaction.objectStore(storeName).get(Number(id));
-        request.onsuccess = () => resolve(request.result);
-        request.onerror = (e) => reject(e.target.error);
-    });
+    try {
+        await waitForAuth();
+        let docId;
+        if (storeName === 'artists')     docId = artistDocId(String(id));
+        else if (storeName === 'userProfile') docId = String(id) || 'config';
+        else                             docId = String(id);
+        const doc = await userCol(storeName).doc(docId).get();
+        return doc.exists ? doc.data() : null;
+    } catch { return null; }
 }
 
 async function deleteItemFromDB(storeName, id) {
-    const db = await openDB();
-    return new Promise((resolve, reject) => {
-        const transaction = db.transaction(storeName, 'readwrite');
-        const request = transaction.objectStore(storeName).delete(Number(id));
-        request.onsuccess = () => resolve(true);
-        request.onerror = (e) => reject(e.target.error);
-    });
+    try {
+        await waitForAuth();
+        await userCol(storeName).doc(String(id)).delete();
+        return true;
+    } catch { return false; }
 }
 
-// --- FUNCIONES DE ÁLBUMES ---
-const saveAlbumToDB = (album) => saveItemToDB(STORE_ALBUMS, album);
-const getAllAlbumsFromDB = () => getAllItemsFromDB(STORE_ALBUMS);
-const getAlbumByIdFromDB = (id) => getItemByIdFromDB(STORE_ALBUMS, id);
-const deleteAlbumFromDB = (id) => deleteItemFromDB(STORE_ALBUMS, id);
+// ── ÁLBUMES ───────────────────────────────────────────────────────────────
+const STORE_ALBUMS = 'albums';
+const saveAlbumToDB      = album => saveItemToDB(STORE_ALBUMS, album);
+const getAllAlbumsFromDB  = ()    => getAllItemsFromDB(STORE_ALBUMS);
+const getAlbumByIdFromDB = id    => getItemByIdFromDB(STORE_ALBUMS, id);
+const deleteAlbumFromDB  = id    => deleteItemFromDB(STORE_ALBUMS, id);
 
-// --- PERFIL DE USUARIO ---
+// ── PERFIL ────────────────────────────────────────────────────────────────
 async function getUserProfileFromDB() {
-    const db = await openDB();
-    return new Promise((resolve, reject) => {
-        const transaction = db.transaction(STORE_PROFILE, 'readonly');
-        const request = transaction.objectStore(STORE_PROFILE).get('config');
-        request.onsuccess = () => resolve(request.result || { key: 'config', userName: 'Usuario BitRevs', avatarData: null, bannerData: null });
-        request.onerror = (e) => reject(e.target.error);
-    });
+    try {
+        await waitForAuth();
+        const doc = await userCol('userProfile').doc('config').get();
+        if (doc.exists) return doc.data();
+        const user = brAuth.currentUser;
+        return { key: 'config', userName: user?.email?.split('@')[0] || 'Usuario', avatarData: null, bannerData: null };
+    } catch {
+        return { key: 'config', userName: 'Usuario BitRevs', avatarData: null, bannerData: null };
+    }
 }
 
 async function saveUserProfileToDB(profileData) {
-    const db = await openDB();
-    return new Promise((resolve, reject) => {
-        const transaction = db.transaction(STORE_PROFILE, 'readwrite');
-        const store = transaction.objectStore(STORE_PROFILE);
-        const request = store.put(profileData);
-        request.onsuccess = () => resolve(true);
-        request.onerror = (e) => reject(e.target.error);
-    });
+    await waitForAuth();
+    await userCol('userProfile').doc('config').set(profileData);
+    return true;
 }
 
-// --- UTILIDADES GLOBALES (Colores y Notas) ---
-
-function formatRating(rating) {
-    const r = parseFloat(rating);
-    if (isNaN(r)) return "";
-    return Number.isInteger(r) ? r.toString() : r.toFixed(1);
-}
-
-function getColorByRating(rating) {
-    const r = parseFloat(rating);
-    if (isNaN(r) || r === 0) return '#4D4D4D';
-    if (r === 10) return '#FF66CC';
-    if (r >= 9) return '#B533FF';
-    if (r >= 8) return '#3366FF';
-    if (r >= 7) return '#66CC33';
-    if (r >= 6) return '#FFD11A';
-    if (r >= 5) return '#FF8533';
-    if (r >= 4) return '#FF3333';
-    if (r >= 2) return '#996600';
-    return '#4D4D4D';
-}
-// ── ARTISTAS ──
-const STORE_ARTISTS = 'artists';
-
-// Asegúrate de añadir esto en onupgradeneeded:
-// if (!db.objectStoreNames.contains(STORE_ARTISTS)) db.createObjectStore(STORE_ARTISTS, { keyPath: 'name' });
-
+// ── ARTISTAS ──────────────────────────────────────────────────────────────
 async function getArtistFromDB(name) {
-    const db = await openDB();
-    return new Promise((resolve, reject) => {
-        const transaction = db.transaction(STORE_ARTISTS, 'readonly');
-        const request = transaction.objectStore(STORE_ARTISTS).get(name);
-        request.onsuccess = () => resolve(request.result || null);
-        request.onerror = (e) => reject(e.target.error);
-    });
+    try {
+        await waitForAuth();
+        const doc = await userCol('artists').doc(artistDocId(name)).get();
+        return doc.exists ? doc.data() : null;
+    } catch { return null; }
 }
 
 async function saveArtistToDB(artistData) {
-    const db = await openDB();
-    return new Promise((resolve, reject) => {
-        const transaction = db.transaction(STORE_ARTISTS, 'readwrite');
-        const request = transaction.objectStore(STORE_ARTISTS).put(artistData);
-        request.onsuccess = () => resolve(true);
-        request.onerror = (e) => reject(e.target.error);
-    });
+    await waitForAuth();
+    await userCol('artists').doc(artistDocId(artistData.name)).set(artistData);
+    return true;
 }
-// ── TOP BOOST (desempate por listas Top) ─────────────────────────────────
-// Devuelve { albumBoost: {albumId→count}, trackBoost: {key→count} }
-// key = `${albumId}__${trackTitle.toLowerCase().trim()}`
+
+// ── TOP BOOST ─────────────────────────────────────────────────────────────
 async function computeTopBoost() {
     try {
         const allLists = await getAllItemsFromDB('lists');
         const topLists = allLists.filter(l => l.isTop);
-        const albumBoost = {};
-        const trackBoost = {};
+        const albumBoost = {}, trackBoost = {};
         topLists.forEach(list => {
             (list.items || []).forEach(item => {
                 if (item.type === 'track') {
                     const key = `${item.albumId}__${(item.trackTitle || '').toLowerCase().trim()}`;
                     trackBoost[key] = (trackBoost[key] || 0) + 1;
                 } else {
-                    // álbum (item.type === 'album' o sin type por compatibilidad)
                     const id = item.id ?? item.albumId;
                     if (id != null) albumBoost[id] = (albumBoost[id] || 0) + 1;
                 }
@@ -173,18 +148,39 @@ function getTrackBoostScore(albumId, trackTitle, albumBoost, trackBoost) {
     return (albumBoost[albumId] || 0) + (trackBoost[key] || 0);
 }
 
-// --- CARGA DE AVATAR GLOBAL EN CABECERA ---
+// ── UTILIDADES ────────────────────────────────────────────────────────────
+function formatRating(rating) {
+    const r = parseFloat(rating);
+    if (isNaN(r)) return "";
+    return Number.isInteger(r) ? r.toString() : r.toFixed(1);
+}
+
+function getColorByRating(rating) {
+    const r = parseFloat(rating);
+    if (isNaN(r) || r === 0) return '#4D4D4D';
+    if (r === 10) return '#FF66CC';
+    if (r >= 9)   return '#B533FF';
+    if (r >= 8)   return '#3366FF';
+    if (r >= 7)   return '#66CC33';
+    if (r >= 6)   return '#FFD11A';
+    if (r >= 5)   return '#FF8533';
+    if (r >= 4)   return '#FF3333';
+    if (r >= 2)   return '#996600';
+    return '#4D4D4D';
+}
+
+// ── AVATAR EN CABECERA ────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
     const headerAvatar = document.getElementById('global-header-avatar');
-    if (headerAvatar && typeof getUserProfileFromDB === 'function') {
-        try {
-            const profile = await getUserProfileFromDB();
-            if (profile.avatarData) {
-                headerAvatar.style.backgroundImage = `url(${profile.avatarData})`;
-                headerAvatar.textContent = '';
-            } else {
-                headerAvatar.textContent = profile.userName.charAt(0).toUpperCase();
-            }
-        } catch (e) { console.error("Error cargando avatar global", e); }
-    }
+    if (!headerAvatar) return;
+    try {
+        await waitForAuth();
+        const profile = await getUserProfileFromDB();
+        if (profile.avatarData) {
+            headerAvatar.style.backgroundImage = `url(${profile.avatarData})`;
+            headerAvatar.textContent = '';
+        } else {
+            headerAvatar.textContent = (profile.userName || 'U').charAt(0).toUpperCase();
+        }
+    } catch (e) { console.error("Error cargando avatar global", e); }
 });
