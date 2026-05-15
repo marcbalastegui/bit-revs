@@ -11,5 +11,5 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 
-const brDB   = firebase.firestore();
 const brAuth = firebase.auth();
+const brDB   = (typeof firebase.firestore === 'function') ? firebase.firestore() : null;
