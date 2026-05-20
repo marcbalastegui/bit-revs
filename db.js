@@ -35,6 +35,19 @@ function artistDocId(name) {
     return (name || 'unknown').replace(/\//g, '|').substring(0, 200);
 }
 
+// ── UTILIDAD: elimina undefined recursivamente (Firestore los rechaza) ────
+function stripUndefined(obj) {
+    if (Array.isArray(obj)) return obj.map(stripUndefined);
+    if (obj !== null && typeof obj === 'object') {
+        const clean = {};
+        for (const [k, v] of Object.entries(obj)) {
+            if (v !== undefined) clean[k] = stripUndefined(v);
+        }
+        return clean;
+    }
+    return obj;
+}
+
 // ── FUNCIONES GENÉRICAS ───────────────────────────────────────────────────
 async function saveItemToDB(storeName, item) {
     await waitForAuth();
@@ -49,7 +62,7 @@ async function saveItemToDB(storeName, item) {
         }
         docId = String(item.id);
     }
-    await userCol(storeName).doc(docId).set(item);
+    await userCol(storeName).doc(docId).set(stripUndefined(item));
     return item.id;
 }
 
