@@ -56,19 +56,29 @@ window.deleteTrack = async function(index) {
     if (await brConfirm("Esta acción no se puede deshacer.", "¿Borrar canción?")) {
         currentAlbum.tracks.splice(index, 1);
         recalculateAlbumRating();
-        await saveAlbumToDB(currentAlbum);
-        renderAlbumContent();
+        try {
+            await saveAlbumToDB(currentAlbum);
+            renderAlbumContent();
+        } catch (err) {
+            console.error('Error al borrar canción:', err);
+            await brAlert(`No se pudo guardar: ${err.message || err}`, "Error al guardar");
+        }
     }
 }
 
 window.editTrack = function(index) {
     editingTrackIndex = index;
     const track = currentAlbum.tracks[index];
-    document.getElementById('track-title').value  = track.title;
-    document.getElementById('track-artist').value = track.artist || "";
-    document.getElementById('track-interlude').checked = track.isInterlude;
-    document.getElementById('track-rating').value = track.rating || "";
-    document.getElementById('rating-container').style.display = track.isInterlude ? 'none' : 'block';
+    const ratingInput = document.getElementById('track-rating');
+    document.getElementById('track-title').value   = track.title || "";
+    document.getElementById('track-artist').value  = track.artist || "";
+    document.getElementById('track-interlude').checked = !!track.isInterlude;
+    // rating: usar String() explícito para no perder el "0"
+    ratingInput.value = (track.rating != null && track.rating !== '') ? String(track.rating) : "";
+    const isInt = !!track.isInterlude;
+    document.getElementById('rating-container').style.display = isInt ? 'none' : 'block';
+    if (isInt) ratingInput.removeAttribute('required');
+    else       ratingInput.setAttribute('required', 'true');
     const modalTitle = document.querySelector('#modal-track h2');
     if (modalTitle) modalTitle.textContent = "Editar Canción";
     document.getElementById('modal-track').classList.remove('hidden');
@@ -89,8 +99,13 @@ function addDragListeners(item, index) {
         const moved = currentAlbum.tracks.splice(dragSrcIndex, 1)[0];
         currentAlbum.tracks.splice(index, 0, moved);
         dragSrcIndex = null;
-        await saveAlbumToDB(currentAlbum);
-        renderAlbumContent();
+        try {
+            await saveAlbumToDB(currentAlbum);
+            renderAlbumContent();
+        } catch (err) {
+            console.error('Error al reordenar canciones:', err);
+            await brAlert(`No se pudo guardar: ${err.message || err}`, "Error al guardar");
+        }
     });
 }
 
@@ -398,17 +413,21 @@ document.getElementById('btn-cancel-track').addEventListener('click', () => {
 
 document.getElementById('track-form').addEventListener('submit', async function(e) {
     e.preventDefault();
-    const title       = document.getElementById('track-title').value;
-    const artist      = document.getElementById('track-artist').value;
+    const title       = document.getElementById('track-title').value.trim();
+    const artist      = document.getElementById('track-artist').value.trim();
     const isInterlude = document.getElementById('track-interlude').checked;
     let rating = "";
     if (!isInterlude) {
-        rating = document.getElementById('track-rating').value.replace(',', '.');
-        if (isNaN(rating) || rating < 0 || rating > 10 || rating.trim() === "") {
+        rating = document.getElementById('track-rating').value.replace(',', '.').trim();
+        if (rating === "" || isNaN(parseFloat(rating)) || parseFloat(rating) < 0 || parseFloat(rating) > 10) {
             await brAlert("Introduce una nota válida entre 0 y 10.", "Nota inválida");
             return;
         }
         rating = parseFloat(rating).toFixed(1);
+    }
+    if (!title) {
+        await brAlert("El título no puede estar vacío.", "Título requerido");
+        return;
     }
     const newTrack = { title, artist, isInterlude, rating };
     const isEditing = editingTrackIndex !== null;
@@ -426,9 +445,14 @@ document.getElementById('track-form').addEventListener('submit', async function(
         currentAlbum.tracks.push(newTrack);
     }
     recalculateAlbumRating(isEditing, trackChange);
-    await saveAlbumToDB(currentAlbum);
-    document.getElementById('modal-track').classList.add('hidden');
-    renderAlbumContent();
+    try {
+        await saveAlbumToDB(currentAlbum);
+        document.getElementById('modal-track').classList.add('hidden');
+        renderAlbumContent();
+    } catch (err) {
+        console.error('Error al guardar canción:', err);
+        await brAlert(`No se pudo guardar: ${err.message || err}`, "Error al guardar");
+    }
 });
 
 // ── HISTORIAL DE NOTAS ────────────────────────────────────────────────────
