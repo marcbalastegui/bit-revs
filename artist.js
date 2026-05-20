@@ -102,7 +102,7 @@ async function loadArtistStats() {
         if (!album.tracks) return;
         album.tracks.forEach(track => {
             if (!track.isInterlude && parseFloat(track.rating) > 0) {
-                allTracks.push({ ...track, albumId: album.id, albumTitle: album.title, albumCover: album.coverBase64 });
+                allTracks.push({ ...track, _mainArtist: album.artist, albumId: album.id, albumTitle: album.title, albumCover: album.coverBase64 });
             }
         });
     });
@@ -120,12 +120,14 @@ async function loadArtistStats() {
                     // Evitar duplicados
                     const exists = allTracks.find(t => t.title === track.title && t.albumId === album.id);
                     if (!exists) {
-                        allTracks.push({ ...track, albumId: album.id, albumTitle: album.title, albumCover: album.coverBase64 });
+                        allTracks.push({ ...track, _mainArtist: album.artist, albumId: album.id, albumTitle: album.title, albumCover: album.coverBase64 });
                     }
                 }
             }
         });
     });
+
+    const dedupedTracks = deduplicateTracks(allTracks);
 
     // Media de álbumes (como principal)
     const albumsWithRating = principalAlbums.filter(a => parseFloat(a.rating) > 0);
@@ -134,8 +136,8 @@ async function loadArtistStats() {
         : 0;
 
     // Media de canciones
-    const avgTrackRating = allTracks.length > 0
-        ? allTracks.reduce((sum, t) => sum + parseFloat(t.rating), 0) / allTracks.length
+    const avgTrackRating = dedupedTracks.length > 0
+        ? dedupedTracks.reduce((sum, t) => sum + parseFloat(t.rating), 0) / dedupedTracks.length
         : 0;
 
     // Mejor álbum (como principal)
@@ -143,7 +145,7 @@ async function loadArtistStats() {
 
     // Mejor canción
     const { albumBoost, trackBoost } = await computeTopBoost();
-    const bestTrack = [...allTracks].sort((a, b) => {
+    const bestTrack = [...dedupedTracks].sort((a, b) => {
         const diff = parseFloat(b.rating) - parseFloat(a.rating);
         if (diff !== 0) return diff;
         const boostDiff = getTrackBoostScore(b.albumId, b.title, albumBoost, trackBoost)
@@ -174,7 +176,7 @@ async function loadArtistStats() {
 
     const distribution = ranges.map(r => ({
         label: r.label,
-        count: allTracks.filter(t => {
+        count: dedupedTracks.filter(t => {
             const v = parseFloat(t.rating);
             return v >= r.min && v < r.max;
         }).length
@@ -212,7 +214,7 @@ async function loadArtistStats() {
     html += `
         <div class="stat-card ${trackColSize}">
             <div class="stat-label">Canciones puntuadas</div>
-            <div class="stat-value-big">${allTracks.length}</div>
+            <div class="stat-value-big">${dedupedTracks.length}</div>
             <div class="stat-value-sub">media: ${formatRating(avgTrackRating)}</div>
         </div>`;
 

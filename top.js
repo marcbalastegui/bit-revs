@@ -57,6 +57,7 @@ async function buildRanking(mode, tiebreaker, dir) {
                 _uid:        buildUid(album.id, track.title),
                 _addedIndex: albumIndex,
                 _boost:      getTrackBoostScore(album.id, track.title, albumBoost, trackBoost),
+                _mainArtist: album.artist,
                 title:       track.title,
                 artist:      artistDisplay,
                 albumTitle:  album.title,
@@ -69,7 +70,8 @@ async function buildRanking(mode, tiebreaker, dir) {
         });
     });
 
-    allTracks.sort((a, b) => {
+    const uniqueTracks = deduplicateTracks(allTracks);
+    uniqueTracks.sort((a, b) => {
         // 1. Nota de canción
         const primaryDiff = mode === 'best'
             ? b.rating - a.rating
@@ -93,7 +95,7 @@ async function buildRanking(mode, tiebreaker, dir) {
         return a.title.localeCompare(b.title);
     });
 
-    return allTracks.slice(0, 100);
+    return uniqueTracks.slice(0, 100);
 }
 
 // ── MOVIMIENTO ────────────────────────────────────────────────────────────

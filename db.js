@@ -148,6 +148,21 @@ function getTrackBoostScore(albumId, trackTitle, albumBoost, trackBoost) {
     return (albumBoost[albumId] || 0) + (trackBoost[key] || 0);
 }
 
+// ── DEDUPLICACIÓN DE CANCIONES ────────────────────────────────────────────
+// Elimina canciones duplicadas entre álbumes (ej: álbum normal + deluxe).
+// Clave: título + artista principal. Se queda con la primera aparición.
+// Los objetos de track deben tener _mainArtist o albumArtist con el artista del álbum.
+function deduplicateTracks(tracks) {
+    const seen = new Set();
+    return tracks.filter(t => {
+        const artist = (t._mainArtist || t.albumArtist || '').toLowerCase().trim();
+        const key    = `${(t.title || '').toLowerCase().trim()}__${artist}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+    });
+}
+
 // ── UTILIDADES ────────────────────────────────────────────────────────────
 function formatRating(rating) {
     const r = parseFloat(rating);

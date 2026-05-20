@@ -21,9 +21,11 @@ async function loadWrapped() {
         });
     });
 
+    const uniqueTracks = deduplicateTracks(allTracks);
+
     const scoredAlbums = albums.filter(a => a.tracks && a.tracks.length > 0 && parseFloat(a.rating) > 0);
 
-    if (scoredAlbums.length === 0 && allTracks.length === 0) {
+    if (scoredAlbums.length === 0 && uniqueTracks.length === 0) {
         grid.innerHTML = `
             <div class="stat-card col-12 wrapped-empty">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="var(--border-color)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:48px;height:48px;margin-bottom:16px;"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
@@ -34,9 +36,9 @@ async function loadWrapped() {
 
     // ── ESTADÍSTICAS ──────────────────────────────────────────────────────
 
-    const globalAvg = allTracks.length > 0
-        ? allTracks.reduce((sum, t) => sum + parseFloat(t.rating), 0) / allTracks.length : 0;
-    const totalTracks = allTracks.length;
+    const globalAvg = uniqueTracks.length > 0
+        ? uniqueTracks.reduce((sum, t) => sum + parseFloat(t.rating), 0) / uniqueTracks.length : 0;
+    const totalTracks = uniqueTracks.length;
 
     const genreCount = {};
     albums.forEach(a => { if (!a.genres) return; a.genres.forEach(g => { genreCount[g] = (genreCount[g] || 0) + 1; }); });
@@ -46,7 +48,7 @@ async function loadWrapped() {
 
     const { albumBoost, trackBoost } = await computeTopBoost();
 
-    const sortedBest = [...allTracks].sort((a, b) => {
+    const sortedBest = [...uniqueTracks].sort((a, b) => {
         const diff = parseFloat(b.rating) - parseFloat(a.rating);
         if (diff !== 0) return diff;
         const boostDiff = getTrackBoostScore(b.albumId, b.title, albumBoost, trackBoost)
@@ -54,7 +56,7 @@ async function loadWrapped() {
         if (boostDiff !== 0) return boostDiff;
         return b.albumRating - a.albumRating;
     });
-    const sortedWorst = [...allTracks].sort((a, b) => {
+    const sortedWorst = [...uniqueTracks].sort((a, b) => {
         const diff = parseFloat(a.rating) - parseFloat(b.rating);
         if (diff !== 0) return diff;
         const boostDiff = getTrackBoostScore(a.albumId, a.title, albumBoost, trackBoost)
@@ -71,7 +73,7 @@ async function loadWrapped() {
     const worstTies   = sortedWorst.filter(t => parseFloat(t.rating) === worstRating);
 
     const artistStats = {};
-    allTracks.forEach(t => {
+    uniqueTracks.forEach(t => {
         const artist = t.albumArtist || 'Desconocido';
         if (!artistStats[artist]) artistStats[artist] = { total: 0, count: 0 };
         artistStats[artist].total += parseFloat(t.rating);
@@ -97,7 +99,7 @@ async function loadWrapped() {
     ];
     const distribution = ranges.map(r => ({
         label: r.label,
-        count: allTracks.filter(t => { const v = parseFloat(t.rating); return v >= r.min && v < r.max; }).length
+        count: uniqueTracks.filter(t => { const v = parseFloat(t.rating); return v >= r.min && v < r.max; }).length
     }));
     const maxCount = Math.max(...distribution.map(d => d.count), 1);
 

@@ -68,17 +68,18 @@ async function loadGenrePage() {
     genreAlbums.forEach(album => {
         (album.tracks || []).forEach(track => {
             if (!track.isInterlude && parseFloat(track.rating) > 0) {
-                allTracks.push({ ...track, albumId: album.id, albumTitle: album.title, albumCover: album.coverBase64 });
+                allTracks.push({ ...track, _mainArtist: album.artist, albumId: album.id, albumTitle: album.title, albumCover: album.coverBase64 });
             }
         });
     });
-    allTracks.sort((a, b) => parseFloat(b.rating) - parseFloat(a.rating));
+    const uniqueGenreTracks = deduplicateTracks(allTracks);
+    uniqueGenreTracks.sort((a, b) => parseFloat(b.rating) - parseFloat(a.rating));
 
     const tracksContainer = document.getElementById('grid-tracks');
-    if (allTracks.length === 0) {
+    if (uniqueGenreTracks.length === 0) {
         tracksContainer.innerHTML = `<p class="genre-empty">No hay canciones puntuadas en este género.</p>`;
     } else {
-        tracksContainer.innerHTML = allTracks.slice(0, 20).map((track, idx) => {
+        tracksContainer.innerHTML = uniqueGenreTracks.slice(0, 20).map((track, idx) => {
             const color = getColorByRating(track.rating);
             return `
                 <div class="genre-track-row" onclick="window.location.href='album.html?id=${track.albumId}'">
