@@ -264,7 +264,7 @@ function renderMediaGrid(items) {
             : '';
 
         const countryBadge = item.country
-            ? `<span style="display:inline-block;margin-top:4px;padding:2px 8px;border-radius:6px;background:var(--bg-secondary);border:1px solid var(--border-color);font-size:0.7rem;font-weight:700;color:var(--text-muted);">🌍 ${item.country}</span>`
+            ? `<span style="display:inline-block;margin-top:4px;padding:2px 8px;border-radius:6px;background:var(--bg-secondary);border:1px solid var(--border-color);font-size:0.7rem;font-weight:700;color:var(--text-muted);">${item.country}</span>`
             : '';
 
         const hasDetails = item.country || item.actors || item.watchDate || item.review;
