@@ -3,6 +3,7 @@
 async function loadWrapped() {
     const grid   = document.getElementById('wrapped-grid');
     const albums = await getAllAlbumsFromDB();
+    const movies = await getAllItemsFromDB('movies');
 
     const allTracks = [];
     albums.forEach(album => {
@@ -298,6 +299,150 @@ async function loadWrapped() {
                     <!-- Puntos y etiquetas -->
                     ${dotsHtml}
                 </svg>
+            </div>`;
+    }
+
+    // ── SECCIÓN PELÍCULAS ─────────────────────────────────────────────────
+    const ratedMovies = (movies || []).filter(m => parseFloat(m.rating) > 0);
+    if (ratedMovies.length > 0) {
+        const totalMovies = ratedMovies.length;
+        const movieAvg    = ratedMovies.reduce((s, m) => s + parseFloat(m.rating), 0) / totalMovies;
+        const sortedMovies = [...ratedMovies].sort((a, b) => parseFloat(b.rating) - parseFloat(a.rating));
+        const bestMovie  = sortedMovies[0];
+        const worstMovie = sortedMovies[sortedMovies.length - 1];
+
+        // Director favorito
+        const dirCount = {}, dirTotal = {};
+        ratedMovies.forEach(m => {
+            if (!m.director) return;
+            dirCount[m.director] = (dirCount[m.director] || 0) + 1;
+            dirTotal[m.director] = (dirTotal[m.director] || 0) + parseFloat(m.rating);
+        });
+        const topDirector = Object.entries(dirCount)
+            .sort((a, b) => b[1] - a[1] || (dirTotal[b[0]] / b[1]) - (dirTotal[a[0]] / a[1]))[0];
+
+        // Género cinematográfico más visto
+        const movieGenreCount = {};
+        ratedMovies.forEach(m => {
+            if (!m.genre) return;
+            m.genre.split(',').map(g => g.trim()).filter(Boolean)
+                .forEach(g => { movieGenreCount[g] = (movieGenreCount[g] || 0) + 1; });
+        });
+        const topMovieGenre = Object.entries(movieGenreCount).sort((a, b) => b[1] - a[1])[0];
+
+        // País más visto
+        const countryCount = {};
+        ratedMovies.forEach(m => {
+            if (m.country?.trim()) countryCount[m.country.trim()] = (countryCount[m.country.trim()] || 0) + 1;
+        });
+        const topCountry = Object.entries(countryCount).sort((a, b) => b[1] - a[1])[0];
+
+        // Distribución de notas
+        const movieDist = ranges.map(r => ({
+            label: r.label,
+            count: ratedMovies.filter(m => { const v = parseFloat(m.rating); return v >= r.min && v < r.max; }).length
+        }));
+        const movieMaxCount = Math.max(...movieDist.map(d => d.count), 1);
+
+        // ── Cabecera de sección ──
+        html += `
+            <div class="stat-card col-12" style="background:none;border:none;box-shadow:none;padding:12px 0 0;">
+                <h2 style="font-size:1.5rem;font-weight:900;letter-spacing:-0.5px;color:var(--text-main);border-top:1px solid var(--border-color);padding-top:20px;">Películas</h2>
+            </div>`;
+
+        // Total + media
+        html += `
+            <div class="stat-card col-4">
+                <div class="stat-label">Películas vistas</div>
+                <div class="stat-value-big">${totalMovies}</div>
+                <div class="stat-value-sub">media: ${formatRating(movieAvg)}</div>
+            </div>`;
+
+        // Mejor película
+        html += `
+            <div class="stat-card col-4" style="cursor:pointer;" onclick="window.location.href='media-detail.html?type=movies&id=${bestMovie.id}'">
+                <div class="stat-label">Película mejor puntuada</div>
+                <div class="highlight-card">
+                    <img class="highlight-cover" src="${bestMovie.coverBase64 || ''}" alt="${bestMovie.title}">
+                    <div class="highlight-info">
+                        <div class="highlight-title">${bestMovie.title}</div>
+                        <div class="highlight-meta">${bestMovie.director ? bestMovie.director + ' · ' : ''}${bestMovie.year || ''}</div>
+                        <span class="highlight-badge" style="background:${getColorByRating(bestMovie.rating)}">${formatRating(bestMovie.rating)}</span>
+                    </div>
+                </div>
+            </div>`;
+
+        // Peor película
+        if (bestMovie.id !== worstMovie.id) {
+            html += `
+                <div class="stat-card col-4" style="cursor:pointer;" onclick="window.location.href='media-detail.html?type=movies&id=${worstMovie.id}'">
+                    <div class="stat-label">Película peor puntuada</div>
+                    <div class="highlight-card">
+                        <img class="highlight-cover" src="${worstMovie.coverBase64 || ''}" alt="${worstMovie.title}">
+                        <div class="highlight-info">
+                            <div class="highlight-title">${worstMovie.title}</div>
+                            <div class="highlight-meta">${worstMovie.director ? worstMovie.director + ' · ' : ''}${worstMovie.year || ''}</div>
+                            <span class="highlight-badge" style="background:${getColorByRating(worstMovie.rating)}">${formatRating(worstMovie.rating)}</span>
+                        </div>
+                    </div>
+                </div>`;
+        }
+
+        // Director favorito
+        if (topDirector) {
+            const dirAvg = dirTotal[topDirector[0]] / topDirector[1];
+            html += `
+                <div class="stat-card col-6">
+                    <div class="stat-label">Director favorito</div>
+                    <div class="artist-card">
+                        <div class="artist-initials" style="background:${getColorByRating(dirAvg)}">${topDirector[0].charAt(0).toUpperCase()}</div>
+                        <div>
+                            <div class="artist-name">${topDirector[0]}</div>
+                            <div class="artist-count">${topDirector[1]} película${topDirector[1] !== 1 ? 's' : ''} · media ${formatRating(dirAvg)}</div>
+                        </div>
+                    </div>
+                </div>`;
+        }
+
+        // Género cinematográfico favorito
+        if (topMovieGenre) {
+            html += `
+                <div class="stat-card col-6">
+                    <div class="stat-label">Género favorito</div>
+                    <span class="genre-pill">${topMovieGenre[0]}</span>
+                    <div class="stat-value-sub" style="margin-top:10px;">${topMovieGenre[1]} película${topMovieGenre[1] !== 1 ? 's' : ''}</div>
+                </div>`;
+        }
+
+        // País más visto
+        if (topCountry) {
+            html += `
+                <div class="stat-card col-4">
+                    <div class="stat-label">País más visto</div>
+                    <div class="stat-value-big" style="font-size:1.8rem;letter-spacing:-1px;">${topCountry[0]}</div>
+                    <div class="stat-value-sub">${topCountry[1]} película${topCountry[1] !== 1 ? 's' : ''}</div>
+                </div>`;
+        }
+
+        // Distribución de notas (películas)
+        const movieBarsHtml = movieDist.map(d => {
+            const h = Math.round((d.count / movieMaxCount) * 100);
+            const c = d.label === '9-10' ? '#B533FF' : d.label === '8-9' ? '#3366FF'
+                : d.label === '7-8' ? '#66CC33' : d.label === '6-7' ? '#FFD11A'
+                : d.label === '5-6' ? '#FF8533' : '#FF3333';
+            return `
+                <div class="chart-bar-wrap">
+                    <div class="chart-bar" style="height:${h}%;background:${c};">
+                        ${d.count > 0 ? `<span class="chart-bar-count">${d.count}</span>` : ''}
+                    </div>
+                    <span class="chart-label">${d.label}</span>
+                </div>`;
+        }).join('');
+
+        html += `
+            <div class="stat-card ${topCountry ? 'col-8' : 'col-12'}">
+                <div class="stat-label">Distribución de notas</div>
+                <div class="chart-container">${movieBarsHtml}</div>
             </div>`;
     }
 

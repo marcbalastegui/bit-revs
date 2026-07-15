@@ -1,10 +1,12 @@
-// top.js - Lógica del Top 100 Canciones
+// top.js - Lógica del Top 100
 
 const SNAPSHOT_KEY    = 'bitrevs_top_snapshot';
+let currentContent    = 'songs';        // 'songs' | 'movies' | 'series'
 let currentMode       = 'best';         // 'best' | 'worst'
 let currentTiebreaker = 'album-rating'; // 'album-rating' | 'alphabetical' | 'added'
 let tiebreakerDir     = 'asc';          // 'asc' | 'desc' (solo aplica a alphabetical y added)
 let fullRanking       = [];
+let fullMediaRanking  = [];
 let snapshotMap       = null;           // se carga UNA vez al inicio y no cambia
 
 // ── SNAPSHOT ──────────────────────────────────────────────────────────────
@@ -198,8 +200,79 @@ function updateDirButton() {
     }
 }
 
+// ── RANKING DE PELÍCULAS / SERIES ────────────────────────────────────────
+async function buildMediaRanking(storeType, mode) {
+    const items = await getAllItemsFromDB(storeType);
+    const rated = items.filter(i => parseFloat(i.rating) > 0);
+    rated.sort((a, b) => {
+        const diff = mode === 'best'
+            ? parseFloat(b.rating) - parseFloat(a.rating)
+            : parseFloat(a.rating) - parseFloat(b.rating);
+        if (diff !== 0) return diff;
+        return (a.title || '').localeCompare(b.title || '');
+    });
+    return rated.slice(0, 100);
+}
+
+function renderMediaRanking(items, filterQuery, storeType) {
+    const list     = document.getElementById('top-list');
+    const subtitle = document.getElementById('top-subtitle');
+    list.innerHTML = '';
+
+    const q = (filterQuery || '').toLowerCase().trim();
+    const filtered = q ? items.filter(i =>
+        (i.title    && i.title.toLowerCase().includes(q))    ||
+        (i.director && i.director.toLowerCase().includes(q)) ||
+        (i.creator  && i.creator.toLowerCase().includes(q))
+    ) : items;
+
+    const contentLabel = storeType === 'movies' ? 'películas' : 'series';
+    const modeLabel    = currentMode === 'best' ? 'mejores' : 'peores';
+
+    if (filtered.length === 0) {
+        subtitle.textContent = `No hay ${contentLabel} que coincidan con tu búsqueda.`;
+        list.innerHTML = `<div class="top-empty"><p>Prueba con otro título.</p></div>`;
+        return;
+    }
+
+    subtitle.textContent = q
+        ? `${filtered.length} ${contentLabel} filtradas`
+        : `Top ${filtered.length} ${contentLabel} ${modeLabel} puntuadas`;
+
+    filtered.forEach((item, idx) => {
+        const rank         = idx + 1;
+        const badgeColor   = getColorByRating(item.rating);
+        const displayRating = formatRating(item.rating);
+        const credit       = storeType === 'movies'
+            ? (item.director ? `${item.director} · ` : '')
+            : (item.creator  ? `${item.creator} · `  : '');
+        const detailUrl    = `media-detail.html?type=${storeType}&id=${item.id}`;
+
+        const row = document.createElement('div');
+        row.className = 'top-row';
+        row.addEventListener('click', () => { window.location.href = detailUrl; });
+        row.innerHTML = `
+            <span class="top-rank">${rank}</span>
+            <span class="top-arrow"></span>
+            <img class="top-cover" src="${item.coverBase64 || ''}" alt="${item.title}" style="border-radius:6px;">
+            <div class="top-info">
+                <div class="top-track-title">${item.title}</div>
+                <div class="top-track-meta">${credit}${item.year || ''}</div>
+            </div>
+            <span class="top-badge" style="background-color:${badgeColor};">${displayRating}</span>
+        `;
+        list.appendChild(row);
+    });
+}
+
 // ── REORDENAR SIN GUARDAR SNAPSHOT ───────────────────────────────────────
 async function reorder() {
+    if (currentContent !== 'songs') {
+        const mediaFilter = document.getElementById('top-media-filter');
+        fullMediaRanking = await buildMediaRanking(currentContent, currentMode);
+        renderMediaRanking(fullMediaRanking, mediaFilter?.value || '', currentContent);
+        return;
+    }
     const filterInput = document.getElementById('top-filter');
     fullRanking = await buildRanking(currentMode, currentTiebreaker, tiebreakerDir);
     // NO llamamos saveSnapshotIfEmpty aquí — solo al cargar la página
@@ -260,6 +333,40 @@ async function initTop() {
         tiebreakerDir = tiebreakerDir === 'asc' ? 'desc' : 'asc';
         updateDirButton();
         await reorder();
+    });
+
+    // ── TABS DE CONTENIDO ────────────────────────────────────────────────
+    function switchContent(content) {
+        currentContent = content;
+        const songsControls = document.getElementById('songs-controls');
+        const mediaControls = document.getElementById('media-controls');
+        const mediaFilter   = document.getElementById('top-media-filter');
+        const titleEl       = document.getElementById('top-title');
+
+        ['songs', 'movies', 'series'].forEach(c => {
+            document.getElementById(`btn-content-${c}`)?.classList.toggle('active', c === content);
+        });
+
+        if (content === 'songs') {
+            songsControls.style.display = '';
+            mediaControls.style.display = 'none';
+            if (titleEl) titleEl.textContent = 'Top Canciones';
+            if (mediaFilter) mediaFilter.value = '';
+        } else {
+            songsControls.style.display = 'none';
+            mediaControls.style.display = '';
+            if (titleEl) titleEl.textContent = content === 'movies' ? 'Top Películas' : 'Top Series';
+        }
+        reorder();
+    }
+
+    document.getElementById('btn-content-songs')?.addEventListener('click',  () => switchContent('songs'));
+    document.getElementById('btn-content-movies')?.addEventListener('click', () => switchContent('movies'));
+    document.getElementById('btn-content-series')?.addEventListener('click', () => switchContent('series'));
+
+    // Buscador de películas/series
+    document.getElementById('top-media-filter')?.addEventListener('input', (e) => {
+        renderMediaRanking(fullMediaRanking, e.target.value, currentContent);
     });
 }
 

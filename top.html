@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <link rel="icon" type="image/png" href="favicon.png">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BitRevs - Top Canciones</title>
+    <title>BitRevs - Top</title>
     <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="/manifest.json">
     <style>
@@ -129,6 +129,28 @@
 
         .top-empty { color: var(--text-muted); margin-top: 40px; text-align: center; }
 
+        /* Tabs de contenido */
+        .top-content-tabs {
+            display: flex; gap: 0;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 24px;
+        }
+        .top-content-btn {
+            padding: 10px 24px;
+            border: none; background: none;
+            font-size: 0.95rem; font-weight: 700;
+            color: var(--text-muted); cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -1px;
+            transition: all 0.15s;
+        }
+        .top-content-btn.active {
+            color: var(--text-main);
+            border-bottom-color: var(--accent-red);
+        }
+        .top-content-btn:hover:not(.active) { color: var(--text-main); }
+
         @media (max-width: 540px) {
             .top-cover { width: 36px; height: 36px; }
             .top-rank  { min-width: 26px; font-size: 0.85rem; }
@@ -157,7 +179,7 @@
                 <a href="collections.html">Colecciones</a>
             </div>
         </div>
-        <a href="top.html" class="active">Top Canciones</a>
+        <a href="top.html" class="active">Top</a>
         <a href="wrapped.html">Wrapped</a>
         <a href="lists.html">Listas</a>
     </nav>
@@ -169,16 +191,25 @@
 
 <main>
     <div class="top-page-header">
-        <h1>Top Canciones</h1>
+        <h1 id="top-title">Top</h1>
         <p id="top-subtitle">Cargando ranking…</p>
     </div>
 
+    <!-- Tabs de tipo de contenido -->
+    <div class="top-content-tabs">
+        <button class="top-content-btn active" id="btn-content-songs">Canciones</button>
+        <button class="top-content-btn" id="btn-content-movies">Películas</button>
+        <button class="top-content-btn" id="btn-content-series">Series</button>
+    </div>
+
+    <!-- Modo mejor/peor — siempre visible -->
     <div class="top-mode-toggle">
         <button class="top-mode-btn active" id="btn-mode-best">Top 100 mejores</button>
         <button class="top-mode-btn" id="btn-mode-worst">Top 100 peores</button>
     </div>
 
-    <div class="controls-bar" style="margin-bottom: 24px;">
+    <!-- Controles específicos de canciones -->
+    <div class="controls-bar" id="songs-controls" style="margin-bottom: 24px;">
         <input type="text" id="top-filter" class="top-search-input" placeholder="Filtrar por artista o álbum…">
         <div class="top-tiebreaker-row">
             <select id="top-tiebreaker">
@@ -188,6 +219,11 @@
             </select>
             <button class="top-dir-btn" id="btn-tiebreaker-dir" title="Cambiar dirección">↓</button>
         </div>
+    </div>
+
+    <!-- Controles específicos de películas/series -->
+    <div class="controls-bar" id="media-controls" style="margin-bottom: 24px; display:none;">
+        <input type="text" id="top-media-filter" class="top-search-input" placeholder="Filtrar por título o director…">
     </div>
 
     <div id="top-list"></div>
