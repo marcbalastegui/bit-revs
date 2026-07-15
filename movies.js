@@ -11,6 +11,19 @@ const countryFilter = document.getElementById('country-filter');
 const yearFrom      = document.getElementById('year-from');
 const yearTo        = document.getElementById('year-to');
 
+const DEFAULT_SORT_KEY = 'bitrevs_movies_default_sort';
+
+function updateDefaultBtn() {
+    const btn   = document.getElementById('btn-default-sort');
+    if (!btn || !sortSelect) return;
+    const saved = localStorage.getItem(DEFAULT_SORT_KEY);
+    const isDefault = saved !== null && saved === sortSelect.value;
+    btn.style.background  = isDefault ? 'var(--text-main)' : 'none';
+    btn.style.color       = isDefault ? '#fff'             : 'var(--text-muted)';
+    btn.style.borderColor = isDefault ? 'var(--text-main)' : 'var(--border-color)';
+    btn.title = isDefault ? 'Quitar predeterminado' : 'Guardar como orden predeterminado';
+}
+
 let editingId = null;
 let detailsTargetId = null;
 
@@ -323,15 +336,36 @@ if (galleryBtn) {
 }
 
 // ── EVENT LISTENERS ───────────────────────────────────────────────────────
-filterInput?.addEventListener('input',   processAndRenderMedia);
-sortSelect?.addEventListener('change',   processAndRenderMedia);
-genreFilter?.addEventListener('change',  processAndRenderMedia);
+filterInput?.addEventListener('input',    processAndRenderMedia);
+genreFilter?.addEventListener('change',   processAndRenderMedia);
 countryFilter?.addEventListener('change', processAndRenderMedia);
-yearFrom?.addEventListener('input',      processAndRenderMedia);
-yearTo?.addEventListener('input',        processAndRenderMedia);
+yearFrom?.addEventListener('input',       processAndRenderMedia);
+yearTo?.addEventListener('input',         processAndRenderMedia);
+
+sortSelect?.addEventListener('change', () => {
+    updateDefaultBtn();
+    processAndRenderMedia();
+});
+
+document.getElementById('btn-default-sort')?.addEventListener('click', () => {
+    const saved = localStorage.getItem(DEFAULT_SORT_KEY);
+    if (saved !== null && saved === sortSelect.value) {
+        localStorage.removeItem(DEFAULT_SORT_KEY);   // toggle off
+    } else {
+        localStorage.setItem(DEFAULT_SORT_KEY, sortSelect.value);
+    }
+    updateDefaultBtn();
+});
 
 // ── INIT ──────────────────────────────────────────────────────────────────
 (async () => {
+    // Cargar orden predeterminado guardado
+    const savedDefault = localStorage.getItem(DEFAULT_SORT_KEY);
+    if (savedDefault && sortSelect) {
+        sortSelect.value = savedDefault;
+    }
+    updateDefaultBtn();
+
     await populateFilters();
     await processAndRenderMedia();
 })();

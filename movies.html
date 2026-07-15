@@ -42,15 +42,20 @@
     <h1>Todas las Películas</h1>
     <div class="controls-bar" style="margin-bottom:12px;">
         <input type="text" id="filter-input" placeholder="Filtrar por título, director...">
-        <select id="sort-select">
-            <option value="default">Orden por defecto</option>
-            <option value="rating-desc">Nota ↓ Mayor a Menor</option>
-            <option value="rating-asc">Nota ↑ Menor a Mayor</option>
-            <option value="year-desc">Año (más reciente)</option>
-            <option value="year-asc">Año (más antiguo)</option>
-            <option value="title-asc">Título A–Z</option>
-            <option value="title-desc">Título Z–A</option>
-        </select>
+        <div style="display:flex;gap:6px;align-items:center;flex-shrink:0;">
+            <select id="sort-select">
+                <option value="default">Orden por defecto</option>
+                <option value="rating-desc">Nota ↓ Mayor a Menor</option>
+                <option value="rating-asc">Nota ↑ Menor a Mayor</option>
+                <option value="year-desc">Año (más reciente)</option>
+                <option value="year-asc">Año (más antiguo)</option>
+                <option value="title-asc">Título A–Z</option>
+                <option value="title-desc">Título Z–A</option>
+            </select>
+            <button id="btn-default-sort"
+                title="Guardar como orden predeterminado"
+                style="width:36px;height:44px;border-radius:12px;border:1.5px solid var(--border-color);background:none;cursor:pointer;font-family:'Inter',sans-serif;font-size:0.8rem;font-weight:900;color:var(--text-muted);transition:all 0.15s;flex-shrink:0;">D</button>
+        </div>
     </div>
     <div class="controls-bar">
         <select id="genre-filter"><option value="">Todos los géneros</option></select>

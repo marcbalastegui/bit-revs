@@ -9,6 +9,19 @@ const sortSelect  = document.getElementById('sort-select');
 let editingId = null;
 let detailsTargetId = null;
 
+const DEFAULT_SORT_KEY = 'bitrevs_series_default_sort';
+
+function updateDefaultBtn() {
+    const btn   = document.getElementById('btn-default-sort');
+    if (!btn || !sortSelect) return;
+    const saved = localStorage.getItem(DEFAULT_SORT_KEY);
+    const isDefault = saved !== null && saved === sortSelect.value;
+    btn.style.background  = isDefault ? 'var(--text-main)' : 'none';
+    btn.style.color       = isDefault ? '#fff'             : 'var(--text-muted)';
+    btn.style.borderColor = isDefault ? 'var(--text-main)' : 'var(--border-color)';
+    btn.title = isDefault ? 'Quitar predeterminado' : 'Guardar como orden predeterminado';
+}
+
 // ── BORRAR ────────────────────────────────────────────────────────────────
 window.deleteMedia = async function(event, id) {
     event.stopPropagation();
@@ -207,8 +220,26 @@ function renderMediaGrid(items) {
 }
 
 filterInput?.addEventListener('input', processAndRenderMedia);
-sortSelect?.addEventListener('change', processAndRenderMedia);
 
+sortSelect?.addEventListener('change', () => {
+    updateDefaultBtn();
+    processAndRenderMedia();
+});
+
+document.getElementById('btn-default-sort')?.addEventListener('click', () => {
+    const saved = localStorage.getItem(DEFAULT_SORT_KEY);
+    if (saved !== null && saved === sortSelect.value) {
+        localStorage.removeItem(DEFAULT_SORT_KEY);   // toggle off
+    } else {
+        localStorage.setItem(DEFAULT_SORT_KEY, sortSelect.value);
+    }
+    updateDefaultBtn();
+});
+
+// Cargar orden predeterminado guardado y renderizar
+const _savedDefault = localStorage.getItem(DEFAULT_SORT_KEY);
+if (_savedDefault && sortSelect) sortSelect.value = _savedDefault;
+updateDefaultBtn();
 processAndRenderMedia();
 
 // ── MODO GALERÍA ──────────────────────────────────────────────────────────
