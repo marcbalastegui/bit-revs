@@ -2,6 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <link rel="icon" type="image/png" href="favicon.png">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BitRevs - Películas</title>
     <link rel="stylesheet" href="style.css">
@@ -39,16 +40,32 @@
 
 <main>
     <h1>Todas las Películas</h1>
-    <div class="controls-bar">
-        <input type="text" id="filter-input" placeholder="Filtrar por título, director o año...">
+    <div class="controls-bar" style="margin-bottom:12px;">
+        <input type="text" id="filter-input" placeholder="Filtrar por título, director...">
         <select id="sort-select">
             <option value="default">Orden por defecto</option>
-            <option value="rating-desc">Nota (Mayor a Menor)</option>
-            <option value="rating-asc">Nota (Menor a Mayor)</option>
-            <option value="year-desc">Año (Más reciente)</option>
-            <option value="year-asc">Año (Más antiguo)</option>
-            <option value="title-asc">Título (A-Z)</option>
+            <option value="rating-desc">Nota ↓ Mayor a Menor</option>
+            <option value="rating-asc">Nota ↑ Menor a Mayor</option>
+            <option value="year-desc">Año (más reciente)</option>
+            <option value="year-asc">Año (más antiguo)</option>
+            <option value="title-asc">Título A–Z</option>
+            <option value="title-desc">Título Z–A</option>
         </select>
+    </div>
+    <div class="controls-bar">
+        <select id="genre-filter"><option value="">Todos los géneros</option></select>
+        <select id="country-filter"><option value="">Todos los países</option></select>
+        <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+            <input type="number" id="year-from" placeholder="Desde" min="1900" max="2100"
+                style="width:82px;height:44px;padding:0 10px;border-radius:12px;border:1px solid transparent;background:white;font-family:'Inter',sans-serif;font-weight:600;font-size:0.9rem;color:var(--text-main);box-shadow:var(--shadow-subtle);">
+            <span style="color:var(--text-muted);font-weight:700;">—</span>
+            <input type="number" id="year-to" placeholder="Hasta" min="1900" max="2100"
+                style="width:82px;height:44px;padding:0 10px;border-radius:12px;border:1px solid transparent;background:white;font-family:'Inter',sans-serif;font-weight:600;font-size:0.9rem;color:var(--text-main);box-shadow:var(--shadow-subtle);">
+        </div>
+        <button id="btn-clear-filters"
+            style="height:44px;padding:0 16px;border-radius:12px;border:1px solid var(--border-color);background:none;cursor:pointer;color:var(--text-muted);font-family:'Inter',sans-serif;font-size:0.85rem;font-weight:700;white-space:nowrap;transition:all 0.2s;flex-shrink:0;">
+            ✕ Limpiar
+        </button>
     </div>
     <div class="album-grid" id="media-grid"></div>
 </main>

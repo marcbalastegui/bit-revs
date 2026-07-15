@@ -71,7 +71,10 @@ async function getAllItemsFromDB(storeName) {
         await waitForAuth();
         const snap = await userCol(storeName).get();
         return snap.docs.map(d => d.data());
-    } catch { return []; }
+    } catch (err) {
+        console.error(`getAllItemsFromDB(${storeName}) falló:`, err);
+        return [];
+    }
 }
 
 async function getItemByIdFromDB(storeName, id) {
