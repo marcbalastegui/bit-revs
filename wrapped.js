@@ -365,16 +365,22 @@ async function loadWrapped() {
             <div class="stat-card col-8">
                 <div class="stat-label">Top películas</div>
                 <div class="movie-top3-grid">
-                    ${top3Movies.map((m, i) => `
+                    ${top3Movies.map((m, i) => {
+                        const dirLink = m.director
+                            ? `<a href="director.html?name=${encodeURIComponent(m.director)}" onclick="event.stopPropagation()" style="color:inherit;font-weight:800;text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${m.director}</a>`
+                            : '';
+                        const metaLine = `${dirLink}${m.director && m.year ? ' · ' : ''}${m.year || ''}`;
+                        return `
                     <div class="movie-top3-item" onclick="window.location.href='media-detail.html?type=movies&id=${m.id}'">
                         <div class="movie-top3-rank" style="color:${rankColors[i]};">${i + 1}</div>
                         <img class="movie-top3-cover" src="${m.coverBase64 || ''}" alt="${m.title}">
                         <div class="movie-top3-info">
                             <div class="movie-top3-title">${m.title}</div>
-                            <div class="movie-top3-meta">${m.director ? m.director + ' · ' : ''}${m.year || ''}</div>
+                            <div class="movie-top3-meta">${metaLine}</div>
                             <span class="highlight-badge" style="background:${getColorByRating(m.rating)}">${formatRating(m.rating)}</span>
                         </div>
-                    </div>`).join('')}
+                    </div>`;
+                    }).join('')}
                 </div>
             </div>`;
 
