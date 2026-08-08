@@ -113,6 +113,7 @@ let dragSrcId     = null;
 let dragSrcRating = null;
 let isDragging    = false;
 let _currentItems = [];
+let _allCountries = []; // cache de países para el dropdown custom
 
 // ── FLAGS ─────────────────────────────────────────────────────────────────
 const COUNTRY_CODES = {
@@ -169,6 +170,48 @@ function updateCountryFlagPreview(val) {
     }
 }
 
+// ── DROPDOWN CUSTOM DE PAÍS ───────────────────────────────────────────────
+function buildCustomCountryDropdown(countries, selectedValue) {
+    const dropdown = document.getElementById('country-filter-dropdown');
+    const display  = document.getElementById('country-filter-display');
+    if (!dropdown || !display) return;
+
+    const val = selectedValue || '';
+    const options = [
+        { value: '', label: 'Todos los países' },
+        ...countries.map(c => ({ value: c, label: c }))
+    ];
+
+    // Reconstruir opciones
+    dropdown.innerHTML = options.map(opt => {
+        const code = opt.value ? getCountryCode(opt.value) : null;
+        const flag = code
+            ? `<img src="https://flagcdn.com/w20/${code}.png" alt="${opt.label}" style="width:18px;height:auto;border-radius:2px;flex-shrink:0;">`
+            : `<span style="width:18px;display:inline-block;flex-shrink:0;"></span>`;
+        const isSel = opt.value === val;
+        return `<div class="custom-country-option${isSel ? ' selected' : ''}" data-value="${opt.value}">${flag}<span>${opt.label}</span></div>`;
+    }).join('');
+
+    // Actualizar trigger con el valor actual
+    const current = options.find(o => o.value === val) || options[0];
+    const curCode = current.value ? getCountryCode(current.value) : null;
+    const curFlag = curCode
+        ? `<img src="https://flagcdn.com/w20/${curCode}.png" alt="${current.label}" style="width:18px;height:auto;border-radius:2px;">`
+        : '';
+    display.innerHTML = `${curFlag}<span>${current.label}</span>`;
+
+    // Listeners de cada opción
+    dropdown.querySelectorAll('.custom-country-option').forEach(el => {
+        el.addEventListener('click', () => {
+            const chosen = el.dataset.value;
+            if (countryFilter) countryFilter.value = chosen;
+            buildCustomCountryDropdown(countries, chosen);
+            document.getElementById('country-filter-custom')?.classList.remove('open');
+            processAndRenderMedia();
+        });
+    });
+}
+
 // ── HELPERS ───────────────────────────────────────────────────────────────
 function parseGenres(genreStr) {
     if (!genreStr) return [];
@@ -195,13 +238,15 @@ async function populateFilters() {
     const countrySet = new Set();
     items.forEach(item => { if (item.country?.trim()) countrySet.add(item.country.trim()); });
     const prevCountry = countryFilter.value;
+    _allCountries = [...countrySet].sort();
     countryFilter.innerHTML = '<option value="">Todos los países</option>';
-    [...countrySet].sort().forEach(c => {
+    _allCountries.forEach(c => {
         const opt = document.createElement('option');
         opt.value = c; opt.textContent = c;
         if (c === prevCountry) opt.selected = true;
         countryFilter.appendChild(opt);
     });
+    buildCustomCountryDropdown(_allCountries, prevCountry);
 }
 
 // ── BORRAR ────────────────────────────────────────────────────────────────
@@ -356,6 +401,7 @@ document.getElementById('btn-clear-filters')?.addEventListener('click', () => {
     if (sortSelect)   sortSelect.value   = 'default';
     if (genreFilter)  genreFilter.value  = '';
     if (countryFilter) countryFilter.value = '';
+    buildCustomCountryDropdown(_allCountries, '');
     if (yearFrom)     yearFrom.value     = '';
     if (yearTo)       yearTo.value       = '';
     processAndRenderMedia();
@@ -580,11 +626,20 @@ if (galleryBtn) {
 }
 
 // ── EVENT LISTENERS ───────────────────────────────────────────────────────
-filterInput?.addEventListener('input',    processAndRenderMedia);
-genreFilter?.addEventListener('change',   processAndRenderMedia);
-countryFilter?.addEventListener('change', processAndRenderMedia);
-yearFrom?.addEventListener('input',       processAndRenderMedia);
-yearTo?.addEventListener('input',         processAndRenderMedia);
+filterInput?.addEventListener('input',  processAndRenderMedia);
+genreFilter?.addEventListener('change', processAndRenderMedia);
+yearFrom?.addEventListener('input',     processAndRenderMedia);
+yearTo?.addEventListener('input',       processAndRenderMedia);
+
+// Toggle del dropdown custom de país
+document.getElementById('country-filter-trigger')?.addEventListener('click', () => {
+    document.getElementById('country-filter-custom')?.classList.toggle('open');
+});
+// Cerrar al hacer click fuera
+document.addEventListener('click', e => {
+    const wrap = document.getElementById('country-filter-custom');
+    if (wrap && !wrap.contains(e.target)) wrap.classList.remove('open');
+});
 
 sortSelect?.addEventListener('change', () => {
     updateDefaultBtn();
