@@ -358,41 +358,32 @@ async function loadWrapped() {
                 <div class="stat-value-sub">media: ${formatRating(movieAvg)}</div>
             </div>`;
 
-        // Mejor película
+        // Top 3 películas
+        const top3Movies = sortedMovies.slice(0, 3);
+        const rankColors = ['#B533FF', '#3366FF', '#66CC33'];
         html += `
-            <div class="stat-card col-4" style="cursor:pointer;" onclick="window.location.href='media-detail.html?type=movies&id=${bestMovie.id}'">
-                <div class="stat-label">Película mejor puntuada</div>
-                <div class="highlight-card">
-                    <img class="highlight-cover" src="${bestMovie.coverBase64 || ''}" alt="${bestMovie.title}">
-                    <div class="highlight-info">
-                        <div class="highlight-title">${bestMovie.title}</div>
-                        <div class="highlight-meta">${bestMovie.director ? bestMovie.director + ' · ' : ''}${bestMovie.year || ''}</div>
-                        <span class="highlight-badge" style="background:${getColorByRating(bestMovie.rating)}">${formatRating(bestMovie.rating)}</span>
-                    </div>
+            <div class="stat-card col-8">
+                <div class="stat-label">Top películas</div>
+                <div class="movie-top3-grid">
+                    ${top3Movies.map((m, i) => `
+                    <div class="movie-top3-item" onclick="window.location.href='media-detail.html?type=movies&id=${m.id}'">
+                        <div class="movie-top3-rank" style="color:${rankColors[i]};">${i + 1}</div>
+                        <img class="movie-top3-cover" src="${m.coverBase64 || ''}" alt="${m.title}">
+                        <div class="movie-top3-info">
+                            <div class="movie-top3-title">${m.title}</div>
+                            <div class="movie-top3-meta">${m.director ? m.director + ' · ' : ''}${m.year || ''}</div>
+                            <span class="highlight-badge" style="background:${getColorByRating(m.rating)}">${formatRating(m.rating)}</span>
+                        </div>
+                    </div>`).join('')}
                 </div>
             </div>`;
-
-        // Peor película
-        if (bestMovie.id !== worstMovie.id) {
-            html += `
-                <div class="stat-card col-4" style="cursor:pointer;" onclick="window.location.href='media-detail.html?type=movies&id=${worstMovie.id}'">
-                    <div class="stat-label">Película peor puntuada</div>
-                    <div class="highlight-card">
-                        <img class="highlight-cover" src="${worstMovie.coverBase64 || ''}" alt="${worstMovie.title}">
-                        <div class="highlight-info">
-                            <div class="highlight-title">${worstMovie.title}</div>
-                            <div class="highlight-meta">${worstMovie.director ? worstMovie.director + ' · ' : ''}${worstMovie.year || ''}</div>
-                            <span class="highlight-badge" style="background:${getColorByRating(worstMovie.rating)}">${formatRating(worstMovie.rating)}</span>
-                        </div>
-                    </div>
-                </div>`;
-        }
 
         // Director favorito
         if (topDirector) {
             const dirAvg = dirTotal[topDirector[0]] / topDirector[1];
+            const dirUrl = `director.html?name=${encodeURIComponent(topDirector[0])}`;
             html += `
-                <div class="stat-card col-6">
+                <div class="stat-card col-6" style="cursor:pointer;" onclick="window.location.href='${dirUrl}'">
                     <div class="stat-label">Director favorito</div>
                     <div class="artist-card">
                         <div class="artist-initials" style="background:${getColorByRating(dirAvg)}">${topDirector[0].charAt(0).toUpperCase()}</div>

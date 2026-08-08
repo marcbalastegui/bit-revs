@@ -489,7 +489,7 @@ function renderMediaGrid(items, sort) {
         const badgeColor = getColorByRating(item.rating);
 
         const directorHtml = item.director
-            ? `<p style="font-size:0.78rem; color:var(--text-muted); margin-top:2px;">Dir. ${item.director}</p>`
+            ? `<p style="font-size:0.78rem; color:var(--text-muted); margin-top:2px;">Dir. <a href="director.html?name=${encodeURIComponent(item.director)}" onclick="event.stopPropagation()" style="color:inherit;font-weight:700;text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${item.director}</a></p>`
             : '';
 
         const metaParts = [item.genre, item.duration ? `${item.duration} min` : null].filter(Boolean);

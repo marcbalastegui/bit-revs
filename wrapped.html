@@ -234,6 +234,62 @@
             text-align: center;
         }
 
+        /* ── TOP 3 PELÍCULAS ── */
+        .movie-top3-grid {
+            display: flex;
+            gap: 12px;
+            margin-top: 12px;
+        }
+        .movie-top3-item {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            border-radius: 14px;
+            cursor: pointer;
+            transition: background 0.15s;
+            min-width: 0;
+        }
+        .movie-top3-item:hover { background: var(--bg-secondary); }
+        .movie-top3-rank {
+            font-size: 2rem;
+            font-weight: 900;
+            letter-spacing: -2px;
+            width: 28px;
+            flex-shrink: 0;
+            text-align: center;
+            line-height: 1;
+        }
+        .movie-top3-cover {
+            width: 46px;
+            height: 68px;
+            object-fit: cover;
+            border-radius: 7px;
+            flex-shrink: 0;
+            border: 1px solid var(--border-color);
+        }
+        .movie-top3-info { min-width: 0; }
+        .movie-top3-title {
+            font-size: 0.88rem;
+            font-weight: 800;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            color: var(--text-main);
+        }
+        .movie-top3-meta {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin: 3px 0 6px;
+        }
+        @media (max-width: 600px) {
+            .movie-top3-grid { flex-direction: column; }
+        }
+
         /* ── ESTADO VACÍO ── */
         .wrapped-empty {
             text-align: center;
