@@ -25,6 +25,43 @@
         .movie-drag-handle:hover              { opacity: 1 !important; background: var(--bg-secondary); }
         .movie-drag-handle div { width: 12px; height: 2px; background: var(--text-muted); border-radius: 1px; }
         .movie-drag-handle[draggable="true"]:active { cursor: grabbing; }
+
+        /* ── SUGERENCIAS DE PAÍS ── */
+        .country-chip-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 8px;
+        }
+        .country-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px 12px;
+            border-radius: 20px;
+            border: 1.5px solid var(--border-color);
+            background: var(--bg-primary);
+            cursor: pointer;
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            transition: all 0.13s;
+            user-select: none;
+        }
+        .country-chip:hover { border-color: var(--accent-red); color: var(--accent-red); }
+        .country-chip-badge {
+            font-size: 0.65rem;
+            font-weight: 700;
+            background: var(--bg-secondary);
+            padding: 1px 6px;
+            border-radius: 8px;
+            color: var(--text-muted);
+        }
+        .country-chip-badge.recent {
+            background: rgba(230,57,70,0.10);
+            color: var(--accent-red);
+        }
     </style>
 </head>
 <body data-store="movies">
@@ -135,9 +172,10 @@
         <form id="details-form">
             <label>País de origen:</label>
             <div style="display:flex;align-items:center;gap:10px;">
-                <input type="text" id="details-country" placeholder="Ej: Estados Unidos" style="flex:1;">
+                <input type="text" id="details-country" placeholder="Ej: Estados Unidos" style="flex:1;" autocomplete="off">
                 <img id="country-flag-preview" src="" alt="" style="width:32px;height:auto;border-radius:3px;display:none;flex-shrink:0;">
             </div>
+            <div id="country-suggestions" class="country-chip-row" style="display:none;"></div>
 
             <label>Actores destacados:</label>
             <input type="text" id="details-actors" placeholder="Ej: Matthew McConaughey, Anne Hathaway">

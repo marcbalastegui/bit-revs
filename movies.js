@@ -27,6 +27,87 @@ function updateDefaultBtn() {
 let editingId = null;
 let detailsTargetId = null;
 
+// ── SUGERENCIAS DE PAÍS ───────────────────────────────────────────────────
+let _countrySuggestionsData = []; // [{name, count, lastId}] — cargado al init
+
+async function loadCountrySuggestions() {
+    const items = await getAllItemsFromDB(storeType);
+    const map   = {};
+    items.forEach(item => {
+        if (!item.country?.trim()) return;
+        const c = item.country.trim();
+        if (!map[c]) map[c] = { count: 0, lastId: 0 };
+        map[c].count++;
+        if (item.id > map[c].lastId) map[c].lastId = item.id;
+    });
+
+    // Score = frecuencia × 3 + bonus de recencia
+    // recencia: más peso cuanto más reciente (en base al id = Date.now() al crear)
+    const recencyBonus = (lastId) => {
+        const days = (Date.now() - lastId) / 86_400_000;
+        if (days < 7)   return 9;   // última semana
+        if (days < 30)  return 5;   // último mes
+        if (days < 90)  return 2;   // últimos 3 meses
+        return 0;
+    };
+
+    _countrySuggestionsData = Object.entries(map)
+        .map(([name, { count, lastId }]) => ({
+            name, count, lastId,
+            score: count * 3 + recencyBonus(lastId),
+            isRecent: (Date.now() - lastId) < 30 * 86_400_000
+        }))
+        .sort((a, b) => b.score - a.score);
+}
+
+function renderCountrySuggestions(query) {
+    const container = document.getElementById('country-suggestions');
+    if (!container) return;
+
+    const q = (query || '').toLowerCase().trim();
+
+    let filtered;
+    if (q) {
+        // Primero los que empiezan por el query, luego los que lo contienen
+        const startsWith = _countrySuggestionsData.filter(s => s.name.toLowerCase().startsWith(q));
+        const contains   = _countrySuggestionsData.filter(s =>
+            !s.name.toLowerCase().startsWith(q) && s.name.toLowerCase().includes(q)
+        );
+        filtered = [...startsWith, ...contains];
+    } else {
+        // Sin filtro: mostrar los de mayor score (favoritos + recientes)
+        filtered = _countrySuggestionsData;
+    }
+
+    const top = filtered.slice(0, 10);
+    if (top.length === 0) { container.style.display = 'none'; return; }
+
+    container.innerHTML = top.map(s => {
+        const code  = getCountryCode(s.name);
+        const flag  = code ? `<img src="https://flagcdn.com/w20/${code}.png" alt="" style="width:15px;height:auto;border-radius:1px;">` : '';
+        let badge   = '';
+        if (s.isRecent && s.count === 1) {
+            badge = `<span class="country-chip-badge recent">Reciente</span>`;
+        } else if (s.isRecent && s.count > 1) {
+            badge = `<span class="country-chip-badge recent">${s.count}× Reciente</span>`;
+        } else if (s.count > 1) {
+            badge = `<span class="country-chip-badge">${s.count} pelis</span>`;
+        }
+        return `<button type="button" class="country-chip" data-name="${s.name}">${flag}${s.name}${badge}</button>`;
+    }).join('');
+
+    container.querySelectorAll('.country-chip').forEach(chip => {
+        chip.addEventListener('mousedown', e => {
+            e.preventDefault(); // evita blur antes del click
+            const input = document.getElementById('details-country');
+            if (input) { input.value = chip.dataset.name; updateCountryFlagPreview(chip.dataset.name); }
+            container.style.display = 'none';
+        });
+    });
+
+    container.style.display = 'flex';
+}
+
 // ── DRAG STATE ────────────────────────────────────────────────────────────
 let dragSrcId     = null;
 let dragSrcRating = null;
@@ -231,8 +312,20 @@ window.openDetails = async function(event, id) {
     document.getElementById('modal-details').classList.remove('hidden');
 }
 
-document.getElementById('details-country')?.addEventListener('input', e => {
+const _countryInput = document.getElementById('details-country');
+_countryInput?.addEventListener('focus', () => {
+    if (_countrySuggestionsData.length > 0) renderCountrySuggestions(_countryInput.value);
+});
+_countryInput?.addEventListener('input', e => {
     updateCountryFlagPreview(e.target.value);
+    renderCountrySuggestions(e.target.value);
+});
+_countryInput?.addEventListener('blur', () => {
+    // Pequeño delay para que el mousedown del chip se procese antes
+    setTimeout(() => {
+        const s = document.getElementById('country-suggestions');
+        if (s) s.style.display = 'none';
+    }, 180);
 });
 
 document.getElementById('btn-cancel-details')?.addEventListener('click', () => {
@@ -250,7 +343,7 @@ document.getElementById('details-form')?.addEventListener('submit', async (e) =>
     try {
         await saveItemToDB(storeType, item);
         document.getElementById('modal-details').classList.add('hidden');
-        await populateFilters();
+        await Promise.all([populateFilters(), loadCountrySuggestions()]);
         processAndRenderMedia();
     } catch (err) {
         await brAlert(`No se pudo guardar: ${err.message || err}`, "Error al guardar");
@@ -517,6 +610,9 @@ document.getElementById('btn-default-sort')?.addEventListener('click', () => {
     }
     updateDefaultBtn();
 
-    await populateFilters();
+    await Promise.all([
+        populateFilters(),
+        loadCountrySuggestions()
+    ]);
     await processAndRenderMedia();
 })();
