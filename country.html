@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/png" href="favicon.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BitRevs - País</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* ── HERO ──────────────────────────────────────────────────────── */
+        .country-hero {
+            display: flex;
+            align-items: center;
+            gap: 36px;
+            padding: 48px 0 40px;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 40px;
+        }
+        .country-flag-img {
+            height: 110px;
+            width: auto;
+            border-radius: 10px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.14);
+            flex-shrink: 0;
+            display: none;
+        }
+        .country-hero-label {
+            font-size: 0.75rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--accent-red);
+            margin-bottom: 10px;
+        }
+        .country-hero-title {
+            font-size: clamp(2rem, 5vw, 3.8rem);
+            font-weight: 900;
+            letter-spacing: -2px;
+            color: var(--text-main);
+            margin: 0 0 8px;
+        }
+        .country-hero-meta {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        @media (max-width: 540px) {
+            .country-hero { flex-direction: column; align-items: flex-start; gap: 20px; }
+            .country-flag-img { height: 70px; }
+        }
+
+        /* ── STATS RÁPIDAS ─────────────────────────────────────────────── */
+        .country-stats {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 40px;
+            flex-wrap: wrap;
+        }
+        .country-stat-box {
+            flex: 1;
+            min-width: 120px;
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 20px 24px;
+        }
+        .country-stat-label {
+            font-size: 0.72rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+        .country-stat-value {
+            font-size: 2rem;
+            font-weight: 900;
+            letter-spacing: -1px;
+            color: var(--text-main);
+        }
+
+        /* ── MEJOR PELÍCULA ─────────────────────────────────────────────── */
+        .country-best-section { margin-bottom: 40px; }
+        .country-section-title {
+            font-size: 1.1rem;
+            font-weight: 900;
+            letter-spacing: -0.3px;
+            margin-bottom: 18px;
+        }
+        .country-best-card {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            padding: 16px 20px;
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            cursor: pointer;
+            transition: background 0.15s;
+            max-width: 560px;
+        }
+        .country-best-card:hover { background: var(--bg-secondary); }
+        .country-best-cover {
+            width: 60px;
+            height: 90px;
+            object-fit: cover;
+            border-radius: 8px;
+            flex-shrink: 0;
+        }
+        .country-best-info { flex: 1; min-width: 0; }
+        .country-best-title {
+            font-size: 1.05rem;
+            font-weight: 800;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .country-best-meta {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+        .country-best-badge {
+            padding: 5px 14px;
+            border-radius: 20px;
+            font-size: 1rem;
+            font-weight: 900;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        /* ── GRID DE PELÍCULAS ──────────────────────────────────────────── */
+        .country-movies-section { margin-bottom: 48px; }
+        .country-movie-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+            gap: 16px;
+        }
+        .genre-movie-card {
+            border-radius: 12px;
+            background: white;
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .genre-movie-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+        }
+        .genre-movie-card img {
+            width: 100%;
+            aspect-ratio: 2/3;
+            object-fit: cover;
+            display: block;
+        }
+        .genre-movie-card-info { padding: 10px 12px; }
+        .genre-movie-card-title {
+            font-size: 0.82rem;
+            font-weight: 700;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-bottom: 2px;
+        }
+        .genre-movie-card-meta {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .genre-movie-card-badge {
+            display: inline-block;
+            margin-top: 6px;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 900;
+            color: white;
+        }
+
+        .country-empty {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+<header>
+    <div class="header-left">
+        <a href="home.html" class="logo">BitRevs</a>
+    </div>
+    <nav>
+        <a href="home.html" class="nav-home-icon" title="Inicio">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        </a>
+        <div class="nav-dropdown">
+            <span class="nav-dropdown-trigger active">Reviews
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="nav-dropdown-arrow"><polyline points="6 9 12 15 18 9"/></svg>
+            </span>
+            <div class="nav-dropdown-menu">
+                <a href="movies.html" class="active">Películas</a>
+                <a href="series.html">Series</a>
+                <a href="music.html">Music</a>
+                <a href="collections.html">Colecciones</a>
+            </div>
+        </div>
+        <a href="top.html">Top</a>
+        <a href="wrapped.html">Wrapped</a>
+        <a href="lists.html">Listas</a>
+    </nav>
+    <div class="header-right">
+        <button style="visibility:hidden;" class="save-btn">+</button>
+        <a href="profile.html" class="header-avatar" id="global-header-avatar" title="Mi Perfil">U</a>
+    </div>
+</header>
+
+<main>
+    <!-- Hero con bandera -->
+    <div class="country-hero">
+        <img id="country-flag-img" class="country-flag-img" src="" alt="">
+        <div class="country-hero-text">
+            <div class="country-hero-label">País de origen</div>
+            <h1 class="country-hero-title" id="country-name">—</h1>
+            <div class="country-hero-meta" id="country-meta"></div>
+        </div>
+    </div>
+
+    <!-- Stats rápidas -->
+    <div class="country-stats" id="country-stats"></div>
+
+    <!-- Mejor película -->
+    <div class="country-best-section" id="country-best-section" style="display:none;">
+        <div class="country-section-title">Mejor película</div>
+        <div id="country-best-card"></div>
+    </div>
+
+    <!-- Todas las películas -->
+    <div class="country-movies-section">
+        <div class="country-section-title" id="movies-section-title">Películas</div>
+        <div class="country-movie-grid" id="country-movies-grid"></div>
+    </div>
+</main>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script src="auth-guard.js"></script>
+<script src="bitrevs-ui.js"></script>
+<script src="db.js"></script>
+<script src="country.js"></script>
+</body>
+</html>

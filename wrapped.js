@@ -141,7 +141,7 @@ async function loadWrapped() {
         </div>`;
 
     html += topGenre ? `
-        <div class="stat-card col-4">
+        <div class="stat-card col-4" style="cursor:pointer;" onclick="window.location.href='genre.html?g='+encodeURIComponent('${topGenre[0]}')">
             <div class="stat-label">Género más escuchado</div>
             <span class="genre-pill">${topGenre[0]}</span>
             <div class="stat-value-sub" style="margin-top:10px;">${topGenre[1]} álbum${topGenre[1] !== 1 ? 'es' : ''}</div>
@@ -407,7 +407,7 @@ async function loadWrapped() {
         // Género cinematográfico favorito
         if (topMovieGenre) {
             html += `
-                <div class="stat-card col-6">
+                <div class="stat-card col-6" style="cursor:pointer;" onclick="window.location.href='movie-genre.html?g='+encodeURIComponent('${topMovieGenre[0]}')">
                     <div class="stat-label">Género favorito</div>
                     <span class="genre-pill">${topMovieGenre[0]}</span>
                     <div class="stat-value-sub" style="margin-top:10px;">${topMovieGenre[1]} película${topMovieGenre[1] !== 1 ? 's' : ''}</div>
@@ -417,7 +417,7 @@ async function loadWrapped() {
         // País más visto
         if (topCountry) {
             html += `
-                <div class="stat-card col-4">
+                <div class="stat-card col-4" style="cursor:pointer;" onclick="window.location.href='country.html?country='+encodeURIComponent('${topCountry[0]}')">
                     <div class="stat-label">País más visto</div>
                     <div class="stat-value-big" style="font-size:1.8rem;letter-spacing:-1px;">${topCountry[0]}</div>
                     <div class="stat-value-sub">${topCountry[1]} película${topCountry[1] !== 1 ? 's' : ''}</div>
