@@ -27,6 +27,65 @@ function updateDefaultBtn() {
 let editingId = null;
 let detailsTargetId = null;
 
+// ── DRAG STATE ────────────────────────────────────────────────────────────
+let dragSrcId     = null;
+let dragSrcRating = null;
+let isDragging    = false;
+let _currentItems = [];
+
+// ── FLAGS ─────────────────────────────────────────────────────────────────
+const COUNTRY_CODES = {
+    'afghanistan':'af','albania':'al','alemania':'de','algeria':'dz','andorra':'ad',
+    'angola':'ao','arabia saudita':'sa','argentina':'ar','armenia':'am','australia':'au',
+    'austria':'at','azerbaiyán':'az','bangladesh':'bd','bélgica':'be','bolivia':'bo',
+    'bosnia':'ba','brasil':'br','bulgaria':'bg','camboya':'kh','camerún':'cm',
+    'canadá':'ca','chile':'cl','china':'cn','chipre':'cy','colombia':'co',
+    'corea del norte':'kp','corea del sur':'kr','costa rica':'cr','croacia':'hr',
+    'cuba':'cu','dinamarca':'dk','ecuador':'ec','egipto':'eg',
+    'emiratos árabes unidos':'ae','emiratos árabes':'ae','eslovaquia':'sk',
+    'eslovenia':'si','españa':'es','estados unidos':'us','estonia':'ee',
+    'etiopía':'et','filipinas':'ph','finlandia':'fi','francia':'fr',
+    'georgia':'ge','ghana':'gh','grecia':'gr','guatemala':'gt','hong kong':'hk',
+    'hungría':'hu','india':'in','indonesia':'id','irán':'ir','irak':'iq',
+    'irlanda':'ie','islandia':'is','israel':'il','italia':'it','jamaica':'jm',
+    'japón':'jp','jordania':'jo','kazajistán':'kz','kenia':'ke','letonia':'lv',
+    'líbano':'lb','lituania':'lt','luxemburgo':'lu','malasia':'my','malta':'mt',
+    'marruecos':'ma','méxico':'mx','moldavia':'md','mongolia':'mn',
+    'montenegro':'me','myanmar':'mm','nepal':'np','nicaragua':'ni','nigeria':'ng',
+    'noruega':'no','nueva zelanda':'nz','países bajos':'nl','holanda':'nl',
+    'pakistan':'pk','palestina':'ps','panamá':'pa','paraguay':'py','perú':'pe',
+    'polonia':'pl','portugal':'pt','puerto rico':'pr','reino unido':'gb',
+    'república checa':'cz','república dominicana':'do','rumanía':'ro','rusia':'ru',
+    'senegal':'sn','serbia':'rs','singapur':'sg','siria':'sy','sudáfrica':'za',
+    'suecia':'se','suiza':'ch','tailandia':'th','taiwán':'tw','tanzania':'tz',
+    'túnez':'tn','turquía':'tr','ucrania':'ua','uruguay':'uy','uzbekistán':'uz',
+    'venezuela':'ve','vietnam':'vn','zimbabue':'zw'
+};
+
+function getCountryCode(name) {
+    if (!name) return null;
+    return COUNTRY_CODES[name.toLowerCase().trim()] || null;
+}
+
+function flagImg(countryName, size = 20) {
+    const code = getCountryCode(countryName);
+    if (!code) return '';
+    return `<img src="https://flagcdn.com/w${size * 2}/${code}.png" alt="${countryName}" style="width:${size}px;height:auto;border-radius:2px;vertical-align:middle;flex-shrink:0;" loading="lazy">`;
+}
+
+function updateCountryFlagPreview(val) {
+    const preview = document.getElementById('country-flag-preview');
+    if (!preview) return;
+    const code = getCountryCode(val);
+    if (code) {
+        preview.src = `https://flagcdn.com/w40/${code}.png`;
+        preview.style.display = 'inline-block';
+    } else {
+        preview.src = '';
+        preview.style.display = 'none';
+    }
+}
+
 // ── HELPERS ───────────────────────────────────────────────────────────────
 function parseGenres(genreStr) {
     if (!genreStr) return [];
@@ -122,7 +181,7 @@ mediaForm.addEventListener('submit', async (e) => {
 
     let itemToSave = editingId
         ? await getItemByIdFromDB(storeType, editingId)
-        : { id: Date.now() };
+        : { id: Date.now(), manualRank: Date.now() };
 
     itemToSave.title    = title;
     itemToSave.director = director;
@@ -159,14 +218,20 @@ window.openDetails = async function(event, id) {
     const item = await getItemByIdFromDB(storeType, id);
     detailsTargetId = id;
 
+    const countryVal = item.country || '';
     document.getElementById('details-title').textContent   = item.title || 'Más detalles';
-    document.getElementById('details-country').value       = item.country   || '';
+    document.getElementById('details-country').value       = countryVal;
     document.getElementById('details-actors').value        = item.actors    || '';
     document.getElementById('details-watch-date').value    = item.watchDate || '';
     document.getElementById('details-review').value        = item.review    || '';
 
+    updateCountryFlagPreview(countryVal);
     document.getElementById('modal-details').classList.remove('hidden');
 }
+
+document.getElementById('details-country')?.addEventListener('input', e => {
+    updateCountryFlagPreview(e.target.value);
+});
 
 document.getElementById('btn-cancel-details')?.addEventListener('click', () => {
     document.getElementById('modal-details').classList.add('hidden');
@@ -242,20 +307,29 @@ async function processAndRenderMedia() {
     const sort = sortSelect?.value;
     if (sort && sort !== 'default') {
         items.sort((a, b) => {
-            if (sort === 'rating-desc') return parseFloat(b.rating) - parseFloat(a.rating);
-            if (sort === 'rating-asc')  return parseFloat(a.rating) - parseFloat(b.rating);
-            if (sort === 'year-desc')   return parseInt(b.year)  - parseInt(a.year);
-            if (sort === 'year-asc')    return parseInt(a.year)  - parseInt(b.year);
-            if (sort === 'title-asc')   return (a.title || '').localeCompare(b.title || '');
-            if (sort === 'title-desc')  return (b.title || '').localeCompare(a.title || '');
+            if (sort === 'rating-desc' || sort === 'rating-asc') {
+                const diff = sort === 'rating-desc'
+                    ? parseFloat(b.rating) - parseFloat(a.rating)
+                    : parseFloat(a.rating) - parseFloat(b.rating);
+                if (diff !== 0) return diff;
+                // Tiebreaker: orden manual dentro de la misma nota
+                return (a.manualRank ?? a.id ?? 0) - (b.manualRank ?? b.id ?? 0);
+            }
+            if (sort === 'year-desc')  return parseInt(b.year)  - parseInt(a.year);
+            if (sort === 'year-asc')   return parseInt(a.year)  - parseInt(b.year);
+            if (sort === 'title-asc')  return (a.title || '').localeCompare(b.title || '');
+            if (sort === 'title-desc') return (b.title || '').localeCompare(a.title || '');
             return 0;
         });
     }
 
-    renderMediaGrid(items);
+    renderMediaGrid(items, sort);
 }
 
-function renderMediaGrid(items) {
+function renderMediaGrid(items, sort) {
+    _currentItems = items;
+    const showDrag = sort === 'rating-desc' || sort === 'rating-asc';
+
     mediaGrid.innerHTML = items.length
         ? ''
         : '<p style="color:var(--text-muted)">No hay películas que coincidan con los filtros.</p>';
@@ -264,7 +338,13 @@ function renderMediaGrid(items) {
         const card = document.createElement('div');
         card.classList.add('album-card');
         card.style.cursor = 'pointer';
-        card.addEventListener('click', () => window.location.href = `media-detail.html?type=movies&id=${item.id}`);
+        card.style.position = 'relative';
+
+        card.addEventListener('click', () => {
+            if (isDragging) return;
+            window.location.href = `media-detail.html?type=movies&id=${item.id}`;
+        });
+
         const badgeColor = getColorByRating(item.rating);
 
         const directorHtml = item.director
@@ -276,13 +356,17 @@ function renderMediaGrid(items) {
             ? `<p style="font-size:0.75rem;color:var(--text-muted);margin-top:3px;">${metaParts.join(' · ')}</p>`
             : '';
 
+        const flag = item.country ? flagImg(item.country, 16) : '';
         const countryBadge = item.country
-            ? `<span style="display:inline-block;margin-top:4px;padding:2px 8px;border-radius:6px;background:var(--bg-secondary);border:1px solid var(--border-color);font-size:0.7rem;font-weight:700;color:var(--text-muted);">${item.country}</span>`
+            ? `<span style="display:inline-flex;align-items:center;gap:4px;margin-top:4px;padding:2px 8px;border-radius:6px;background:var(--bg-secondary);border:1px solid var(--border-color);font-size:0.7rem;font-weight:700;color:var(--text-muted);">${flag}${item.country}</span>`
             : '';
 
         const hasDetails = item.country || item.actors || item.watchDate || item.review;
 
         card.innerHTML = `
+            <div class="movie-drag-handle" style="display:${showDrag ? 'flex' : 'none'};" title="Arrastra para reordenar (solo entre películas con la misma nota)">
+                <div></div><div></div><div></div>
+            </div>
             <div class="card-actions">
                 <button class="action-btn btn-edit" onclick="editMedia(event, ${item.id})">✎</button>
                 <button class="action-btn btn-delete" onclick="deleteMedia(event, ${item.id})">✖</button>
@@ -303,6 +387,71 @@ function renderMediaGrid(items) {
                 </button>
             </div>
         `;
+
+        // ── DRAG & DROP ───────────────────────────────────────────────────
+        if (showDrag) {
+            const handle = card.querySelector('.movie-drag-handle');
+            handle.setAttribute('draggable', 'true');
+
+            handle.addEventListener('dragstart', e => {
+                dragSrcId     = item.id;
+                dragSrcRating = String(parseFloat(item.rating).toFixed(1));
+                isDragging    = true;
+                e.dataTransfer.effectAllowed = 'move';
+                setTimeout(() => { card.style.opacity = '0.4'; }, 0);
+            });
+
+            handle.addEventListener('dragend', () => {
+                isDragging        = false;
+                dragSrcId         = null;
+                dragSrcRating     = null;
+                card.style.opacity = '';
+                mediaGrid.querySelectorAll('.album-card').forEach(c => {
+                    c.style.outline      = '';
+                    c.style.outlineOffset = '';
+                });
+            });
+
+            card.addEventListener('dragover', e => {
+                if (!dragSrcId || dragSrcId === item.id) return;
+                if (String(parseFloat(item.rating).toFixed(1)) !== dragSrcRating) return;
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+                card.style.outline       = '2px solid var(--accent-red)';
+                card.style.outlineOffset = '2px';
+            });
+
+            card.addEventListener('dragleave', () => {
+                card.style.outline      = '';
+                card.style.outlineOffset = '';
+            });
+
+            card.addEventListener('drop', async e => {
+                e.preventDefault();
+                card.style.outline      = '';
+                card.style.outlineOffset = '';
+                if (!dragSrcId || dragSrcId === item.id) return;
+                if (String(parseFloat(item.rating).toFixed(1)) !== dragSrcRating) return;
+
+                const sameRating = _currentItems.filter(i =>
+                    String(parseFloat(i.rating).toFixed(1)) === dragSrcRating
+                );
+                const srcIdx = sameRating.findIndex(i => i.id === dragSrcId);
+                const tgtIdx = sameRating.findIndex(i => i.id === item.id);
+                if (srcIdx < 0 || tgtIdx < 0) return;
+
+                const [moved] = sameRating.splice(srcIdx, 1);
+                sameRating.splice(tgtIdx, 0, moved);
+
+                await Promise.all(sameRating.map((it, idx) => {
+                    it.manualRank = idx * 1000;
+                    return saveItemToDB(storeType, it);
+                }));
+
+                processAndRenderMedia();
+            });
+        }
+
         mediaGrid.appendChild(card);
     });
 }

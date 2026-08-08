@@ -7,6 +7,25 @@
     <title>BitRevs - Películas</title>
     <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="/manifest.json">
+    <style>
+        .movie-drag-handle {
+            position: absolute;
+            top: 6px;
+            left: 6px;
+            flex-direction: column;
+            gap: 3px;
+            padding: 6px 5px;
+            cursor: grab;
+            opacity: 0;
+            transition: opacity 0.15s;
+            z-index: 2;
+            border-radius: 6px;
+        }
+        .album-card:hover .movie-drag-handle { opacity: 0.45; }
+        .movie-drag-handle:hover              { opacity: 1 !important; background: var(--bg-secondary); }
+        .movie-drag-handle div { width: 12px; height: 2px; background: var(--text-muted); border-radius: 1px; }
+        .movie-drag-handle[draggable="true"]:active { cursor: grabbing; }
+    </style>
 </head>
 <body data-store="movies">
 <header>
@@ -115,7 +134,10 @@
         <h2 id="details-title">Más detalles</h2>
         <form id="details-form">
             <label>País de origen:</label>
-            <input type="text" id="details-country" placeholder="Ej: Estados Unidos">
+            <div style="display:flex;align-items:center;gap:10px;">
+                <input type="text" id="details-country" placeholder="Ej: Estados Unidos" style="flex:1;">
+                <img id="country-flag-preview" src="" alt="" style="width:32px;height:auto;border-radius:3px;display:none;flex-shrink:0;">
+            </div>
 
             <label>Actores destacados:</label>
             <input type="text" id="details-actors" placeholder="Ej: Matthew McConaughey, Anne Hathaway">
