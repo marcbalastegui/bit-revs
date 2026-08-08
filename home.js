@@ -1,5 +1,53 @@
 // home.js - Lógica de la página principal
 
+// ── PAÍSES / BANDERAS ─────────────────────────────────────────────────────
+const HOME_COUNTRY_CODES = {
+    'afghanistan':'af','albania':'al','alemania':'de','algeria':'dz','andorra':'ad',
+    'angola':'ao','arabia saudita':'sa','argentina':'ar','armenia':'am','australia':'au',
+    'austria':'at','azerbaiyán':'az','bangladesh':'bd','bélgica':'be','bolivia':'bo',
+    'bosnia':'ba','brasil':'br','bulgaria':'bg','camboya':'kh','camerún':'cm',
+    'canadá':'ca','chile':'cl','china':'cn','chipre':'cy','colombia':'co',
+    'corea del norte':'kp','corea del sur':'kr','costa rica':'cr','croacia':'hr',
+    'cuba':'cu','dinamarca':'dk','ecuador':'ec','egipto':'eg',
+    'emiratos árabes unidos':'ae','emiratos árabes':'ae','eslovaquia':'sk',
+    'eslovenia':'si','españa':'es','estados unidos':'us','estonia':'ee',
+    'etiopía':'et','filipinas':'ph','finlandia':'fi','francia':'fr',
+    'georgia':'ge','ghana':'gh','grecia':'gr','guatemala':'gt','hong kong':'hk',
+    'hungría':'hu','india':'in','indonesia':'id','irán':'ir','irak':'iq',
+    'irlanda':'ie','islandia':'is','israel':'il','italia':'it','jamaica':'jm',
+    'japón':'jp','jordania':'jo','kazajistán':'kz','kenia':'ke','letonia':'lv',
+    'líbano':'lb','lituania':'lt','luxemburgo':'lu','malasia':'my','malta':'mt',
+    'marruecos':'ma','méxico':'mx','moldavia':'md','mongolia':'mn',
+    'montenegro':'me','myanmar':'mm','nepal':'np','nicaragua':'ni','nigeria':'ng',
+    'noruega':'no','nueva zelanda':'nz','países bajos':'nl','holanda':'nl',
+    'pakistan':'pk','palestina':'ps','panamá':'pa','paraguay':'py','perú':'pe',
+    'polonia':'pl','portugal':'pt','puerto rico':'pr','reino unido':'gb',
+    'república checa':'cz','república dominicana':'do','rumanía':'ro','rusia':'ru',
+    'senegal':'sn','serbia':'rs','singapur':'sg','siria':'sy','sudáfrica':'za',
+    'suecia':'se','suiza':'ch','tailandia':'th','taiwán':'tw','tanzania':'tz',
+    'túnez':'tn','turquía':'tr','ucrania':'ua','uruguay':'uy','uzbekistán':'uz',
+    'venezuela':'ve','vietnam':'vn','zimbabue':'zw'
+};
+function homeCountryCode(name) {
+    return name ? (HOME_COUNTRY_CODES[name.toLowerCase().trim()] || null) : null;
+}
+function genrePillHtml(name, count, href) {
+    return `<div class="home-genre-pill" onclick="window.location.href='${href}'">
+        <span class="home-genre-pill-name">${name}</span>
+        <span class="home-genre-pill-count">${count}</span>
+    </div>`;
+}
+function countryPillHtml(name, count, href) {
+    const code = homeCountryCode(name);
+    const flag = code
+        ? `<img src="https://flagcdn.com/w20/${code}.png" alt="${name}" style="width:18px;height:auto;border-radius:2px;flex-shrink:0;">`
+        : '';
+    return `<div class="home-genre-pill" onclick="window.location.href='${href}'">
+        ${flag}<span class="home-genre-pill-name">${name}</span>
+        <span class="home-genre-pill-count">${count}</span>
+    </div>`;
+}
+
 async function loadHome() {
     const albums = await getAllAlbumsFromDB();
     const movies = await getAllItemsFromDB('movies');
@@ -133,6 +181,59 @@ async function loadHome() {
             renderTimeline(filtered, type);
         });
     });
+
+    // ── GÉNEROS MUSICALES ─────────────────────────────────────────────────
+    const musicGenreCount = {};
+    albums.forEach(a => {
+        (a.genres || []).forEach(g => { musicGenreCount[g] = (musicGenreCount[g] || 0) + 1; });
+    });
+    const topMusicGenres = Object.entries(musicGenreCount).sort((a, b) => b[1] - a[1]);
+    const gridMusicGenres = document.getElementById('grid-music-genres');
+    if (gridMusicGenres) {
+        if (topMusicGenres.length === 0) {
+            document.getElementById('section-music-genres').style.display = 'none';
+        } else {
+            gridMusicGenres.innerHTML = topMusicGenres
+                .map(([name, count]) => genrePillHtml(name, count, `genre.html?g=${encodeURIComponent(name)}`))
+                .join('');
+        }
+    }
+
+    // ── GÉNEROS CINEMATOGRÁFICOS ──────────────────────────────────────────
+    const movieGenreCount = {};
+    movies.forEach(m => {
+        if (!m.genre) return;
+        m.genre.split(',').map(g => g.trim()).filter(Boolean)
+            .forEach(g => { movieGenreCount[g] = (movieGenreCount[g] || 0) + 1; });
+    });
+    const topMovieGenres = Object.entries(movieGenreCount).sort((a, b) => b[1] - a[1]);
+    const gridMovieGenres = document.getElementById('grid-movie-genres');
+    if (gridMovieGenres) {
+        if (topMovieGenres.length === 0) {
+            document.getElementById('section-movie-genres').style.display = 'none';
+        } else {
+            gridMovieGenres.innerHTML = topMovieGenres
+                .map(([name, count]) => genrePillHtml(name, count, `movie-genre.html?g=${encodeURIComponent(name)}`))
+                .join('');
+        }
+    }
+
+    // ── PAÍSES ────────────────────────────────────────────────────────────
+    const countryCount = {};
+    movies.forEach(m => {
+        if (m.country?.trim()) countryCount[m.country.trim()] = (countryCount[m.country.trim()] || 0) + 1;
+    });
+    const topCountries = Object.entries(countryCount).sort((a, b) => b[1] - a[1]);
+    const gridCountries = document.getElementById('grid-countries');
+    if (gridCountries) {
+        if (topCountries.length === 0) {
+            document.getElementById('section-countries').style.display = 'none';
+        } else {
+            gridCountries.innerHTML = topCountries
+                .map(([name, count]) => countryPillHtml(name, count, `country.html?country=${encodeURIComponent(name)}`))
+                .join('');
+        }
+    }
 
     // ── ALEATORIO ─────────────────────────────────────────────────────────
     renderRandom(albums);

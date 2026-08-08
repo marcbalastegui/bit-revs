@@ -70,7 +70,9 @@ function getCountryCode(name) {
 function flagImg(countryName, size = 20) {
     const code = getCountryCode(countryName);
     if (!code) return '';
-    return `<img src="https://flagcdn.com/w${size * 2}/${code}.png" alt="${countryName}" style="width:${size}px;height:auto;border-radius:2px;vertical-align:middle;flex-shrink:0;" loading="lazy">`;
+    // flagcdn.com only supports: w20, w40, w80, w160, w320, w640
+    const srcW = size <= 20 ? 20 : 40;
+    return `<img src="https://flagcdn.com/w${srcW}/${code}.png" alt="${countryName}" style="width:${size}px;height:auto;border-radius:2px;vertical-align:middle;flex-shrink:0;" loading="lazy">`;
 }
 
 function updateCountryFlagPreview(val) {
