@@ -1,3 +1,4 @@
+
 // home.js - Lógica de la página principal
 
 // ── PAÍSES / BANDERAS ─────────────────────────────────────────────────────
