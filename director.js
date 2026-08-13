@@ -160,43 +160,39 @@ async function loadDirectorPage() {
     }
     statsEl.innerHTML = statsHtml;
 
-    // ── MEJOR PELÍCULA ────────────────────────────────────────────────────
-    if (ratedMovies.length > 0) {
-        const best = ratedMovies[0];
-        document.getElementById('director-best-section').style.display = 'block';
-        document.getElementById('director-best-card').innerHTML = `
-            <div class="dir-best-card" onclick="window.location.href='media-detail.html?type=movies&id=${best.id}'">
-                <img class="dir-best-cover" src="${best.coverBase64 || ''}" alt="${best.title}">
-                <div class="dir-best-info">
-                    <div class="dir-best-title">${best.title}</div>
-                    <div class="dir-best-meta">${best.year || ''}</div>
-                </div>
-                <span class="dir-best-badge" style="background:${getColorByRating(best.rating)}">${formatRating(best.rating)}</span>
-            </div>`;
-    }
-
-    // ── GRID DE PELÍCULAS ─────────────────────────────────────────────────
+    // ── TOP 10 PELÍCULAS ──────────────────────────────────────────────────
     const grid    = document.getElementById('director-movies-grid');
     const titleEl = document.getElementById('dir-movies-title');
+    const rankColors = ['#B533FF', '#3366FF', '#66CC33'];
 
-    // Todas: mejor primero, sin nota al final
-    const toShow = [
-        ...ratedMovies,
-        ...dirMovies.filter(m => !(parseFloat(m.rating) > 0))
-    ];
-    // Excluir la mejor del grid (ya se muestra arriba)
-    const gridMovies = ratedMovies.length > 0
-        ? toShow.filter(m => m.id !== ratedMovies[0].id)
-        : toShow;
+    if (ratedMovies.length > 0) {
+        document.getElementById('director-best-section').style.display = 'block';
+        const top10 = ratedMovies.slice(0, 10);
+        document.getElementById('director-best-card').innerHTML = top10.map((m, i) => {
+            const color = rankColors[i] || 'var(--text-muted)';
+            return `
+                <div class="dir-rank-row" onclick="window.location.href='media-detail.html?type=movies&id=${m.id}'">
+                    <div class="dir-rank-num" style="color:${color};">${i + 1}</div>
+                    <img class="dir-rank-cover" src="${m.coverBase64 || ''}" alt="${m.title}">
+                    <div class="dir-rank-info">
+                        <div class="dir-rank-title">${m.title}</div>
+                        <div class="dir-rank-meta">${m.year || ''}</div>
+                    </div>
+                    <span class="dir-best-badge" style="background:${getColorByRating(m.rating)}">${formatRating(m.rating)}</span>
+                </div>`;
+        }).join('');
+    }
 
-    if (gridMovies.length === 0) {
+    // Sin puntuar: grid pequeño al final
+    const unrated = dirMovies.filter(m => !(parseFloat(m.rating) > 0));
+    if (dirMovies.length === 0) {
         titleEl.style.display = 'none';
-        if (dirMovies.length === 0) {
-            grid.innerHTML = '<p class="dir-empty">No hay películas de este director todavía.</p>';
-        }
+        grid.innerHTML = '<p class="dir-empty">No hay películas de este director todavía.</p>';
+    } else if (unrated.length > 0) {
+        titleEl.textContent = `Sin puntuar (${unrated.length})`;
+        grid.innerHTML = unrated.map(movieCardHtml).join('');
     } else {
-        titleEl.textContent = `Resto de películas (${gridMovies.length})`;
-        grid.innerHTML = gridMovies.map(movieCardHtml).join('');
+        titleEl.style.display = 'none';
     }
 }
 

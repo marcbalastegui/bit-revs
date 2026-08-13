@@ -156,6 +156,18 @@ async function loadArtistStats() {
         return parseFloat(albumB?.rating || 0) - parseFloat(albumA?.rating || 0);
     })[0];
 
+    // Top 10 canciones
+    const top10Tracks = [...dedupedTracks].sort((a, b) => {
+        const diff = parseFloat(b.rating) - parseFloat(a.rating);
+        if (diff !== 0) return diff;
+        const boostDiff = getTrackBoostScore(b.albumId, b.title, albumBoost, trackBoost)
+                        - getTrackBoostScore(a.albumId, a.title, albumBoost, trackBoost);
+        if (boostDiff !== 0) return boostDiff;
+        const albumA = albums.find(al => al.id === a.albumId);
+        const albumB = albums.find(al => al.id === b.albumId);
+        return parseFloat(albumB?.rating || 0) - parseFloat(albumA?.rating || 0);
+    }).slice(0, 10);
+
     // Géneros (de todos sus álbumes, principal y featured)
     const genreSet = new Set();
     artistAlbums.forEach(a => {
@@ -259,6 +271,29 @@ async function loadArtistStats() {
                         <span class="highlight-badge" style="background:${badgeColor}">${formatRating(bestTrack.rating)}</span>
                     </div>
                 </div>
+            </div>`;
+    }
+
+    // Top 10 canciones
+    if (top10Tracks.length > 0) {
+        const rankColors10 = ['#B533FF', '#3366FF', '#66CC33'];
+        const rowsHtml = top10Tracks.map((t, i) => {
+            const color = rankColors10[i] || 'var(--text-muted)';
+            return `
+                <div class="artist-track-row" onclick="window.location.href='album.html?id=${t.albumId}'">
+                    <div class="artist-track-rank" style="color:${color};">${i + 1}</div>
+                    <img class="artist-track-cover" src="${t.albumCover || ''}" alt="${t.albumTitle}" loading="lazy" onerror="this.style.visibility='hidden'">
+                    <div class="artist-track-info">
+                        <div class="artist-track-title">${t.title}</div>
+                        <div class="artist-track-meta">${t.albumTitle}</div>
+                    </div>
+                    <span class="highlight-badge" style="background:${getColorByRating(t.rating)}">${formatRating(t.rating)}</span>
+                </div>`;
+        }).join('');
+        html += `
+            <div class="stat-card col-12">
+                <div class="stat-label">Top 10 canciones</div>
+                ${rowsHtml}
             </div>`;
     }
 

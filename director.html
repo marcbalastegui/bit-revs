@@ -251,6 +251,56 @@
             font-size: 0.9rem;
             font-style: italic;
         }
+
+        /* ── TOP 10 RANKING ─────────────────────────────────────────────── */
+        .dir-rank-row {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 10px 12px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .dir-rank-row:hover { background: var(--bg-secondary); }
+
+        .dir-rank-num {
+            font-size: 1.6rem;
+            font-weight: 900;
+            letter-spacing: -1px;
+            width: 32px;
+            text-align: center;
+            flex-shrink: 0;
+            line-height: 1;
+        }
+
+        .dir-rank-cover {
+            width: 40px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 6px;
+            flex-shrink: 0;
+            border: 1px solid var(--border-color);
+        }
+
+        .dir-rank-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .dir-rank-title {
+            font-size: 0.9rem;
+            font-weight: 800;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .dir-rank-meta {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
     </style>
 </head>
 <body>
@@ -306,7 +356,7 @@
 
     <!-- Mejor película -->
     <div class="director-best-section" id="director-best-section" style="display:none;">
-        <div class="dir-section-title">Mejor película</div>
+        <div class="dir-section-title">Top películas</div>
         <div id="director-best-card"></div>
     </div>
 
