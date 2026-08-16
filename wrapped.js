@@ -307,7 +307,14 @@ async function loadWrapped() {
     if (ratedMovies.length > 0) {
         const totalMovies = ratedMovies.length;
         const movieAvg    = ratedMovies.reduce((s, m) => s + parseFloat(m.rating), 0) / totalMovies;
-        const sortedMovies = [...ratedMovies].sort((a, b) => parseFloat(b.rating) - parseFloat(a.rating));
+        const sortedMovies = [...ratedMovies].sort((a, b) => {
+            const diff = parseFloat(b.rating) - parseFloat(a.rating);
+            if (diff !== 0) return diff;
+            // Desempate: orden manual del usuario (manualRank, menor = mejor)
+            const rankA = a.manualRank != null ? a.manualRank : Infinity;
+            const rankB = b.manualRank != null ? b.manualRank : Infinity;
+            return rankA - rankB;
+        });
         const bestMovie  = sortedMovies[0];
         const worstMovie = sortedMovies[sortedMovies.length - 1];
 
