@@ -6,6 +6,28 @@ let reviewBlocks  = [];
 let reviewTarget  = null;
 let creditsTarget = null;
 let creditsEditMode = false; // false = vista lectura, true = edición
+let trackSortMode = 'default'; // 'default' | 'desc' | 'asc'
+
+function getDisplayTracks() {
+    const indexed = (currentAlbum.tracks || []).map((track, realIndex) => ({ track, realIndex }));
+    if (trackSortMode === 'desc') {
+        return [...indexed].sort((a, b) => {
+            if (a.track.isInterlude && b.track.isInterlude) return 0;
+            if (a.track.isInterlude) return 1;
+            if (b.track.isInterlude) return -1;
+            return parseFloat(b.track.rating || 0) - parseFloat(a.track.rating || 0);
+        });
+    }
+    if (trackSortMode === 'asc') {
+        return [...indexed].sort((a, b) => {
+            if (a.track.isInterlude && b.track.isInterlude) return 0;
+            if (a.track.isInterlude) return 1;
+            if (b.track.isInterlude) return -1;
+            return parseFloat(a.track.rating || 0) - parseFloat(b.track.rating || 0);
+        });
+    }
+    return indexed;
+}
 
 async function loadAlbumDetails() {
     const params  = new URLSearchParams(window.location.search);
@@ -147,26 +169,30 @@ function renderAlbumContent() {
     const albumHasReview  = currentAlbum.review  && currentAlbum.review.length > 0;
     const albumHasCredits = currentAlbum.credits && (currentAlbum.credits.produced || currentAlbum.credits.written);
 
+    const isSorted = trackSortMode !== 'default';
     let tracksHtml = '';
-    currentAlbum.tracks.forEach((track, index) => {
+    getDisplayTracks().forEach(({ track, realIndex }) => {
         const trackColor     = track.isInterlude ? '#4D4D4D' : getColorByRating(track.rating);
         const displayRating  = track.isInterlude ? 'INTERLUDE' : formatRating(track.rating);
         const badgeClass     = track.isInterlude ? 'rating-badge album-tag' : 'rating-badge';
         const trackHasReview = track.review && track.review.length > 0;
         const artistDisplay  = buildTrackArtistDisplay(track);
+        const dragHandle     = isSorted
+            ? `<span class="drag-handle" style="opacity:0.2;cursor:default;" title="Desactiva el orden por nota para reordenar">⠿</span>`
+            : `<span class="drag-handle" title="Arrastra para reordenar">⠿</span>`;
 
         tracksHtml += `
-            <div class="track-item" data-index="${index}">
-                <span class="drag-handle" title="Arrastra para reordenar">⠿</span>
+            <div class="track-item" data-index="${realIndex}">
+                ${dragHandle}
                 <div class="track-info">
                     <h4>${track.title}</h4>
                     <p>${artistDisplay}</p>
                 </div>
                 <div class="track-actions">
-                    <button class="track-review-btn${trackHasReview ? ' has-review' : ''}" onclick="openReview('track', ${index})" title="${trackHasReview ? 'Ver review' : 'Escribir review'}">${reviewPenSVG(trackHasReview)}</button>
-                    <button class="track-credits-btn track-review-btn" onclick="openCredits('track', ${index})" title="Créditos">${creditsSVG(false)}</button>
-                    <button class="track-btn edit"   onclick="editTrack(${index})"   title="Editar">✎</button>
-                    <button class="track-btn delete" onclick="deleteTrack(${index})" title="Borrar">✖</button>
+                    <button class="track-review-btn${trackHasReview ? ' has-review' : ''}" onclick="openReview('track', ${realIndex})" title="${trackHasReview ? 'Ver review' : 'Escribir review'}">${reviewPenSVG(trackHasReview)}</button>
+                    <button class="track-credits-btn track-review-btn" onclick="openCredits('track', ${realIndex})" title="Créditos">${creditsSVG(false)}</button>
+                    <button class="track-btn edit"   onclick="editTrack(${realIndex})"   title="Editar">✎</button>
+                    <button class="track-btn delete" onclick="deleteTrack(${realIndex})" title="Borrar">✖</button>
                 </div>
                 <span class="${badgeClass}" style="background-color: ${trackColor}; font-size: ${track.isInterlude ? '0.7rem' : '1rem'}">${displayRating}</span>
             </div>
@@ -201,16 +227,27 @@ function renderAlbumContent() {
             </div>
         </div>
         <div class="tracklist-section">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; gap:10px;">
                 <h2>Canciones</h2>
-                <button class="btn" style="background-color:var(--text-main); color:var(--bg-primary);" id="btn-add-track">+ Añadir Canción</button>
+                <div style="display:flex; gap:8px; align-items:center;">
+                    <button id="btn-sort-tracks" style="
+                        background:none; border:1px solid var(--border-color); border-radius:8px;
+                        padding:5px 12px; font-family:'Inter',sans-serif; font-size:0.78rem; font-weight:700;
+                        color:${isSorted ? 'var(--accent-red)' : 'var(--text-muted)'}; cursor:pointer;
+                        border-color:${isSorted ? 'var(--accent-red)' : 'var(--border-color)'};
+                        transition:all 0.15s; white-space:nowrap;
+                    ">${trackSortMode === 'default' ? 'Ordenar por nota' : trackSortMode === 'desc' ? 'Nota: alta a baja' : 'Nota: baja a alta'}</button>
+                    <button class="btn" style="background-color:var(--text-main); color:var(--bg-primary);" id="btn-add-track">+ Añadir Canción</button>
+                </div>
             </div>
             <div id="tracks-list">${tracksHtml}</div>
         </div>
         ${buildRatingHistoryHtml()}
     `;
 
-    document.querySelectorAll('.track-item').forEach((el, index) => addDragListeners(el, index));
+    if (!isSorted) {
+        document.querySelectorAll('.track-item').forEach((el, index) => addDragListeners(el, index));
+    }
     document.getElementById('btn-add-track').addEventListener('click', () => {
         editingTrackIndex = null;
         const modalTitle = document.querySelector('#modal-track h2');
@@ -218,6 +255,12 @@ function renderAlbumContent() {
         document.getElementById('track-form').reset();
         document.getElementById('rating-container').style.display = 'block';
         document.getElementById('modal-track').classList.remove('hidden');
+    });
+    document.getElementById('btn-sort-tracks').addEventListener('click', () => {
+        if (trackSortMode === 'default') trackSortMode = 'desc';
+        else if (trackSortMode === 'desc') trackSortMode = 'asc';
+        else trackSortMode = 'default';
+        renderAlbumContent();
     });
 }
 
