@@ -602,8 +602,8 @@ function openCoverZoom() {
         img.id = 'cover-zoom-img';
         img.style.cssText = `
             position:relative; z-index:1;
-            max-width:min(85vw, 560px); max-height:min(85vh, 560px);
-            width:auto; height:auto;
+            width:min(80vmin, 680px); height:min(80vmin, 680px);
+            object-fit:cover;
             border-radius:16px;
             box-shadow:0 32px 80px rgba(0,0,0,0.7);
             transform:scale(0.88); transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1), opacity 0.25s;
