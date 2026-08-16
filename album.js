@@ -588,17 +588,15 @@ function openCoverZoom() {
             position:fixed; inset:0; z-index:9999;
             display:flex; align-items:center; justify-content:center;
             cursor:zoom-out; opacity:0; transition:opacity 0.25s;
+            background:rgba(0,0,0,0.35);
+            backdrop-filter:blur(18px);
+            -webkit-backdrop-filter:blur(18px);
         `;
 
-        // Fondo borroso con la portada de fondo
+        // Elemento vacío para mantener estructura (ya no se usa como fondo)
         const bg = document.createElement('div');
         bg.id = 'cover-zoom-bg';
-        bg.style.cssText = `
-            position:absolute; inset:0;
-            background-size:cover; background-position:center;
-            filter:blur(40px) brightness(0.35) saturate(1.4);
-            transform:scale(1.1);
-        `;
+        bg.style.cssText = `display:none;`;
 
         const img = document.createElement('img');
         img.id = 'cover-zoom-img';
