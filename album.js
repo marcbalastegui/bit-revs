@@ -204,7 +204,7 @@ function renderAlbumContent() {
 
     container.innerHTML = `
         <div class="album-header-banner">
-            <img src="${currentAlbum.coverBase64}" alt="${currentAlbum.title}" class="detail-cover">
+            <img src="${currentAlbum.coverBase64}" alt="${currentAlbum.title}" class="detail-cover" onclick="openCoverZoom()" style="cursor:zoom-in;" title="Ver portada">
             <div class="detail-info">
                 <span class="detail-type">${typeText} • ${currentAlbum.year}</span>
                 <h1 class="detail-title">${currentAlbum.title}</h1>
@@ -574,5 +574,76 @@ document.addEventListener('click', (e) => {
     // Click fuera → cierra todos
     document.querySelectorAll('.history-popover').forEach(p => p.classList.add('hidden'));
 });
+
+// ── ZOOM DE PORTADA ───────────────────────────────────────────────────────
+function openCoverZoom() {
+    if (!currentAlbum?.coverBase64) return;
+
+    // Crear overlay si no existe
+    let overlay = document.getElementById('cover-zoom-overlay');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'cover-zoom-overlay';
+        overlay.style.cssText = `
+            position:fixed; inset:0; z-index:9999;
+            display:flex; align-items:center; justify-content:center;
+            cursor:zoom-out; opacity:0; transition:opacity 0.25s;
+        `;
+
+        // Fondo borroso con la portada de fondo
+        const bg = document.createElement('div');
+        bg.id = 'cover-zoom-bg';
+        bg.style.cssText = `
+            position:absolute; inset:0;
+            background-size:cover; background-position:center;
+            filter:blur(40px) brightness(0.35) saturate(1.4);
+            transform:scale(1.1);
+        `;
+
+        const img = document.createElement('img');
+        img.id = 'cover-zoom-img';
+        img.style.cssText = `
+            position:relative; z-index:1;
+            max-width:min(85vw, 560px); max-height:min(85vh, 560px);
+            width:auto; height:auto;
+            border-radius:16px;
+            box-shadow:0 32px 80px rgba(0,0,0,0.7);
+            transform:scale(0.88); transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1), opacity 0.25s;
+            opacity:0;
+        `;
+
+        overlay.appendChild(bg);
+        overlay.appendChild(img);
+        document.body.appendChild(overlay);
+
+        overlay.addEventListener('click', closeCoverZoom);
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeCoverZoom(); });
+    }
+
+    const bg  = document.getElementById('cover-zoom-bg');
+    const img = document.getElementById('cover-zoom-img');
+    bg.style.backgroundImage  = `url(${currentAlbum.coverBase64})`;
+    img.src = currentAlbum.coverBase64;
+    img.alt = currentAlbum.title;
+
+    overlay.style.display = 'flex';
+    requestAnimationFrame(() => {
+        overlay.style.opacity = '1';
+        img.style.opacity     = '1';
+        img.style.transform   = 'scale(1)';
+    });
+
+    document.body.style.overflow = 'hidden';
+}
+
+function closeCoverZoom() {
+    const overlay = document.getElementById('cover-zoom-overlay');
+    const img     = document.getElementById('cover-zoom-img');
+    if (!overlay) return;
+    overlay.style.opacity = '0';
+    if (img) { img.style.opacity = '0'; img.style.transform = 'scale(0.88)'; }
+    setTimeout(() => { overlay.style.display = 'none'; }, 250);
+    document.body.style.overflow = '';
+}
 
 loadAlbumDetails();
