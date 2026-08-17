@@ -67,16 +67,26 @@ async function getArtistGenres(artistId) {
 }
 
 // Lista completa de pistas de un álbum (hasta 50).
+// Separa artistas invitados del título: t.artists[0] = artista principal, resto = featurings.
 async function getAlbumTracks(spotifyId) {
     if (!spotifyId) return [];
     try {
         const data = await spotifyFetch(`/albums/${spotifyId}/tracks?limit=50`);
-        return (data.items || []).map(t => ({
-            title: t.name || '',
-            artist: '',
-            isInterlude: false,
-            rating: ''
-        }));
+        return (data.items || []).map(t => {
+            // Artistas invitados = todos excepto el primero (artista del álbum)
+            const featured = (t.artists || []).slice(1).map(a => a.name).join(', ');
+            // Limpiar "(feat. X)", "(ft. X)", "(with X)", "(featuring X)" del título
+            const cleanTitle = (t.name || '')
+                .replace(/\s*[\(\[]\s*(feat\.?|ft\.?|featuring|with)\s+[^\)\]]+[\)\]]/gi, '')
+                .replace(/\s*[-–]\s*(feat\.?|ft\.?|featuring|with)\s+.+$/gi, '')
+                .trim();
+            return {
+                title: cleanTitle,
+                artist: featured,
+                isInterlude: false,
+                rating: ''
+            };
+        });
     } catch { return []; }
 }
 
