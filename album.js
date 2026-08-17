@@ -52,8 +52,8 @@ function recalculateAlbumRating(recordHistory = false, trackChange = null) {
         if (!t.isInterlude && !isNaN(parseFloat(t.rating))) { total += parseFloat(t.rating); count++; }
     });
     const newRating = count === 0 ? 0 : parseFloat((total / count).toFixed(1));
-    const ratingActuallyChanged = prevRating > 0 && count > 0 && newRating !== prevRating;
-    if (recordHistory && (trackChange || ratingActuallyChanged)) {
+    // Solo registrar si hubo un cambio real en una canción ya puntuada (trackChange lo garantiza)
+    if (recordHistory && trackChange) {
         if (!currentAlbum.ratingHistory) currentAlbum.ratingHistory = [];
         currentAlbum.ratingHistory.push({
             date: new Date().toISOString(),
