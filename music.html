@@ -33,6 +33,14 @@
     </nav>
     <div class="header-right">
         <button style="visibility:hidden;" class="save-btn">+</button>
+        <button type="button" id="spotify-connect-btn" class="spotify-connect-btn" title="Conectar Spotify">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="9"/>
+                <path d="M7.5 10.3c3-1 6.2-1 9.2.2"/>
+                <path d="M8 13.4c2.5-.8 5-.8 7.4.1"/>
+                <path d="M8.6 16.3c1.8-.5 3.6-.5 5.3.1"/>
+            </svg>
+        </button>
         <a href="profile.html" class="header-avatar" id="global-header-avatar" title="Mi Perfil">U</a>
     </div>
 </header>
@@ -77,6 +85,19 @@
 <div id="modal-add" class="modal hidden">
     <div class="modal-content">
         <h2>Nueva Reseña</h2>
+
+        <div id="spotify-suggestions" class="spotify-suggestions hidden">
+            <div class="spotify-suggestions-header">
+                <div class="spotify-tabs">
+                    <button type="button" class="spotify-tab active" data-tab="top">Más escuchados</button>
+                    <button type="button" class="spotify-tab" data-tab="recent">Recientes</button>
+                </div>
+            </div>
+            <input type="text" id="spotify-search-input" class="spotify-search-input" placeholder="Buscar en Spotify...">
+            <div id="spotify-suggestions-grid" class="spotify-suggestions-grid"></div>
+            <div id="spotify-suggestions-status" class="spotify-suggestions-status"></div>
+        </div>
+
         <form id="album-form">
             <label for="cover">Portada:</label>
             <input type="file" id="cover" accept="image/*" required>
@@ -125,6 +146,8 @@
 <script src="auth-guard.js"></script>
 <script src="bitrevs-ui.js"></script>
 <script src="db.js"></script>
+<script src="spotify-auth.js"></script>
+<script src="spotify-api.js"></script>
 <script src="script.js"></script>
 </body>
 </html>

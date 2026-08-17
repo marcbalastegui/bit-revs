@@ -6,6 +6,11 @@ const btnCancel   = document.getElementById('btn-cancel');
 const albumForm   = document.getElementById('album-form');
 let editingAlbumId = null;
 
+// Estado de las sugerencias de Spotify en el modal (ver sección "SPOTIFY" al final del archivo)
+let spotifySelectedCoverBase64 = null;
+let spotifyActiveTab = 'top';
+let spotifySearchDebounceTimer = null;
+
 // ── GÉNEROS PREDEFINIDOS ──────────────────────────────────────────────────
 const GENRES_PREDEFINED = [
     'Rap/Hip-Hop', 'Pop', 'R&B/Soul', 'Rock',
@@ -84,6 +89,12 @@ window.editAlbum = async function(event, id) {
 
     document.querySelector('#modal-add .modal-content h2').textContent = "Editar";
     document.getElementById('cover').removeAttribute('required');
+
+    // Las sugerencias de Spotify solo tienen sentido al crear una reseña nueva
+    const spotifySuggestionsEl = document.getElementById('spotify-suggestions');
+    if (spotifySuggestionsEl) spotifySuggestionsEl.classList.add('hidden');
+    spotifySelectedCoverBase64 = null;
+
     modalAdd.classList.remove('hidden');
 };
 
@@ -99,6 +110,7 @@ if (btnAddAlbum && modalAdd) {
         document.getElementById('featured-artists').value = '';
         const rdEl = document.getElementById('review-date');
         if (rdEl) rdEl.value = '';
+        resetSpotifySuggestions();
         modalAdd.classList.remove('hidden');
     });
 }
@@ -107,6 +119,7 @@ if (btnCancel && modalAdd) {
     btnCancel.addEventListener('click', () => {
         modalAdd.classList.add('hidden');
         if (albumForm) albumForm.reset();
+        spotifySelectedCoverBase64 = null;
     });
 }
 
@@ -148,6 +161,10 @@ if (albumForm) {
                 await finalizeSave(albumToSave);
             };
             reader.readAsDataURL(file);
+        } else if (spotifySelectedCoverBase64) {
+            // Portada elegida desde las sugerencias de Spotify (ver sección "SPOTIFY")
+            albumToSave.coverBase64 = spotifySelectedCoverBase64;
+            await finalizeSave(albumToSave);
         } else {
             await finalizeSave(albumToSave);
         }
@@ -159,6 +176,7 @@ async function finalizeSave(album) {
         await saveAlbumToDB(album);
         if (albumForm) albumForm.reset();
         modalAdd.classList.add('hidden');
+        spotifySelectedCoverBase64 = null;
         await processAndRenderAlbums();
     } catch (error) {
         await brAlert("Error al guardar: " + error, "Error");
@@ -362,3 +380,207 @@ window.addAlbumToCollection = async function(event, albumId) {
     event.stopPropagation();
     window.location.href = `collections.html?add=album_${albumId}`;
 };
+
+// ═══════════════════════════════════════════════════════════════════════
+// SPOTIFY — botón de conexión en el header + sugerencias en el modal
+// Depende de spotify-auth.js y spotify-api.js (cargados antes que este archivo).
+// No toca saveAlbumToDB ni processAndRenderAlbums: solo rellena el formulario.
+// ═══════════════════════════════════════════════════════════════════════
+
+// ── Botón "Conectar Spotify" del header ───────────────────────────────────
+function updateSpotifyHeaderButton() {
+    const btn = document.getElementById('spotify-connect-btn');
+    if (!btn) return;
+    const connected = typeof isSpotifyConnected === 'function' && isSpotifyConnected();
+    btn.classList.toggle('connected', connected);
+    btn.title = connected ? 'Conectado con Spotify' : 'Conectar Spotify';
+}
+
+const spotifyConnectBtn = document.getElementById('spotify-connect-btn');
+if (spotifyConnectBtn) {
+    spotifyConnectBtn.addEventListener('click', async () => {
+        const connected = typeof isSpotifyConnected === 'function' && isSpotifyConnected();
+        if (connected) {
+            const doDisconnect = typeof brConfirm === 'function'
+                ? await brConfirm('Se cerrará la conexión con tu cuenta de Spotify en este navegador.', 'Desconectar Spotify')
+                : confirm('¿Desconectar Spotify?');
+            if (doDisconnect) {
+                spotifyLogout();
+                updateSpotifyHeaderButton();
+                const spotifySuggestionsEl = document.getElementById('spotify-suggestions');
+                if (spotifySuggestionsEl) spotifySuggestionsEl.classList.add('hidden');
+            }
+        } else if (typeof spotifyLogin === 'function') {
+            spotifyLogin();
+        }
+    });
+}
+
+// ── Callback OAuth: si la URL trae ?code=..., completar el login ─────────
+(async () => {
+    if (window.location.search.includes('code=') && typeof handleSpotifyCallback === 'function') {
+        await handleSpotifyCallback();
+    }
+    updateSpotifyHeaderButton();
+})();
+
+// ── Sugerencias en el modal de añadir álbum ───────────────────────────────
+
+function resetSpotifySuggestions() {
+    spotifySelectedCoverBase64 = null;
+    spotifyActiveTab = 'top';
+
+    const section = document.getElementById('spotify-suggestions');
+    if (!section) return;
+
+    const connected = typeof isSpotifyConnected === 'function' && isSpotifyConnected();
+    section.classList.toggle('hidden', !connected);
+    if (!connected) return;
+
+    const searchInput = document.getElementById('spotify-search-input');
+    if (searchInput) searchInput.value = '';
+
+    document.querySelectorAll('.spotify-tab').forEach(tab => {
+        tab.classList.toggle('active', tab.dataset.tab === 'top');
+    });
+
+    loadSpotifySuggestions('top');
+}
+
+document.querySelectorAll('.spotify-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+        document.querySelectorAll('.spotify-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        spotifyActiveTab = tab.dataset.tab;
+
+        const searchInput = document.getElementById('spotify-search-input');
+        if (searchInput) searchInput.value = '';
+
+        loadSpotifySuggestions(spotifyActiveTab);
+    });
+});
+
+async function loadSpotifySuggestions(kind) {
+    const grid = document.getElementById('spotify-suggestions-grid');
+    const status = document.getElementById('spotify-suggestions-status');
+    if (!grid || !status) return;
+
+    grid.innerHTML = '';
+    status.textContent = 'Cargando...';
+
+    try {
+        const albums = kind === 'recent'
+            ? await getRecentAlbums(12)
+            : await getTopAlbums(12);
+
+        renderSpotifyAlbumGrid(albums);
+        status.textContent = albums.length === 0 ? 'No se encontraron álbumes.' : '';
+    } catch (err) {
+        console.error('spotify: error al cargar sugerencias:', err);
+        status.textContent = 'No se pudieron cargar las sugerencias de Spotify.';
+    }
+}
+
+function renderSpotifyAlbumGrid(albums) {
+    const grid = document.getElementById('spotify-suggestions-grid');
+    if (!grid) return;
+    grid.innerHTML = '';
+
+    albums.slice(0, 12).forEach(album => {
+        const item = document.createElement('div');
+        item.className = 'spotify-suggestion-item';
+        item.innerHTML = `
+            <img class="spotify-suggestion-cover" src="${album.coverUrl}" alt="${album.title || ''}" loading="lazy">
+            <div class="spotify-suggestion-title">${album.title || 'Sin título'}</div>
+            <div class="spotify-suggestion-artist">${album.artist || ''}</div>
+        `;
+        item.addEventListener('click', () => selectSpotifyAlbum(album, item));
+        grid.appendChild(item);
+    });
+}
+
+async function selectSpotifyAlbum(album, itemEl) {
+    const status = document.getElementById('spotify-suggestions-status');
+
+    document.querySelectorAll('.spotify-suggestion-item').forEach(el => el.classList.remove('selected'));
+    if (itemEl) itemEl.classList.add('selected');
+
+    const titleEl  = document.getElementById('title');
+    const artistEl = document.getElementById('artist');
+    const yearEl   = document.getElementById('year');
+    if (titleEl)  titleEl.value  = album.title || '';
+    if (artistEl) artistEl.value = album.artist || '';
+    if (yearEl && album.year)    yearEl.value  = album.year;
+
+    if (!album.coverUrl) return;
+
+    // Al elegir una portada de Spotify, se limpia el selector de archivo local
+    // para que el envío del formulario use esta portada.
+    const coverInput = document.getElementById('cover');
+    if (coverInput) {
+        coverInput.value = '';
+        coverInput.removeAttribute('required');
+    }
+
+    if (status) status.textContent = 'Descargando portada...';
+    try {
+        spotifySelectedCoverBase64 = await spotifyFetchImageAsBase64(album.coverUrl);
+        if (status) status.textContent = `Portada de "${album.title || ''}" lista para guardar.`;
+    } catch (err) {
+        console.error('spotify: no se pudo descargar la portada:', err);
+        spotifySelectedCoverBase64 = null;
+        if (coverInput) coverInput.setAttribute('required', 'true');
+        if (status) status.textContent = 'No se pudo descargar la portada, súbela manualmente.';
+    }
+}
+
+function spotifyFetchImageAsBase64(url) {
+    return fetch(url)
+        .then(res => res.blob())
+        .then(blob => new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+        }));
+}
+
+// Si el usuario elige un archivo local manualmente, tiene prioridad sobre
+// la portada de Spotify seleccionada previamente.
+const spotifyCoverInputEl = document.getElementById('cover');
+if (spotifyCoverInputEl) {
+    spotifyCoverInputEl.addEventListener('change', () => {
+        if (spotifyCoverInputEl.files && spotifyCoverInputEl.files[0]) {
+            spotifySelectedCoverBase64 = null;
+            document.querySelectorAll('.spotify-suggestion-item').forEach(el => el.classList.remove('selected'));
+        }
+    });
+}
+
+// ── Buscador de Spotify (debounce 400ms) ──────────────────────────────────
+const spotifySearchInputEl = document.getElementById('spotify-search-input');
+if (spotifySearchInputEl) {
+    spotifySearchInputEl.addEventListener('input', () => {
+        clearTimeout(spotifySearchDebounceTimer);
+        const query = spotifySearchInputEl.value.trim();
+
+        spotifySearchDebounceTimer = setTimeout(async () => {
+            if (query === '') {
+                loadSpotifySuggestions(spotifyActiveTab);
+                return;
+            }
+
+            const status = document.getElementById('spotify-suggestions-status');
+            if (status) status.textContent = 'Buscando...';
+
+            try {
+                const results = await searchSpotifyAlbum(query);
+                renderSpotifyAlbumGrid(results);
+                if (status) status.textContent = results.length === 0 ? 'Sin resultados.' : '';
+            } catch (err) {
+                console.error('spotify: error en la búsqueda:', err);
+                if (status) status.textContent = 'Error al buscar en Spotify.';
+            }
+        }, 400);
+    });
+}

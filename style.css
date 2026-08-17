@@ -763,3 +763,62 @@ div.album-tag {
     transform: translateY(-4px);
     box-shadow: 0 8px 24px rgba(0,0,0,0.08);
 }
+
+/* ── SPOTIFY ── */
+.spotify-connect-btn {
+    width: 38px; height: 38px; border-radius: 50%;
+    border: 1px solid var(--border-color); background: var(--bg-secondary);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; color: var(--text-muted); transition: all 0.2s; flex-shrink: 0;
+}
+.spotify-connect-btn svg { width: 18px; height: 18px; }
+.spotify-connect-btn:hover { border-color: #1DB954; color: #1DB954; }
+.spotify-connect-btn.connected { color: #1DB954; border-color: #1DB954; background: rgba(29,185,84,0.08); }
+
+.spotify-suggestions {
+    background: var(--bg-secondary); border: 1px solid var(--border-color);
+    border-radius: 14px; padding: 16px; margin-bottom: 20px;
+}
+.spotify-suggestions-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.spotify-tabs { display: flex; gap: 8px; }
+.spotify-tab {
+    background: none; border: 1px solid var(--border-color); border-radius: 20px;
+    padding: 6px 14px; font-size: 0.78rem; font-weight: 700; color: var(--text-muted);
+    cursor: pointer; font-family: 'Inter', sans-serif; transition: all 0.15s;
+}
+.spotify-tab:hover { border-color: #1DB954; color: #1DB954; }
+.spotify-tab.active { background: #1DB954; border-color: #1DB954; color: white; }
+
+.spotify-search-input {
+    width: 100%; padding: 10px 14px; border-radius: 10px;
+    border: 1px solid var(--border-color); background: white; color: var(--text-main);
+    font-family: 'Inter', sans-serif; font-size: 0.9rem; margin-bottom: 12px;
+}
+.spotify-search-input:focus { outline: none; border-color: #1DB954; }
+
+.spotify-suggestions-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+    gap: 10px; max-height: 260px; overflow-y: auto;
+}
+.spotify-suggestion-item {
+    cursor: pointer; border-radius: 10px; padding: 4px;
+    border: 1.5px solid transparent; transition: border-color 0.15s, background 0.15s;
+    text-align: center;
+}
+.spotify-suggestion-item:hover { border-color: #1DB954; background: rgba(29,185,84,0.06); }
+.spotify-suggestion-item.selected { border-color: #1DB954; background: rgba(29,185,84,0.1); }
+.spotify-suggestion-cover {
+    width: 100%; aspect-ratio: 1/1; object-fit: cover; border-radius: 8px;
+    background: var(--border-color); margin-bottom: 6px; display: block;
+}
+.spotify-suggestion-title {
+    font-size: 0.72rem; font-weight: 700; color: var(--text-main);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.spotify-suggestion-artist {
+    font-size: 0.68rem; color: var(--text-muted);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.spotify-suggestions-status {
+    font-size: 0.8rem; color: var(--text-muted); padding: 10px 4px; text-align: center;
+}
