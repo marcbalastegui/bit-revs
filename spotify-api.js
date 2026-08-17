@@ -38,6 +38,7 @@ function spotifyMapTrackToAlbum(track) {
         artist: (album.artists || []).map(a => a.name).join(', '),
         year: spotifyExtractYear(album.release_date),
         coverUrl: (album.images && album.images[0]) ? album.images[0].url : '',
+        albumType: album.album_type || 'album',
         tracks: [{ title: track.name, duration_ms: track.duration_ms }]
     };
 }
@@ -49,46 +50,31 @@ function spotifyMapAlbumObject(album) {
         artist: (album.artists || []).map(a => a.name).join(', '),
         year: spotifyExtractYear(album.release_date),
         coverUrl: (album.images && album.images[0]) ? album.images[0].url : '',
+        albumType: album.album_type || 'album',
         tracks: []
     };
 }
 
 // Álbumes más escuchados, calculados a partir de las canciones más escuchadas
 // del usuario (Spotify no da "top albums" directamente).
-// Álbumes más escuchados por minutos estimados.
-// Spotify no da play counts reales, así que estimamos:
-//   peso de cada canción = (51 - posición_en_top50)   → la #1 vale 50, la #50 vale 1
-//   minutos_estimados    = peso × duración_en_minutos
-// Sumamos eso por álbum y ordenamos de mayor a menor.
-async function getTopAlbums(limit = 20) {
-    const data = await spotifyFetch('/me/top/tracks?limit=50&time_range=medium_term');
+// Álbumes guardados (liked) por el usuario, ordenados por fecha de guardado (más reciente primero).
+async function getLikedAlbums(limit = 50) {
+    const data = await spotifyFetch(`/me/albums?limit=${Math.min(limit, 50)}`);
     const items = data.items || [];
-
-    const albumsById = new Map();
-
-    items.forEach((track, idx) => {
-        if (!track.album) return;
-        const id = track.album.id;
-        const weight = 51 - idx;                          // posición → peso
-        const mins   = (track.duration_ms || 0) / 60000;  // duración en minutos
-
-        if (!albumsById.has(id)) {
-            const mapped = spotifyMapTrackToAlbum(track);
-            mapped._score    = weight;
-            mapped._listenMins = weight * mins;
-            albumsById.set(id, mapped);
-        } else {
-            const existing = albumsById.get(id);
-            existing._score      += weight;
-            existing._listenMins += weight * mins;
-            existing.tracks.push({ title: track.name, duration_ms: track.duration_ms });
-        }
+    return items.map(item => {
+        const album = item.album || {};
+        return {
+            spotifyId: album.id,
+            title: album.name,
+            artist: (album.artists || []).map(a => a.name).join(', '),
+            year: spotifyExtractYear(album.release_date),
+            coverUrl: (album.images && album.images[0]) ? album.images[0].url : '',
+            albumType: album.album_type || 'album',
+            tracks: (album.tracks && album.tracks.items)
+                ? album.tracks.items.map(t => ({ title: t.name, duration_ms: t.duration_ms }))
+                : []
+        };
     });
-
-    return Array.from(albumsById.values())
-        .sort((a, b) => b._score - a._score)
-        .slice(0, limit)
-        .map(({ _score, _listenMins, ...album }) => ({ ...album, listenMins: Math.round(_listenMins) }));
 }
 
 // Álbumes de las canciones reproducidas recientemente, deduplicados.

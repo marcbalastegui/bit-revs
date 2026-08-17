@@ -17,7 +17,8 @@ const SPOTIFY_REDIRECT_URI = window.location.origin + window.location.pathname;
 
 const SPOTIFY_SCOPES = [
     'user-top-read',
-    'user-read-recently-played'
+    'user-read-recently-played',
+    'user-library-read'
 ].join(' ');
 
 const SPOTIFY_AUTH_ENDPOINT = 'https://accounts.spotify.com/authorize';

@@ -789,6 +789,15 @@ div.album-tag {
 .spotify-tab:hover { border-color: #1DB954; color: #1DB954; }
 .spotify-tab.active { background: #1DB954; border-color: #1DB954; color: white; }
 
+.spotify-type-tabs { display: flex; gap: 6px; margin-bottom: 10px; }
+.spotify-type-tab {
+    background: none; border: 1px solid var(--border-color); border-radius: 16px;
+    padding: 4px 12px; font-size: 0.73rem; font-weight: 700; color: var(--text-muted);
+    cursor: pointer; font-family: 'Inter', sans-serif; transition: all 0.15s;
+}
+.spotify-type-tab:hover { border-color: var(--text-main); color: var(--text-main); }
+.spotify-type-tab.active { background: var(--text-main); border-color: var(--text-main); color: white; }
+
 .spotify-search-input {
     width: 100%; padding: 10px 14px; border-radius: 10px;
     border: 1px solid var(--border-color); background: white; color: var(--text-main);

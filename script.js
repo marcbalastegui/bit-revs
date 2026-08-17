@@ -8,7 +8,8 @@ let editingAlbumId = null;
 
 // Estado de las sugerencias de Spotify en el modal (ver sección "SPOTIFY" al final del archivo)
 let spotifySelectedCoverBase64 = null;
-let spotifyActiveTab = 'top';
+let spotifyActiveTab = 'liked';
+let spotifyTypeFilter = 'album';
 let spotifySearchDebounceTimer = null;
 
 // ── GÉNEROS PREDEFINIDOS ──────────────────────────────────────────────────
@@ -428,7 +429,8 @@ if (spotifyConnectBtn) {
 
 function resetSpotifySuggestions() {
     spotifySelectedCoverBase64 = null;
-    spotifyActiveTab = 'top';
+    spotifyActiveTab = 'liked';
+    spotifyTypeFilter = 'album';
 
     const section = document.getElementById('spotify-suggestions');
     if (!section) return;
@@ -441,10 +443,13 @@ function resetSpotifySuggestions() {
     if (searchInput) searchInput.value = '';
 
     document.querySelectorAll('.spotify-tab').forEach(tab => {
-        tab.classList.toggle('active', tab.dataset.tab === 'top');
+        tab.classList.toggle('active', tab.dataset.tab === 'liked');
+    });
+    document.querySelectorAll('.spotify-type-tab').forEach(tab => {
+        tab.classList.toggle('active', tab.dataset.type === 'album');
     });
 
-    loadSpotifySuggestions('top');
+    loadSpotifySuggestions('liked');
 }
 
 document.querySelectorAll('.spotify-tab').forEach(tab => {
@@ -460,6 +465,22 @@ document.querySelectorAll('.spotify-tab').forEach(tab => {
     });
 });
 
+document.querySelectorAll('.spotify-type-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+        document.querySelectorAll('.spotify-type-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        spotifyTypeFilter = tab.dataset.type;
+
+        const searchInput = document.getElementById('spotify-search-input');
+        if (searchInput && searchInput.value.trim()) {
+            // Si hay búsqueda activa, refiltrar sin recargar
+            renderSpotifyAlbumGrid(window._spotifyLastResults || []);
+        } else {
+            loadSpotifySuggestions(spotifyActiveTab);
+        }
+    });
+});
+
 async function loadSpotifySuggestions(kind) {
     const grid = document.getElementById('spotify-suggestions-grid');
     const status = document.getElementById('spotify-suggestions-status');
@@ -470,16 +491,17 @@ async function loadSpotifySuggestions(kind) {
 
     try {
         let albums = kind === 'recent'
-            ? await getRecentAlbums(18)
-            : await getTopAlbums(18);
+            ? await getRecentAlbums(50)
+            : await getLikedAlbums(50);
 
-        // Filtrar álbumes ya reviewados (por título, sin distinguir mayúsculas)
+        // Filtrar ya reviewados (por título, sin distinguir mayúsculas)
         const reviewed = await getAllAlbumsFromDB();
         const reviewedTitles = new Set(
             reviewed.map(a => (a.title || '').trim().toLowerCase())
         );
         albums = albums.filter(a => !reviewedTitles.has((a.title || '').trim().toLowerCase()));
 
+        window._spotifyLastResults = albums;
         renderSpotifyAlbumGrid(albums);
         status.textContent = albums.length === 0 ? 'No hay álbumes nuevos para añadir.' : '';
     } catch (err) {
@@ -507,13 +529,24 @@ function renderSpotifyAlbumGrid(albums) {
     if (!grid) return;
     grid.innerHTML = '';
 
-    albums.slice(0, 18).forEach(album => {
+    // Filtrar por tipo: 'album' → album/compilation; 'single' → single/ep
+    const typeFiltered = albums.filter(a => {
+        const t = (a.albumType || 'album').toLowerCase();
+        if (spotifyTypeFilter === 'single') return t === 'single' || t === 'ep';
+        return t === 'album' || t === 'compilation';
+    });
+
+    if (typeFiltered.length === 0) {
+        const status = document.getElementById('spotify-suggestions-status');
+        if (status) status.textContent = 'No hay resultados para este filtro.';
+        return;
+    }
+
+    typeFiltered.slice(0, 18).forEach(album => {
         const item = document.createElement('div');
         item.className = 'spotify-suggestion-item';
         let statHtml = '';
-        if (album.listenMins != null) {
-            statHtml = `<div class="spotify-suggestion-stat">~${album.listenMins}min</div>`;
-        } else if (album.playedAt) {
+        if (album.playedAt) {
             statHtml = `<div class="spotify-suggestion-stat">${spotifyRelativeTime(album.playedAt)}</div>`;
         }
         item.innerHTML = `
@@ -603,6 +636,7 @@ if (spotifySearchInputEl) {
 
             try {
                 const results = await searchSpotifyAlbum(query);
+                window._spotifyLastResults = results;
                 renderSpotifyAlbumGrid(results);
                 if (status) status.textContent = results.length === 0 ? 'Sin resultados.' : '';
             } catch (err) {
