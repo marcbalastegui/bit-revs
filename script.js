@@ -469,12 +469,19 @@ async function loadSpotifySuggestions(kind) {
     status.textContent = 'Cargando...';
 
     try {
-        const albums = kind === 'recent'
+        let albums = kind === 'recent'
             ? await getRecentAlbums(18)
             : await getTopAlbums(18);
 
+        // Filtrar álbumes ya reviewados (por título, sin distinguir mayúsculas)
+        const reviewed = await getAllAlbumsFromDB();
+        const reviewedTitles = new Set(
+            reviewed.map(a => (a.title || '').trim().toLowerCase())
+        );
+        albums = albums.filter(a => !reviewedTitles.has((a.title || '').trim().toLowerCase()));
+
         renderSpotifyAlbumGrid(albums);
-        status.textContent = albums.length === 0 ? 'No se encontraron álbumes.' : '';
+        status.textContent = albums.length === 0 ? 'No hay álbumes nuevos para añadir.' : '';
     } catch (err) {
         console.error('spotify: error al cargar sugerencias:', err);
         status.textContent = 'No se pudieron cargar las sugerencias de Spotify.';

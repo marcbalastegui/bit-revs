@@ -139,3 +139,45 @@ window.brAlert = function(message, title = 'BitRevs') {
 window.brConfirm = function(message, title = '¿Estás seguro?') {
     return brShowDialog(title, message, true);
 };
+
+// ── SPOTIFY BUTTON (todas las páginas) ───────────────────────────────────
+(function injectSpotifyHeaderBtn() {
+    const SPOTIFY_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="9"/>
+        <path d="M7.5 10.3c3-1 6.2-1 9.2.2"/>
+        <path d="M8 13.4c2.5-.8 5-.8 7.4.1"/>
+        <path d="M8.6 16.3c1.8-.5 3.6-.5 5.3.1"/>
+    </svg>`;
+
+    function spotifyIsConnected() {
+        return !!(localStorage.getItem('spotify_refresh_token') || localStorage.getItem('spotify_access_token'));
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const connected = spotifyIsConnected();
+        const existing = document.getElementById('spotify-connect-btn');
+
+        if (existing) {
+            // music.html ya tiene el botón — solo actualizar estado visual
+            existing.classList.toggle('connected', connected);
+            existing.title = connected ? 'Spotify conectado' : 'Conectar Spotify';
+            return;
+        }
+
+        // Resto de páginas — inyectar
+        const headerRight = document.querySelector('.header-right');
+        if (!headerRight) return;
+
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.id = 'spotify-connect-btn';
+        btn.className = 'spotify-connect-btn' + (connected ? ' connected' : '');
+        btn.title = connected ? 'Spotify conectado' : 'Conectar Spotify';
+        btn.innerHTML = SPOTIFY_SVG;
+        btn.addEventListener('click', () => { window.location.href = 'music.html'; });
+
+        const avatar = headerRight.querySelector('.header-avatar');
+        if (avatar) headerRight.insertBefore(btn, avatar);
+        else headerRight.appendChild(btn);
+    });
+})();
