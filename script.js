@@ -511,8 +511,8 @@ function renderSpotifyAlbumGrid(albums) {
         const item = document.createElement('div');
         item.className = 'spotify-suggestion-item';
         let statHtml = '';
-        if (album.playCount != null) {
-            statHtml = `<div class="spotify-suggestion-stat">${album.playCount} ${album.playCount === 1 ? 'canción' : 'canciones'} en top</div>`;
+        if (album.listenMins != null) {
+            statHtml = `<div class="spotify-suggestion-stat">~${album.listenMins}min</div>`;
         } else if (album.playedAt) {
             statHtml = `<div class="spotify-suggestion-stat">${spotifyRelativeTime(album.playedAt)}</div>`;
         }
