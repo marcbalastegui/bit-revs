@@ -36,6 +36,7 @@ function spotifyMapTrackToAlbum(track) {
         spotifyId: album.id,
         title: album.name,
         artist: (album.artists || []).map(a => a.name).join(', '),
+        artistId: (album.artists && album.artists[0]) ? album.artists[0].id : null,
         year: spotifyExtractYear(album.release_date),
         coverUrl: (album.images && album.images[0]) ? album.images[0].url : '',
         albumType: album.album_type || 'album',
@@ -48,11 +49,35 @@ function spotifyMapAlbumObject(album) {
         spotifyId: album.id,
         title: album.name,
         artist: (album.artists || []).map(a => a.name).join(', '),
+        artistId: (album.artists && album.artists[0]) ? album.artists[0].id : null,
         year: spotifyExtractYear(album.release_date),
         coverUrl: (album.images && album.images[0]) ? album.images[0].url : '',
         albumType: album.album_type || 'album',
         tracks: []
     };
+}
+
+// Géneros del artista principal de un álbum.
+async function getArtistGenres(artistId) {
+    if (!artistId) return [];
+    try {
+        const data = await spotifyFetch(`/artists/${artistId}`);
+        return data.genres || [];
+    } catch { return []; }
+}
+
+// Lista completa de pistas de un álbum (hasta 50).
+async function getAlbumTracks(spotifyId) {
+    if (!spotifyId) return [];
+    try {
+        const data = await spotifyFetch(`/albums/${spotifyId}/tracks?limit=50`);
+        return (data.items || []).map(t => ({
+            title: t.name || '',
+            artist: '',
+            isInterlude: false,
+            rating: ''
+        }));
+    } catch { return []; }
 }
 
 // Álbumes más escuchados, calculados a partir de las canciones más escuchadas
@@ -67,12 +92,11 @@ async function getLikedAlbums(limit = 50) {
             spotifyId: album.id,
             title: album.name,
             artist: (album.artists || []).map(a => a.name).join(', '),
+            artistId: (album.artists && album.artists[0]) ? album.artists[0].id : null,
             year: spotifyExtractYear(album.release_date),
             coverUrl: (album.images && album.images[0]) ? album.images[0].url : '',
             albumType: album.album_type || 'album',
-            tracks: (album.tracks && album.tracks.items)
-                ? album.tracks.items.map(t => ({ title: t.name, duration_ms: t.duration_ms }))
-                : []
+            tracks: []
         };
     });
 }

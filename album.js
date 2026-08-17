@@ -477,7 +477,8 @@ document.getElementById('track-form').addEventListener('submit', async function(
     let trackChange = null;
     if (isEditing) {
         const oldTrack = currentAlbum.tracks[editingTrackIndex];
-        if (parseFloat(oldTrack.rating) !== parseFloat(newTrack.rating)) {
+        // Solo registrar cambio si el track YA tenía una nota válida previa
+        if (!isNaN(parseFloat(oldTrack.rating)) && parseFloat(oldTrack.rating) !== parseFloat(newTrack.rating)) {
             trackChange = { title: oldTrack.title, fromRating: parseFloat(oldTrack.rating), toRating: parseFloat(newTrack.rating) };
         }
         newTrack.review   = oldTrack.review;

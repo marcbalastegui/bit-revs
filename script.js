@@ -8,11 +8,29 @@ let editingAlbumId = null;
 
 // Estado de las sugerencias de Spotify en el modal (ver sección "SPOTIFY" al final del archivo)
 let spotifySelectedCoverBase64 = null;
+let spotifySelectedTracks = null;
 let spotifyActiveTab = 'liked';
 let spotifyTypeFilter = 'album';
 let spotifySearchDebounceTimer = null;
 
 // ── GÉNEROS PREDEFINIDOS ──────────────────────────────────────────────────
+
+function spotifyMapGenresToBitRevs(spotifyGenres) {
+    const result = new Set();
+    for (const g of spotifyGenres.map(x => x.toLowerCase())) {
+        if (g.includes('rap') || g.includes('hip hop') || g.includes('hip-hop') || g.includes('trap') || g.includes('drill') || g.includes('gangster')) result.add('Rap/Hip-Hop');
+        if (g.includes('r&b') || g.includes('soul') || g.includes('rhythm and blues') || g.includes('neo soul')) result.add('R&B/Soul');
+        if (g === 'pop' || g.includes('pop') && !g.includes('hip') && !g.includes('indie') && !g.includes('k-pop')) result.add('Pop');
+        if (g.includes('rock') || g.includes('alternative') || g.includes('punk') || g.includes('grunge')) result.add('Rock');
+        if (g.includes('electronic') || g.includes('electro') || g.includes('edm') || g.includes('techno') || g.includes('house') || g.includes('dance') || g.includes('synth')) result.add('Electrónica');
+        if (g.includes('jazz')) result.add('Jazz');
+        if (g.includes('reggaeton') || g.includes('urbano') || g.includes('latin') || g.includes('reggae')) result.add('Reggaeton');
+        if (g.includes('indie')) result.add('Indie');
+        if (g.includes('metal') || g.includes('hardcore')) result.add('Metal');
+    }
+    return Array.from(result);
+}
+
 const GENRES_PREDEFINED = [
     'Rap/Hip-Hop', 'Pop', 'R&B/Soul', 'Rock',
     'Electrónica', 'Jazz', 'Reggaeton', 'Indie', 'Metal'
@@ -145,7 +163,7 @@ if (albumForm) {
 
         let albumToSave = editingAlbumId
             ? await getAlbumByIdFromDB(editingAlbumId)
-            : { id: Date.now(), tracks: [], rating: 0 };
+            : { id: Date.now(), tracks: spotifySelectedTracks ? [...spotifySelectedTracks] : [], rating: 0 };
 
         albumToSave.title           = title;
         albumToSave.artist          = artist;
@@ -178,6 +196,7 @@ async function finalizeSave(album) {
         if (albumForm) albumForm.reset();
         modalAdd.classList.add('hidden');
         spotifySelectedCoverBase64 = null;
+        spotifySelectedTracks = null;
         await processAndRenderAlbums();
     } catch (error) {
         await brAlert("Error al guardar: " + error, "Error");
@@ -429,6 +448,7 @@ if (spotifyConnectBtn) {
 
 function resetSpotifySuggestions() {
     spotifySelectedCoverBase64 = null;
+    spotifySelectedTracks = null;
     spotifyActiveTab = 'liked';
     spotifyTypeFilter = 'album';
 
@@ -575,33 +595,57 @@ async function selectSpotifyAlbum(album, itemEl) {
     document.querySelectorAll('.spotify-suggestion-item').forEach(el => el.classList.remove('selected'));
     if (itemEl) itemEl.classList.add('selected');
 
+    // Rellenar campos básicos
     const titleEl  = document.getElementById('title');
     const artistEl = document.getElementById('artist');
     const yearEl   = document.getElementById('year');
     if (titleEl)  titleEl.value  = album.title || '';
     if (artistEl) artistEl.value = album.artist || '';
-    if (yearEl && album.year)    yearEl.value  = album.year;
+    if (yearEl && album.year) yearEl.value = album.year;
 
-    if (!album.coverUrl) return;
+    // Fecha de review = hoy
+    const reviewDateEl = document.getElementById('review-date');
+    if (reviewDateEl) reviewDateEl.value = new Date().toISOString().split('T')[0];
 
-    // Al elegir una portada de Spotify, se limpia el selector de archivo local
-    // para que el envío del formulario use esta portada.
+    // Limpiar portada local para que use la de Spotify
     const coverInput = document.getElementById('cover');
-    if (coverInput) {
-        coverInput.value = '';
-        coverInput.removeAttribute('required');
+    if (coverInput) { coverInput.value = ''; coverInput.removeAttribute('required'); }
+
+    if (status) status.textContent = 'Cargando géneros, canciones y portada...';
+
+    // Lanzar las tres peticiones en paralelo
+    const [, genres, tracks] = await Promise.allSettled([
+        // 1. Portada
+        album.coverUrl
+            ? spotifyFetchImageAsBase64(album.coverUrl)
+                .then(b64 => { spotifySelectedCoverBase64 = b64; })
+                .catch(() => { spotifySelectedCoverBase64 = null; if (coverInput) coverInput.setAttribute('required', 'true'); })
+            : Promise.resolve(),
+        // 2. Géneros del artista
+        (typeof getArtistGenres === 'function' && album.artistId)
+            ? getArtistGenres(album.artistId)
+            : Promise.resolve([]),
+        // 3. Canciones del álbum
+        (typeof getAlbumTracks === 'function' && album.spotifyId)
+            ? getAlbumTracks(album.spotifyId)
+            : Promise.resolve([])
+    ]);
+
+    // Aplicar géneros
+    const spotifyGenres = (genres.status === 'fulfilled' && genres.value) ? genres.value : [];
+    if (spotifyGenres.length > 0) {
+        const mapped = spotifyMapGenresToBitRevs(spotifyGenres);
+        renderGenreSelector(mapped);
     }
 
-    if (status) status.textContent = 'Descargando portada...';
-    try {
-        spotifySelectedCoverBase64 = await spotifyFetchImageAsBase64(album.coverUrl);
-        if (status) status.textContent = `Portada de "${album.title || ''}" lista para guardar.`;
-    } catch (err) {
-        console.error('spotify: no se pudo descargar la portada:', err);
-        spotifySelectedCoverBase64 = null;
-        if (coverInput) coverInput.setAttribute('required', 'true');
-        if (status) status.textContent = 'No se pudo descargar la portada, súbela manualmente.';
-    }
+    // Guardar tracks para cuando se guarde el álbum
+    spotifySelectedTracks = (tracks.status === 'fulfilled' && tracks.value?.length > 0)
+        ? tracks.value
+        : null;
+
+    if (status) status.textContent = spotifySelectedCoverBase64
+        ? `"${album.title || ''}" lista para guardar (${spotifySelectedTracks?.length || 0} canciones importadas).`
+        : `Portada no disponible, súbela manualmente.`;
 }
 
 function spotifyFetchImageAsBase64(url) {
