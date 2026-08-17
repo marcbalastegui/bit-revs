@@ -85,9 +85,13 @@ async function loadHome() {
 
     // ── ÚLTIMAS AÑADIDAS ──────────────────────────────────────────────────
     const recent = [...allReviews].sort((a, b) => b.id - a.id).slice(0, 12);
+    const movieIds = new Set(movies.map(m => m.id));
+    const albumIds = new Set(albums.map(a => a.id));
     renderScrollGrid('grid-recent', recent, (item) => {
-        const isAlbum = albums.find(a => a.id === item.id);
-        return albumCard(item, isAlbum ? `album.html?id=${item.id}` : null);
+        const href = albumIds.has(item.id) ? `album.html?id=${item.id}`
+                   : movieIds.has(item.id) ? `media-detail.html?type=movies&id=${item.id}`
+                   : `media-detail.html?type=series&id=${item.id}`;
+        return albumCard(item, href);
     });
 
     // ── MEJORES REVIEWS ───────────────────────────────────────────────────
@@ -273,8 +277,9 @@ function renderScrollGrid(containerId, items, cardFn) {
 
 function albumCard(item, href) {
     const badgeColor = getColorByRating(item.rating);
-    const displayRating = item.tracks && item.tracks.length > 0
-        ? formatRating(item.rating) : '—';
+    // Álbumes sin canciones → '—'; películas/series (sin tracks) → mostrar nota directamente
+    const displayRating = Array.isArray(item.tracks) && item.tracks.length === 0
+        ? '—' : formatRating(item.rating);
     const onclick = href ? `onclick="window.location.href='${href}'"` : '';
 
     return `
