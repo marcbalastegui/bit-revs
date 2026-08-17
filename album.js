@@ -477,8 +477,10 @@ document.getElementById('track-form').addEventListener('submit', async function(
     let trackChange = null;
     if (isEditing) {
         const oldTrack = currentAlbum.tracks[editingTrackIndex];
-        // Solo registrar cambio si el track YA tenía una nota válida previa
-        if (!isNaN(parseFloat(oldTrack.rating)) && parseFloat(oldTrack.rating) !== parseFloat(newTrack.rating)) {
+        // Un track está sin puntuación si su rating es '', null, undefined o NaN
+        const hadRating = oldTrack.rating !== '' && oldTrack.rating != null && !isNaN(parseFloat(oldTrack.rating)) && parseFloat(oldTrack.rating) > 0;
+        // Solo registrar cambio si ya tenía una nota real previa Y es distinta
+        if (hadRating && parseFloat(oldTrack.rating) !== parseFloat(newTrack.rating)) {
             trackChange = { title: oldTrack.title, fromRating: parseFloat(oldTrack.rating), toRating: parseFloat(newTrack.rating) };
         }
         newTrack.review   = oldTrack.review;
