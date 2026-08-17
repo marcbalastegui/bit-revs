@@ -470,8 +470,8 @@ async function loadSpotifySuggestions(kind) {
 
     try {
         const albums = kind === 'recent'
-            ? await getRecentAlbums(12)
-            : await getTopAlbums(12);
+            ? await getRecentAlbums(18)
+            : await getTopAlbums(18);
 
         renderSpotifyAlbumGrid(albums);
         status.textContent = albums.length === 0 ? 'No se encontraron álbumes.' : '';
@@ -481,18 +481,39 @@ async function loadSpotifySuggestions(kind) {
     }
 }
 
+function spotifyRelativeTime(isoString) {
+    if (!isoString) return '';
+    const diff = Date.now() - new Date(isoString).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 60) return `Hace ${mins} min`;
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return `Hace ${hrs}h`;
+    const days = Math.floor(hrs / 24);
+    if (days === 1) return 'Ayer';
+    if (days < 7) return `Hace ${days} días`;
+    const weeks = Math.floor(days / 7);
+    return weeks === 1 ? 'Hace 1 semana' : `Hace ${weeks} semanas`;
+}
+
 function renderSpotifyAlbumGrid(albums) {
     const grid = document.getElementById('spotify-suggestions-grid');
     if (!grid) return;
     grid.innerHTML = '';
 
-    albums.slice(0, 12).forEach(album => {
+    albums.slice(0, 18).forEach(album => {
         const item = document.createElement('div');
         item.className = 'spotify-suggestion-item';
+        let statHtml = '';
+        if (album.playCount != null) {
+            statHtml = `<div class="spotify-suggestion-stat">${album.playCount} ${album.playCount === 1 ? 'canción' : 'canciones'} en top</div>`;
+        } else if (album.playedAt) {
+            statHtml = `<div class="spotify-suggestion-stat">${spotifyRelativeTime(album.playedAt)}</div>`;
+        }
         item.innerHTML = `
             <img class="spotify-suggestion-cover" src="${album.coverUrl}" alt="${album.title || ''}" loading="lazy">
             <div class="spotify-suggestion-title">${album.title || 'Sin título'}</div>
             <div class="spotify-suggestion-artist">${album.artist || ''}</div>
+            ${statHtml}
         `;
         item.addEventListener('click', () => selectSpotifyAlbum(album, item));
         grid.appendChild(item);

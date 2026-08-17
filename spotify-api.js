@@ -78,7 +78,7 @@ async function getTopAlbums(limit = 20) {
     return Array.from(albumsById.values())
         .sort((a, b) => b._count - a._count)
         .slice(0, limit)
-        .map(({ _count, ...album }) => album);
+        .map(({ _count, ...album }) => ({ ...album, playCount: _count }));
 }
 
 // Álbumes de las canciones reproducidas recientemente, deduplicados.
@@ -93,7 +93,9 @@ async function getRecentAlbums(limit = 10) {
         if (!track || !track.album) return;
         const id = track.album.id;
         if (!albumsById.has(id)) {
-            albumsById.set(id, spotifyMapTrackToAlbum(track));
+            const mapped = spotifyMapTrackToAlbum(track);
+            mapped.playedAt = item.played_at || null;
+            albumsById.set(id, mapped);
         } else {
             albumsById.get(id).tracks.push({ title: track.name, duration_ms: track.duration_ms });
         }
