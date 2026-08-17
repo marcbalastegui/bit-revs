@@ -816,6 +816,8 @@ div.album-tag {
 }
 .spotify-suggestion-item:hover { border-color: #1DB954; background: rgba(29,185,84,0.06); }
 .spotify-suggestion-item.selected { border-color: #1DB954; background: rgba(29,185,84,0.1); }
+.spotify-suggestion-item.spotify-already-added { opacity: 0.45; }
+.spotify-added-badge { color: var(--text-muted) !important; font-weight: 600; }
 .spotify-suggestion-cover {
     width: 100%; aspect-ratio: 1/1; object-fit: cover; border-radius: 8px;
     background: var(--border-color); margin-bottom: 6px; display: block;

@@ -474,12 +474,19 @@ document.querySelectorAll('.spotify-type-tab').forEach(tab => {
         const searchInput = document.getElementById('spotify-search-input');
         if (searchInput && searchInput.value.trim()) {
             // Si hay búsqueda activa, refiltrar sin recargar
-            renderSpotifyAlbumGrid(window._spotifyLastResults || []);
+            renderSpotifyAlbumGrid(window._spotifyLastResults || [], window._spotifyLastReviewedSet || null);
         } else {
             loadSpotifySuggestions(spotifyActiveTab);
         }
     });
 });
+
+function normalizeTitle(t) {
+    return (t || '').toLowerCase()
+        .replace(/\s*[\(\[](deluxe|bonus|remastered|special|expanded|edition|version|explicit|anniversary|complete)[^\)\]]*[\)\]]/gi, '')
+        .replace(/\s*[-–]\s*(deluxe|bonus|remastered|special|expanded|edition|version|explicit)[^\n]*/gi, '')
+        .trim();
+}
 
 async function loadSpotifySuggestions(kind) {
     const grid = document.getElementById('spotify-suggestions-grid');
@@ -494,14 +501,13 @@ async function loadSpotifySuggestions(kind) {
             ? await getRecentAlbums(50)
             : await getLikedAlbums(50);
 
-        // Filtrar ya reviewados (por título, sin distinguir mayúsculas)
+        // Filtrar ya reviewados usando título normalizado
         const reviewed = await getAllAlbumsFromDB();
-        const reviewedTitles = new Set(
-            reviewed.map(a => (a.title || '').trim().toLowerCase())
-        );
-        albums = albums.filter(a => !reviewedTitles.has((a.title || '').trim().toLowerCase()));
+        const reviewedTitles = new Set(reviewed.map(a => normalizeTitle(a.title)));
+        albums = albums.filter(a => !reviewedTitles.has(normalizeTitle(a.title)));
 
         window._spotifyLastResults = albums;
+        window._spotifyLastReviewedSet = null;
         renderSpotifyAlbumGrid(albums);
         status.textContent = albums.length === 0 ? 'No hay álbumes nuevos para añadir.' : '';
     } catch (err) {
@@ -524,7 +530,7 @@ function spotifyRelativeTime(isoString) {
     return weeks === 1 ? 'Hace 1 semana' : `Hace ${weeks} semanas`;
 }
 
-function renderSpotifyAlbumGrid(albums) {
+function renderSpotifyAlbumGrid(albums, reviewedSet = null) {
     const grid = document.getElementById('spotify-suggestions-grid');
     if (!grid) return;
     grid.innerHTML = '';
@@ -543,10 +549,13 @@ function renderSpotifyAlbumGrid(albums) {
     }
 
     typeFiltered.slice(0, 18).forEach(album => {
+        const alreadyAdded = reviewedSet ? reviewedSet.has(normalizeTitle(album.title)) : false;
         const item = document.createElement('div');
-        item.className = 'spotify-suggestion-item';
+        item.className = 'spotify-suggestion-item' + (alreadyAdded ? ' spotify-already-added' : '');
         let statHtml = '';
-        if (album.playedAt) {
+        if (alreadyAdded) {
+            statHtml = `<div class="spotify-suggestion-stat spotify-added-badge">Ya añadido</div>`;
+        } else if (album.playedAt) {
             statHtml = `<div class="spotify-suggestion-stat">${spotifyRelativeTime(album.playedAt)}</div>`;
         }
         item.innerHTML = `
@@ -635,9 +644,14 @@ if (spotifySearchInputEl) {
             if (status) status.textContent = 'Buscando...';
 
             try {
-                const results = await searchSpotifyAlbum(query);
+                const [results, reviewed] = await Promise.all([
+                    searchSpotifyAlbum(query),
+                    getAllAlbumsFromDB()
+                ]);
+                const reviewedSet = new Set(reviewed.map(a => normalizeTitle(a.title)));
                 window._spotifyLastResults = results;
-                renderSpotifyAlbumGrid(results);
+                window._spotifyLastReviewedSet = reviewedSet;
+                renderSpotifyAlbumGrid(results, reviewedSet);
                 if (status) status.textContent = results.length === 0 ? 'Sin resultados.' : '';
             } catch (err) {
                 console.error('spotify: error en la búsqueda:', err);
