@@ -1,5 +1,64 @@
 // artist.js - Estadísticas por artista (incluye colaboraciones)
 
+function buildEvolutionChart(albums) {
+    const sorted = [...albums]
+        .filter(a => parseFloat(a.rating) > 0)
+        .sort((a, b) => {
+            const yearDiff = (a.year || 0) - (b.year || 0);
+            return yearDiff !== 0 ? yearDiff : a.id - b.id;
+        });
+    if (sorted.length < 2) return '';
+
+    const W = 600, H = 140;
+    const PAD = { top: 26, right: 24, bottom: 40, left: 28 };
+    const cW = W - PAD.left - PAD.right;
+    const cH = H - PAD.top - PAD.bottom;
+
+    const ratings = sorted.map(a => parseFloat(a.rating));
+    const minR = Math.max(0,  Math.min(...ratings) - 0.8);
+    const maxR = Math.min(10, Math.max(...ratings) + 0.8);
+    const range = maxR - minR || 1;
+    const n = sorted.length;
+
+    const pts = sorted.map((a, i) => ({
+        x: PAD.left + (n === 1 ? cW / 2 : (i / (n - 1)) * cW),
+        y: PAD.top + (1 - (parseFloat(a.rating) - minR) / range) * cH,
+        album: a
+    }));
+
+    const polyline = pts.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+    const areaPoints = [
+        `${pts[0].x.toFixed(1)},${(PAD.top + cH).toFixed(1)}`,
+        ...pts.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`),
+        `${pts[pts.length - 1].x.toFixed(1)},${(PAD.top + cH).toFixed(1)}`
+    ].join(' ');
+
+    const dotsHtml = pts.map(p => {
+        const color = getColorByRating(p.album.rating);
+        const label = (p.album.title || '').length > 11
+            ? p.album.title.substring(0, 10) + '…'
+            : (p.album.title || '');
+        return `
+            <circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="5" fill="${color}" stroke="white" stroke-width="1.5">
+                <title>${p.album.title} (${p.album.year || '?'}) · ${formatRating(p.album.rating)}</title>
+            </circle>
+            <text x="${p.x.toFixed(1)}" y="${(p.y - 9).toFixed(1)}" text-anchor="middle" font-size="10" font-weight="700" fill="${color}" font-family="Inter,sans-serif">${formatRating(p.album.rating)}</text>
+            <text x="${p.x.toFixed(1)}" y="${(PAD.top + cH + 14).toFixed(1)}" text-anchor="middle" font-size="9" fill="#999" font-family="Inter,sans-serif">${label}</text>`;
+    }).join('');
+
+    return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;overflow:visible;display:block;">
+        <defs>
+            <linearGradient id="evo-grad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="var(--text-main)" stop-opacity="0.1"/>
+                <stop offset="100%" stop-color="var(--text-main)" stop-opacity="0"/>
+            </linearGradient>
+        </defs>
+        <polygon points="${areaPoints}" fill="url(#evo-grad)"/>
+        <polyline points="${polyline}" fill="none" stroke="var(--text-main)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+        ${dotsHtml}
+    </svg>`;
+}
+
 async function loadArtistStats() {
     const params = new URLSearchParams(window.location.search);
     const artistName = params.get('name');
@@ -160,8 +219,10 @@ async function loadArtistStats() {
     const artistRank = rankedArtists.findIndex(a => a.name.toLowerCase() === artistName.toLowerCase()) + 1;
     const totalRanked = rankedArtists.length;
 
-    // Mejor álbum (como principal)
-    const bestAlbum = [...albumsWithRating].sort((a, b) => parseFloat(b.rating) - parseFloat(a.rating))[0];
+    // Mejor y peor álbum (como principal)
+    const sortedByRating = [...albumsWithRating].sort((a, b) => parseFloat(b.rating) - parseFloat(a.rating));
+    const bestAlbum  = sortedByRating[0];
+    const worstAlbum = albumsWithRating.length > 1 ? sortedByRating[sortedByRating.length - 1] : null;
 
     // Mejor canción
     const { albumBoost, trackBoost } = await computeTopBoost();
@@ -286,6 +347,33 @@ async function loadArtistStats() {
                         <span class="highlight-badge" style="background:${badgeColor}">${formatRating(bestAlbum.rating)}</span>
                     </div>
                 </div>
+            </div>`;
+    }
+
+    // Peor álbum
+    if (worstAlbum) {
+        const badgeColor = getColorByRating(worstAlbum.rating);
+        html += `
+            <div class="stat-card col-6" onclick="window.location.href='album.html?id=${worstAlbum.id}'" style="cursor:pointer;">
+                <div class="stat-label">Peor álbum</div>
+                <div class="highlight-card">
+                    <img class="highlight-cover" src="${worstAlbum.coverBase64 || ''}" alt="${worstAlbum.title}" loading="lazy" onerror="this.style.visibility='hidden'">
+                    <div class="highlight-info">
+                        <div class="highlight-title">${worstAlbum.title}</div>
+                        <div class="highlight-meta">${worstAlbum.year}</div>
+                        <span class="highlight-badge" style="background:${badgeColor}">${formatRating(worstAlbum.rating)}</span>
+                    </div>
+                </div>
+            </div>`;
+    }
+
+    // Evolución de nota por álbum
+    const evolutionChart = buildEvolutionChart(ownAlbums);
+    if (evolutionChart) {
+        html += `
+            <div class="stat-card col-12">
+                <div class="stat-label" style="margin-bottom:12px;">Evolución de nota</div>
+                ${evolutionChart}
             </div>`;
     }
 
