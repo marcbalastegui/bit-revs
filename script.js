@@ -222,14 +222,24 @@ async function processAndRenderAlbums() {
 
         let filteredAlbums = [...currentAlbums];
 
-        // Toggle singles: si está activo, mostrar solo singles; si no, ocultar singles
-        const singlesToggle = document.getElementById('singles-toggle');
-        if (singlesToggle) {
-            if (singlesToggle.checked) {
-                filteredAlbums = filteredAlbums.filter(a => a.type === 'Single');
-            } else {
-                filteredAlbums = filteredAlbums.filter(a => a.type !== 'Single');
-            }
+        // Actualizar contadores de los botones de tipo
+        const albumCount  = currentAlbums.filter(a => a.type !== 'Single' && a.type !== 'EP').length;
+        const singleCount = currentAlbums.filter(a => a.type === 'Single').length;
+        const epCount     = currentAlbums.filter(a => a.type === 'EP').length;
+        const countAlbumEl  = document.getElementById('count-album');
+        const countSingleEl = document.getElementById('count-single');
+        const countEpEl     = document.getElementById('count-ep');
+        if (countAlbumEl)  countAlbumEl.textContent  = albumCount;
+        if (countSingleEl) countSingleEl.textContent  = singleCount;
+        if (countEpEl)     countEpEl.textContent      = epCount;
+
+        // Filtro por tipo
+        if (typeFilter === 'album') {
+            filteredAlbums = filteredAlbums.filter(a => a.type !== 'Single' && a.type !== 'EP');
+        } else if (typeFilter === 'Single') {
+            filteredAlbums = filteredAlbums.filter(a => a.type === 'Single');
+        } else if (typeFilter === 'EP') {
+            filteredAlbums = filteredAlbums.filter(a => a.type === 'EP');
         }
 
         // Filtro por texto
@@ -345,15 +355,31 @@ async function populateGenreFilter() {
 }
 
 // ── EVENTOS ───────────────────────────────────────────────────────────────
-const globalFilterInput  = document.getElementById('filter-input');
-const globalSortSelect   = document.getElementById('sort-select');
-const globalGenreFilter  = document.getElementById('genre-filter');
-const globalSinglesToggle = document.getElementById('singles-toggle');
+let typeFilter = 'album'; // 'album' | 'Single' | 'EP' | '' (todos)
 
-if (globalFilterInput)   globalFilterInput.addEventListener('input', processAndRenderAlbums);
-if (globalSortSelect)    globalSortSelect.addEventListener('change', processAndRenderAlbums);
-if (globalGenreFilter)   globalGenreFilter.addEventListener('change', processAndRenderAlbums);
-if (globalSinglesToggle) globalSinglesToggle.addEventListener('change', processAndRenderAlbums);
+const globalFilterInput = document.getElementById('filter-input');
+const globalSortSelect  = document.getElementById('sort-select');
+const globalGenreFilter = document.getElementById('genre-filter');
+
+if (globalFilterInput) globalFilterInput.addEventListener('input', processAndRenderAlbums);
+if (globalSortSelect)  globalSortSelect.addEventListener('change', processAndRenderAlbums);
+if (globalGenreFilter) globalGenreFilter.addEventListener('change', processAndRenderAlbums);
+
+document.querySelectorAll('.type-filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const t = btn.dataset.type;
+        if (typeFilter === t) {
+            // Deseleccionar → mostrar todos
+            typeFilter = '';
+            document.querySelectorAll('.type-filter-btn').forEach(b => b.classList.remove('active'));
+        } else {
+            typeFilter = t;
+            document.querySelectorAll('.type-filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        }
+        processAndRenderAlbums();
+    });
+});
 
 (async () => {
     await populateGenreFilter();

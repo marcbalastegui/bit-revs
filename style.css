@@ -165,16 +165,25 @@ h1 { font-size: 2.8rem; font-weight: 900; margin-bottom: 30px; letter-spacing: -
 }
 
 /* ── SINGLES TOGGLE ── */
-.singles-toggle-label {
-    display: flex; align-items: center; gap: 6px;
-    font-weight: 600; font-size: 0.85rem;
-    color: var(--text-muted); cursor: pointer;
-    white-space: nowrap; padding: 0 8px; user-select: none;
+.type-filter-bar {
+    display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;
 }
-.singles-toggle-label input[type="checkbox"] {
-    width: 16px; height: 16px;
-    cursor: pointer; accent-color: var(--accent-red); flex-shrink: 0;
+.type-filter-btn {
+    display: flex; align-items: center; gap: 7px;
+    padding: 8px 18px; border-radius: 24px;
+    border: 1.5px solid var(--border-color); background: var(--bg-secondary);
+    color: var(--text-muted); font-family: 'Inter', sans-serif;
+    font-size: 0.85rem; font-weight: 700; cursor: pointer; transition: all 0.15s;
+    white-space: nowrap;
 }
+.type-filter-btn svg { width: 15px; height: 15px; flex-shrink: 0; }
+.type-filter-btn:hover { border-color: var(--text-main); color: var(--text-main); }
+.type-filter-btn.active { background: var(--text-main); border-color: var(--text-main); color: white; }
+.type-count {
+    background: rgba(0,0,0,0.08); border-radius: 20px;
+    padding: 1px 8px; font-size: 0.76rem; font-weight: 800;
+}
+.type-filter-btn.active .type-count { background: rgba(255,255,255,0.2); }
 
 /* ── GRID Y TARJETAS ── */
 .album-grid {
