@@ -140,6 +140,26 @@ async function loadArtistStats() {
         ? dedupedTracks.reduce((sum, t) => sum + parseFloat(t.rating), 0) / dedupedTracks.length
         : 0;
 
+    // Ranking entre todos los artistas principales (por media de canciones de sus propios álbumes)
+    const artistScoreMap = {};
+    albums.forEach(album => {
+        if (!album.artist) return;
+        const key = album.artist.toLowerCase();
+        if (!artistScoreMap[key]) artistScoreMap[key] = { name: album.artist, total: 0, count: 0 };
+        (album.tracks || []).forEach(t => {
+            if (!t.isInterlude && parseFloat(t.rating) > 0) {
+                artistScoreMap[key].total += parseFloat(t.rating);
+                artistScoreMap[key].count++;
+            }
+        });
+    });
+    const rankedArtists = Object.values(artistScoreMap)
+        .filter(a => a.count > 0)
+        .map(a => ({ ...a, avg: a.total / a.count }))
+        .sort((a, b) => b.avg - a.avg);
+    const artistRank = rankedArtists.findIndex(a => a.name.toLowerCase() === artistName.toLowerCase()) + 1;
+    const totalRanked = rankedArtists.length;
+
     // Mejor álbum (como principal)
     const bestAlbum = [...albumsWithRating].sort((a, b) => parseFloat(b.rating) - parseFloat(a.rating))[0];
 
@@ -203,6 +223,18 @@ async function loadArtistStats() {
     // ── CONSTRUIR HTML ────────────────────────────────────────────────────
 
     let html = '';
+
+    // Ranking
+    if (artistRank > 0) {
+        const rankColors = ['#B533FF', '#3366FF', '#66CC33'];
+        const rankColor = rankColors[artistRank - 1] || 'var(--text-main)';
+        html += `
+            <div class="stat-card col-4">
+                <div class="stat-label">Ranking</div>
+                <div class="stat-value-big" style="color:${rankColor}; font-size:2.6rem;">#${artistRank}</div>
+                <div class="stat-value-sub">de ${totalRanked} artistas</div>
+            </div>`;
+    }
 
     // Media de álbumes — solo si tiene álbumes propios
     if (ownAlbums.length > 0) {
