@@ -9,8 +9,9 @@ function buildEvolutionChart(albums) {
         });
     if (sorted.length < 2) return '';
 
-    const W = 600, H = 140;
-    const PAD = { top: 26, right: 24, bottom: 40, left: 28 };
+    const W = 600, H = 190;
+    const COVER = 32; // cover thumbnail diameter
+    const PAD = { top: 26, right: 24, bottom: 60, left: 28 };
     const cW = W - PAD.left - PAD.right;
     const cH = H - PAD.top - PAD.bottom;
 
@@ -26,24 +27,43 @@ function buildEvolutionChart(albums) {
         album: a
     }));
 
-    const polyline = pts.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+    const polyline  = pts.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
     const areaPoints = [
         `${pts[0].x.toFixed(1)},${(PAD.top + cH).toFixed(1)}`,
         ...pts.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`),
         `${pts[pts.length - 1].x.toFixed(1)},${(PAD.top + cH).toFixed(1)}`
     ].join(' ');
 
-    const dotsHtml = pts.map(p => {
+    // clipPath defs for cover thumbnails
+    const clipDefs = pts.map((p, i) => {
+        const cy = PAD.top + cH + 14 + COVER / 2;
+        return `<clipPath id="evo-clip-${i}"><circle cx="${p.x.toFixed(1)}" cy="${cy.toFixed(1)}" r="${COVER / 2}"/></clipPath>`;
+    }).join('');
+
+    const dotsHtml = pts.map((p, i) => {
         const color = getColorByRating(p.album.rating);
-        const label = (p.album.title || '').length > 11
-            ? p.album.title.substring(0, 10) + '…'
-            : (p.album.title || '');
+        const coverY = PAD.top + cH + 14; // top of cover image
+        const coverCY = coverY + COVER / 2;
+        const yearY  = coverY + COVER + 11;
+        const tooltip = `${p.album.title} (${p.album.year || '?'}) · ${formatRating(p.album.rating)}`;
+        const coverSrc = p.album.coverBase64 || '';
+
         return `
-            <circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="5" fill="${color}" stroke="white" stroke-width="1.5">
-                <title>${p.album.title} (${p.album.year || '?'}) · ${formatRating(p.album.rating)}</title>
+            <!-- cover thumbnail -->
+            ${coverSrc ? `<image href="${coverSrc}" x="${(p.x - COVER/2).toFixed(1)}" y="${coverY.toFixed(1)}" width="${COVER}" height="${COVER}" clip-path="url(#evo-clip-${i})" preserveAspectRatio="xMidYMid slice">
+                <title>${tooltip}</title>
+            </image>` : ''}
+            <circle cx="${p.x.toFixed(1)}" cy="${coverCY.toFixed(1)}" r="${COVER / 2}" fill="none" stroke="${color}" stroke-width="1.5">
+                <title>${tooltip}</title>
             </circle>
-            <text x="${p.x.toFixed(1)}" y="${(p.y - 9).toFixed(1)}" text-anchor="middle" font-size="10" font-weight="700" fill="${color}" font-family="Inter,sans-serif">${formatRating(p.album.rating)}</text>
-            <text x="${p.x.toFixed(1)}" y="${(PAD.top + cH + 14).toFixed(1)}" text-anchor="middle" font-size="9" fill="#999" font-family="Inter,sans-serif">${label}</text>`;
+            <!-- year -->
+            <text x="${p.x.toFixed(1)}" y="${yearY.toFixed(1)}" text-anchor="middle" font-size="9" fill="#999" font-family="Inter,sans-serif">${p.album.year || ''}</text>
+            <!-- dot on line -->
+            <circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="5" fill="${color}" stroke="white" stroke-width="1.5">
+                <title>${tooltip}</title>
+            </circle>
+            <!-- rating label -->
+            <text x="${p.x.toFixed(1)}" y="${(p.y - 9).toFixed(1)}" text-anchor="middle" font-size="10" font-weight="700" fill="${color}" font-family="Inter,sans-serif">${formatRating(p.album.rating)}</text>`;
     }).join('');
 
     return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;overflow:visible;display:block;">
@@ -52,6 +72,7 @@ function buildEvolutionChart(albums) {
                 <stop offset="0%" stop-color="var(--text-main)" stop-opacity="0.1"/>
                 <stop offset="100%" stop-color="var(--text-main)" stop-opacity="0"/>
             </linearGradient>
+            ${clipDefs}
         </defs>
         <polygon points="${areaPoints}" fill="url(#evo-grad)"/>
         <polyline points="${polyline}" fill="none" stroke="var(--text-main)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
