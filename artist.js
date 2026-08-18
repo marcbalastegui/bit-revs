@@ -34,28 +34,29 @@ function buildEvolutionChart(albums) {
         `${pts[pts.length - 1].x.toFixed(1)},${(PAD.top + cH).toFixed(1)}`
     ].join(' ');
 
-    // clipPath defs for cover thumbnails
+    const R = 4; // corner radius for square covers
+
+    // clipPath defs for cover thumbnails (rounded square)
     const clipDefs = pts.map((p, i) => {
-        const cy = PAD.top + cH + 14 + COVER / 2;
-        return `<clipPath id="evo-clip-${i}"><circle cx="${p.x.toFixed(1)}" cy="${cy.toFixed(1)}" r="${COVER / 2}"/></clipPath>`;
+        const coverY = PAD.top + cH + 14;
+        return `<clipPath id="evo-clip-${i}"><rect x="${(p.x - COVER/2).toFixed(1)}" y="${coverY.toFixed(1)}" width="${COVER}" height="${COVER}" rx="${R}" ry="${R}"/></clipPath>`;
     }).join('');
 
     const dotsHtml = pts.map((p, i) => {
         const color = getColorByRating(p.album.rating);
         const coverY = PAD.top + cH + 14; // top of cover image
-        const coverCY = coverY + COVER / 2;
         const yearY  = coverY + COVER + 11;
         const tooltip = `${p.album.title} (${p.album.year || '?'}) · ${formatRating(p.album.rating)}`;
         const coverSrc = p.album.coverBase64 || '';
 
         return `
-            <!-- cover thumbnail -->
+            <!-- cover thumbnail (square) -->
             ${coverSrc ? `<image href="${coverSrc}" x="${(p.x - COVER/2).toFixed(1)}" y="${coverY.toFixed(1)}" width="${COVER}" height="${COVER}" clip-path="url(#evo-clip-${i})" preserveAspectRatio="xMidYMid slice">
                 <title>${tooltip}</title>
             </image>` : ''}
-            <circle cx="${p.x.toFixed(1)}" cy="${coverCY.toFixed(1)}" r="${COVER / 2}" fill="none" stroke="${color}" stroke-width="1.5">
+            <rect x="${(p.x - COVER/2).toFixed(1)}" y="${coverY.toFixed(1)}" width="${COVER}" height="${COVER}" rx="${R}" ry="${R}" fill="none" stroke="${color}" stroke-width="1.5">
                 <title>${tooltip}</title>
-            </circle>
+            </rect>
             <!-- year -->
             <text x="${p.x.toFixed(1)}" y="${yearY.toFixed(1)}" text-anchor="middle" font-size="9" fill="#999" font-family="Inter,sans-serif">${p.album.year || ''}</text>
             <!-- dot on line -->
