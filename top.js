@@ -1,28 +1,56 @@
 // top.js - Lógica del Top 100
 
-const SNAPSHOT_KEY    = 'bitrevs_top_snapshot';
-let currentContent    = 'songs';        // 'songs' | 'movies' | 'series'
+let currentContent    = 'songs';        // 'songs' | 'movies' | 'series' | 'artists'
 let currentMode       = 'best';         // 'best' | 'worst'
 let currentTiebreaker = 'album-rating'; // 'album-rating' | 'alphabetical' | 'added'
-let tiebreakerDir     = 'asc';          // 'asc' | 'desc' (solo aplica a alphabetical y added)
+let mediaTiebreaker   = 'alphabetical'; // tiebreaker for movies/series
+let tiebreakerDir     = 'asc';
 let fullRanking       = [];
 let fullMediaRanking  = [];
-let snapshotMap       = null;           // se carga UNA vez al inicio y no cambia
+let fullArtistsRanking = [];
+let snapshotMap       = null;
 
-// ── SNAPSHOT ──────────────────────────────────────────────────────────────
-function loadSnapshot() {
+// ── SNAPSHOT DIARIO ────────────────────────────────────────────────────────
+// SNAP_A = snapshot del día actual (se guarda una vez al día)
+// SNAP_B = snapshot del día anterior (usado para calcular movimiento)
+const SNAP_A      = 'bitrevs_snap_a';
+const SNAP_A_DATE = 'bitrevs_snap_a_date';
+const SNAP_B      = 'bitrevs_snap_b';
+
+function getTodayStr() {
+    return new Date().toISOString().slice(0, 10);
+}
+
+// Inicializa snapshots y devuelve el mapa del día anterior (para comparar)
+function initSnapshots() {
+    const today     = getTodayStr();
+    const savedDate = localStorage.getItem(SNAP_A_DATE) || '';
+
+    if (savedDate !== today) {
+        // Nuevo día: rotar A → B, limpiar A
+        const currentA = localStorage.getItem(SNAP_A);
+        if (currentA) localStorage.setItem(SNAP_B, currentA);
+        localStorage.removeItem(SNAP_A);
+        localStorage.setItem(SNAP_A_DATE, today);
+    }
+
+    // Devolver mapa de SNAP_B (ayer) para comparar movimientos
     try {
-        const raw = localStorage.getItem(SNAPSHOT_KEY);
-        return raw ? JSON.parse(raw) : null;
+        const raw = localStorage.getItem(SNAP_B);
+        if (!raw) return null;
+        const data = JSON.parse(raw);
+        const map  = {};
+        data.forEach(e => { map[e.uid] = e.rank; });
+        return map;
     } catch { return null; }
 }
 
-// Solo se guarda si NO existe uno previo — nunca se sobreescribe al reordenar
+// Guardar snapshot del día actual (solo una vez)
 function saveSnapshotIfEmpty(rankedTracks) {
     try {
-        if (localStorage.getItem(SNAPSHOT_KEY)) return;
+        if (localStorage.getItem(SNAP_A)) return;
         const snapshot = rankedTracks.map((t, i) => ({ uid: t._uid, rank: i + 1 }));
-        localStorage.setItem(SNAPSHOT_KEY, JSON.stringify(snapshot));
+        localStorage.setItem(SNAP_A, JSON.stringify(snapshot));
     } catch {}
 }
 
@@ -201,7 +229,7 @@ function updateDirButton() {
 }
 
 // ── RANKING DE PELÍCULAS / SERIES ────────────────────────────────────────
-async function buildMediaRanking(storeType, mode) {
+async function buildMediaRanking(storeType, mode, tiebreaker = 'alphabetical') {
     const items = await getAllItemsFromDB(storeType);
     const rated = items.filter(i => parseFloat(i.rating) > 0);
     rated.sort((a, b) => {
@@ -209,9 +237,75 @@ async function buildMediaRanking(storeType, mode) {
             ? parseFloat(b.rating) - parseFloat(a.rating)
             : parseFloat(a.rating) - parseFloat(b.rating);
         if (diff !== 0) return diff;
+        if (tiebreaker === 'year-desc') return (parseInt(b.year) || 0) - (parseInt(a.year) || 0);
+        if (tiebreaker === 'year-asc')  return (parseInt(a.year) || 0) - (parseInt(b.year) || 0);
+        if (tiebreaker === 'added')     return (a.id || 0) - (b.id || 0);
         return (a.title || '').localeCompare(b.title || '');
     });
     return rated.slice(0, 100);
+}
+
+// ── RANKING DE ARTISTAS ───────────────────────────────────────────────────
+async function buildArtistsRanking(mode) {
+    const albums = await getAllAlbumsFromDB();
+    const artistStats = {};
+
+    albums.forEach(album => {
+        if (!album.tracks || !album.artist) return;
+        album.tracks.forEach(track => {
+            if (track.isInterlude) return;
+            const r = parseFloat(track.rating);
+            if (isNaN(r) || r <= 0) return;
+            if (!artistStats[album.artist]) artistStats[album.artist] = { total: 0, count: 0, albumCount: 0 };
+            artistStats[album.artist].total += r;
+            artistStats[album.artist].count++;
+        });
+        if (!artistStats[album.artist]) artistStats[album.artist] = { total: 0, count: 0, albumCount: 0 };
+        artistStats[album.artist].albumCount++;
+    });
+
+    return Object.entries(artistStats)
+        .filter(([, s]) => s.count >= 3)
+        .map(([name, s]) => ({ name, avg: s.total / s.count, count: s.count, albumCount: s.albumCount }))
+        .sort((a, b) => mode === 'best' ? b.avg - a.avg : a.avg - b.avg)
+        .slice(0, 100);
+}
+
+function renderArtistsRanking(artists) {
+    const list     = document.getElementById('top-list');
+    const subtitle = document.getElementById('top-subtitle');
+    list.innerHTML = '';
+
+    if (artists.length === 0) {
+        subtitle.textContent = 'No hay artistas con suficientes canciones puntuadas.';
+        list.innerHTML = `<div class="top-empty"><p>Puntúa al menos 3 canciones de un artista para que aparezca.</p></div>`;
+        return;
+    }
+
+    const modeLabel = currentMode === 'best' ? 'mejores' : 'peores';
+    subtitle.textContent = `Top ${artists.length} artistas ${modeLabel} valorados`;
+
+    artists.forEach((artist, idx) => {
+        const rank        = idx + 1;
+        const badgeColor  = getColorByRating(artist.avg);
+        const displayRating = formatRating(artist.avg);
+
+        const row = document.createElement('div');
+        row.className = 'top-row';
+        row.addEventListener('click', () => {
+            window.location.href = `artist.html?name=${encodeURIComponent(artist.name)}`;
+        });
+        row.innerHTML = `
+            <span class="top-rank">${rank}</span>
+            <span class="top-arrow"></span>
+            <div class="top-info">
+                <div class="top-track-title">${artist.name}</div>
+                <div class="top-track-meta">${artist.albumCount} álbum${artist.albumCount !== 1 ? 'es' : ''} · ${artist.count} canciones puntuadas</div>
+            </div>
+            <span class="top-badge" style="background-color:${badgeColor};">${displayRating}</span>
+        `;
+        list.appendChild(row);
+    });
 }
 
 function renderMediaRanking(items, filterQuery, storeType) {
@@ -267,31 +361,31 @@ function renderMediaRanking(items, filterQuery, storeType) {
 
 // ── REORDENAR SIN GUARDAR SNAPSHOT ───────────────────────────────────────
 async function reorder() {
+    if (currentContent === 'artists') {
+        fullArtistsRanking = await buildArtistsRanking(currentMode);
+        renderArtistsRanking(fullArtistsRanking);
+        return;
+    }
     if (currentContent !== 'songs') {
         const mediaFilter = document.getElementById('top-media-filter');
-        fullMediaRanking = await buildMediaRanking(currentContent, currentMode);
+        fullMediaRanking = await buildMediaRanking(currentContent, currentMode, mediaTiebreaker);
         renderMediaRanking(fullMediaRanking, mediaFilter?.value || '', currentContent);
         return;
     }
     const filterInput = document.getElementById('top-filter');
     fullRanking = await buildRanking(currentMode, currentTiebreaker, tiebreakerDir);
-    // NO llamamos saveSnapshotIfEmpty aquí — solo al cargar la página
     renderRanking(fullRanking, filterInput?.value || '');
 }
 
 // ── INIT ──────────────────────────────────────────────────────────────────
 async function initTop() {
-    // Cargar snapshot ANTES de construir el ranking
-    const prevSnapshot = loadSnapshot();
-    if (prevSnapshot) {
-        snapshotMap = {};
-        prevSnapshot.forEach(entry => { snapshotMap[entry.uid] = entry.rank; });
-    }
+    // Snapshot diario: rotar si es un nuevo día, devolver mapa de ayer
+    snapshotMap = initSnapshots();
 
-    // Construir ranking inicial
+    // Construir ranking inicial de canciones
     fullRanking = await buildRanking(currentMode, currentTiebreaker, tiebreakerDir);
 
-    // Guardar snapshot UNA sola vez — al cargar la página
+    // Guardar snapshot del día actual (solo una vez)
     saveSnapshotIfEmpty(fullRanking);
 
     updateDirButton();
@@ -299,7 +393,6 @@ async function initTop() {
 
     const filterInput = document.getElementById('top-filter');
 
-    // Buscador
     filterInput?.addEventListener('input', () => {
         renderRanking(fullRanking, filterInput.value);
     });
@@ -321,17 +414,22 @@ async function initTop() {
         await reorder();
     });
 
-    // Criterio de desempate
+    // Criterio de desempate (canciones)
     document.getElementById('top-tiebreaker')?.addEventListener('change', async (e) => {
         currentTiebreaker = e.target.value;
         updateDirButton();
         await reorder();
     });
 
-    // Dirección asc/desc
     document.getElementById('btn-tiebreaker-dir')?.addEventListener('click', async () => {
         tiebreakerDir = tiebreakerDir === 'asc' ? 'desc' : 'asc';
         updateDirButton();
+        await reorder();
+    });
+
+    // Criterio de desempate (películas/series)
+    document.getElementById('top-media-tiebreaker')?.addEventListener('change', async (e) => {
+        mediaTiebreaker = e.target.value;
         await reorder();
     });
 
@@ -343,7 +441,7 @@ async function initTop() {
         const mediaFilter   = document.getElementById('top-media-filter');
         const titleEl       = document.getElementById('top-title');
 
-        ['songs', 'movies', 'series'].forEach(c => {
+        ['songs', 'movies', 'series', 'artists'].forEach(c => {
             document.getElementById(`btn-content-${c}`)?.classList.toggle('active', c === content);
         });
 
@@ -352,6 +450,10 @@ async function initTop() {
             mediaControls.style.display = 'none';
             if (titleEl) titleEl.textContent = 'Top Canciones';
             if (mediaFilter) mediaFilter.value = '';
+        } else if (content === 'artists') {
+            songsControls.style.display = 'none';
+            mediaControls.style.display = 'none';
+            if (titleEl) titleEl.textContent = 'Top Artistas';
         } else {
             songsControls.style.display = 'none';
             mediaControls.style.display = '';
@@ -360,9 +462,10 @@ async function initTop() {
         reorder();
     }
 
-    document.getElementById('btn-content-songs')?.addEventListener('click',  () => switchContent('songs'));
-    document.getElementById('btn-content-movies')?.addEventListener('click', () => switchContent('movies'));
-    document.getElementById('btn-content-series')?.addEventListener('click', () => switchContent('series'));
+    document.getElementById('btn-content-songs')?.addEventListener('click',   () => switchContent('songs'));
+    document.getElementById('btn-content-movies')?.addEventListener('click',  () => switchContent('movies'));
+    document.getElementById('btn-content-series')?.addEventListener('click',  () => switchContent('series'));
+    document.getElementById('btn-content-artists')?.addEventListener('click', () => switchContent('artists'));
 
     // Buscador de películas/series
     document.getElementById('top-media-filter')?.addEventListener('input', (e) => {

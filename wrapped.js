@@ -239,9 +239,14 @@ async function loadWrapped() {
     // Distribución de notas
     const barsHtml = distribution.map(d => {
         const heightPct = Math.round((d.count / maxCount) * 100);
-        const barColor = d.label === '9-10' ? '#B533FF' : d.label === '8-9' ? '#3366FF'
-            : d.label === '7-8' ? '#66CC33' : d.label === '6-7' ? '#FFD11A'
-            : d.label === '5-6' ? '#FF8533' : '#FF3333';
+        const barColor = d.label === '9-10' ? '#B533FF'
+            : d.label === '8-9'  ? '#3366FF'
+            : d.label === '7-8'  ? '#66CC33'
+            : d.label === '6-7'  ? '#FFD11A'
+            : d.label === '5-6'  ? '#FF8533'
+            : d.label === '4-5'  ? '#FF3333'
+            : d.label === '2-4'  ? '#996600'
+            : '#4D4D4D'; // '0-2'
         return `
             <div class="chart-bar-wrap">
                 <div class="chart-bar" style="height:${heightPct}%; background:${barColor};">

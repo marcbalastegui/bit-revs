@@ -184,7 +184,7 @@
         <a href="lists.html">Listas</a>
     </nav>
     <div class="header-right">
-        <button id="btn-add-album" class="save-btn">+ Añadir</button>
+        <button style="visibility:hidden;" class="save-btn">+</button>
         <a href="profile.html" class="header-avatar" id="global-header-avatar" title="Mi Perfil">U</a>
     </div>
 </header>
@@ -200,6 +200,7 @@
         <button class="top-content-btn active" id="btn-content-songs">Canciones</button>
         <button class="top-content-btn" id="btn-content-movies">Películas</button>
         <button class="top-content-btn" id="btn-content-series">Series</button>
+        <button class="top-content-btn" id="btn-content-artists">Artistas</button>
     </div>
 
     <!-- Modo mejor/peor — siempre visible -->
@@ -224,6 +225,14 @@
     <!-- Controles específicos de películas/series -->
     <div class="controls-bar" id="media-controls" style="margin-bottom: 24px; display:none;">
         <input type="text" id="top-media-filter" class="top-search-input" placeholder="Filtrar por título o director…">
+        <div class="top-tiebreaker-row">
+            <select id="top-media-tiebreaker">
+                <option value="alphabetical">Desempate: alfabético</option>
+                <option value="year-desc">Desempate: año (más reciente)</option>
+                <option value="year-asc">Desempate: año (más antiguo)</option>
+                <option value="added">Desempate: orden de añadido</option>
+            </select>
+        </div>
     </div>
 
     <div id="top-list"></div>

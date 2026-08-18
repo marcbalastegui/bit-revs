@@ -1,6 +1,32 @@
 
 // home.js - Lógica de la página principal
 
+// ── SLIDER DE ARTISTAS ─────────────────────────────────────────────────────
+let allTopArtists = [];
+let artistPage    = 0;
+const ARTISTS_PER_PAGE = 6;
+
+async function renderArtistsPage() {
+    const artistGrid = document.getElementById('grid-artists');
+    if (!artistGrid) return;
+    const start      = artistPage * ARTISTS_PER_PAGE;
+    const pageArtists = allTopArtists.slice(start, start + ARTISTS_PER_PAGE);
+    artistGrid.innerHTML = '';
+    for (const artist of pageArtists) {
+        const html = await artistCard(artist);
+        const el = document.createElement('div');
+        el.innerHTML = html;
+        if (el.firstElementChild) artistGrid.appendChild(el.firstElementChild);
+    }
+    const totalPages = Math.max(1, Math.ceil(allTopArtists.length / ARTISTS_PER_PAGE));
+    const prevBtn = document.getElementById('btn-artists-prev');
+    const nextBtn = document.getElementById('btn-artists-next');
+    const indicator = document.getElementById('artists-page-indicator');
+    if (prevBtn) prevBtn.disabled = artistPage === 0;
+    if (nextBtn) nextBtn.disabled = artistPage >= totalPages - 1;
+    if (indicator) indicator.textContent = `${artistPage + 1}/${totalPages}`;
+}
+
 // ── PAÍSES / BANDERAS ─────────────────────────────────────────────────────
 const HOME_COUNTRY_CODES = {
     'afghanistan':'af','albania':'al','alemania':'de','algeria':'dz','andorra':'ad',
@@ -101,26 +127,6 @@ async function loadHome() {
         .slice(0, 12);
     renderScrollGrid('grid-best', best, (item) => albumCard(item, `album.html?id=${item.id}`));
 
-    // ── ESTO HACE UN AÑO ──────────────────────────────────────────────────
-    const now = new Date();
-    const oneYearAgo = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
-    const margin = 30; // ±30 días de margen
-
-    const flashback = albums.filter(a => {
-        if (!a.reviewDate) return false;
-        const parts = a.reviewDate.split('-');
-        const d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
-        const diffDays = Math.abs((d - oneYearAgo) / (1000 * 60 * 60 * 24));
-        return diffDays <= margin;
-    });
-
-    const gridFlashback = document.getElementById('grid-flashback');
-    if (flashback.length === 0) {
-        gridFlashback.innerHTML = `<p class="home-empty">No hay álbumes puntuados hace un año. ¡Vuelve dentro de un tiempo!</p>`;
-    } else {
-        renderScrollGrid('grid-flashback', flashback, (item) => flashbackCard(item));
-    }
-
     // ── REVISITA REVIEWS ANTIGUAS ─────────────────────────────────────────
     // Los álbumes más antiguos que aún no has "revisado" recientemente
     // Ordenados por id ascendente (los más viejos primero), excluir los últimos 10
@@ -131,7 +137,7 @@ async function loadHome() {
 
     renderScrollGrid('grid-revisit', revisit, (item) => albumCard(item, `album.html?id=${item.id}`));
 
-    // ── ARTISTAS MEJOR VALORADOS ──────────────────────────────────────────
+    // ── ARTISTAS MEJOR VALORADOS (SLIDER) ────────────────────────────────
     const artistStats = {};
     albums.forEach(album => {
         if (!album.tracks) return;
@@ -149,21 +155,52 @@ async function loadHome() {
         }
     });
 
-    const topArtists = Object.entries(artistStats)
+    allTopArtists = Object.entries(artistStats)
         .filter(([, s]) => s.count >= 3)
         .map(([name, s]) => ({ name, avg: s.total / s.count, count: s.count, albumCount: s.albumCount }))
         .sort((a, b) => b.avg - a.avg)
-        .slice(0, 10);
+        .slice(0, 30);
 
-    // Artists need async card generation
-    const artistGrid = document.getElementById('grid-artists');
-    if (artistGrid) {
-        artistGrid.innerHTML = '';
-        for (const artist of topArtists) {
-            const html = await artistCard(artist);
-            const el = document.createElement('div');
-            el.innerHTML = html;
-            if (el.firstElementChild) artistGrid.appendChild(el.firstElementChild);
+    artistPage = 0;
+    await renderArtistsPage();
+
+    document.getElementById('btn-artists-prev')?.addEventListener('click', async () => {
+        if (artistPage > 0) { artistPage--; await renderArtistsPage(); }
+    });
+    document.getElementById('btn-artists-next')?.addEventListener('click', async () => {
+        const totalPages = Math.ceil(allTopArtists.length / ARTISTS_PER_PAGE);
+        if (artistPage < totalPages - 1) { artistPage++; await renderArtistsPage(); }
+    });
+
+    // ── DIRECTORES MEJOR VALORADOS ────────────────────────────────────────
+    const directorStats = {};
+    movies.forEach(movie => {
+        if (!movie.director || !movie.director.trim()) return;
+        const r = parseFloat(movie.rating);
+        if (isNaN(r) || r <= 0) return;
+        const name = movie.director.trim();
+        if (!directorStats[name]) directorStats[name] = { total: 0, count: 0 };
+        directorStats[name].total += r;
+        directorStats[name].count++;
+    });
+
+    const topDirectors = Object.entries(directorStats)
+        .filter(([, s]) => s.count >= 2)
+        .map(([name, s]) => ({ name, avg: s.total / s.count, count: s.count }))
+        .sort((a, b) => b.avg - a.avg)
+        .slice(0, 20);
+
+    const directorGrid = document.getElementById('grid-directors');
+    if (directorGrid) {
+        if (topDirectors.length === 0) {
+            document.getElementById('section-directors').style.display = 'none';
+        } else {
+            directorGrid.innerHTML = '';
+            topDirectors.forEach(director => {
+                const el = document.createElement('div');
+                el.innerHTML = directorCard(director);
+                if (el.firstElementChild) directorGrid.appendChild(el.firstElementChild);
+            });
         }
     }
 
@@ -293,21 +330,14 @@ function albumCard(item, href) {
         </div>`;
 }
 
-function flashbackCard(item) {
-    const badgeColor = getColorByRating(item.rating);
-    const parts = item.reviewDate.split('-');
-    const months = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
-    const dateLabel = `${parseInt(parts[2])} de ${months[parseInt(parts[1]) - 1]} de ${parseInt(parts[0]) - 1}`;
 
+function directorCard(director) {
+    const badgeColor = getColorByRating(director.avg);
     return `
-        <div class="home-flashback-card" onclick="window.location.href='album.html?id=${item.id}'">
-            <img class="home-flashback-cover" src="${item.coverBase64}" alt="${item.title}">
-            <div class="home-flashback-info">
-                <div class="home-flashback-label">Hace un año</div>
-                <div class="home-flashback-title">${item.title}</div>
-                <div class="home-flashback-meta">${item.artist} · ${dateLabel}</div>
-                <span class="home-card-badge" style="background:${badgeColor}; margin-top:4px; display:inline-block;">${formatRating(item.rating)}</span>
-            </div>
+        <div class="home-artist-card" onclick="window.location.href='director.html?name=${encodeURIComponent(director.name)}'">
+            <div class="home-artist-avatar" style="background:${badgeColor}">${director.name.charAt(0).toUpperCase()}</div>
+            <div class="home-artist-name">${director.name}</div>
+            <div class="home-artist-meta">${formatRating(director.avg)} · ${director.count} película${director.count !== 1 ? 's' : ''}</div>
         </div>`;
 }
 

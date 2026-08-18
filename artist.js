@@ -459,7 +459,9 @@ async function loadArtistStats() {
                        : d.label === '7-8'  ? '#66CC33'
                        : d.label === '6-7'  ? '#FFD11A'
                        : d.label === '5-6'  ? '#FF8533'
-                       : '#FF3333';
+                       : d.label === '4-5'  ? '#FF3333'
+                       : d.label === '2-4'  ? '#996600'
+                       : '#4D4D4D'; // '0-2'
         return `
             <div class="chart-bar-wrap">
                 <div class="chart-bar" style="height:${heightPct}%; background:${barColor};">

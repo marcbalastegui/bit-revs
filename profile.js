@@ -73,7 +73,10 @@ function renderSection(items, containerId, isVertical, sortByRating = true) {
 
     let displayItems = [...items];
     if (sortByRating) {
-        displayItems = displayItems.sort((a, b) => b.rating - a.rating).slice(0, 5);
+        displayItems = displayItems
+            .filter(i => parseFloat(i.rating) > 0)
+            .sort((a, b) => parseFloat(b.rating) - parseFloat(a.rating))
+            .slice(0, 5);
     }
 
     if (displayItems.length === 0) {
@@ -85,9 +88,14 @@ function renderSection(items, containerId, isVertical, sortByRating = true) {
     displayItems.forEach(item => {
         const card = document.createElement('div');
         card.classList.add('album-card');
+        card.style.cursor = 'pointer';
 
         if (containerId === 'top-albums-grid' || containerId === 'recent-albums-grid') {
             card.onclick = () => window.location.href = `album.html?id=${item.id}`;
+        } else if (containerId === 'top-movies-grid') {
+            card.onclick = () => window.location.href = `media-detail.html?type=movies&id=${item.id}`;
+        } else if (containerId === 'top-series-grid') {
+            card.onclick = () => window.location.href = `media-detail.html?type=series&id=${item.id}`;
         }
 
         const badgeColor = getColorByRating(item.rating);
@@ -100,7 +108,7 @@ function renderSection(items, containerId, isVertical, sortByRating = true) {
                     <h3>${item.title}</h3>
                     <span class="rating-badge" style="background-color: ${badgeColor};">${formatRating(item.rating)}</span>
                 </div>
-                <p>${item.artist || item.year} ${item.artist ? '• ' + item.year : ''}</p>
+                <p>${item.artist || item.director || item.creator || ''} ${item.year ? '· ' + item.year : ''}</p>
             </div>
         `;
         container.appendChild(card);
