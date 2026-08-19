@@ -3,28 +3,22 @@
 
 // ── SLIDER DE ARTISTAS ─────────────────────────────────────────────────────
 let allTopArtists = [];
-let artistPage    = 0;
-const ARTISTS_PER_PAGE = 6;
+let artistPage    = 0; // kept for compat but unused
+const ARTIST_SCROLL_PX = 800;
 
 async function renderArtistsPage() {
     const artistGrid = document.getElementById('grid-artists');
     if (!artistGrid) return;
-    const start      = artistPage * ARTISTS_PER_PAGE;
-    const pageArtists = allTopArtists.slice(start, start + ARTISTS_PER_PAGE);
     artistGrid.innerHTML = '';
-    for (const artist of pageArtists) {
+    for (const artist of allTopArtists) {
         const html = await artistCard(artist);
         const el = document.createElement('div');
         el.innerHTML = html;
         if (el.firstElementChild) artistGrid.appendChild(el.firstElementChild);
     }
-    const totalPages = Math.max(1, Math.ceil(allTopArtists.length / ARTISTS_PER_PAGE));
-    const prevBtn = document.getElementById('btn-artists-prev');
-    const nextBtn = document.getElementById('btn-artists-next');
+    // Hide indicator, keep arrows only if there are enough artists to scroll
     const indicator = document.getElementById('artists-page-indicator');
-    if (prevBtn) prevBtn.disabled = artistPage === 0;
-    if (nextBtn) nextBtn.disabled = artistPage >= totalPages - 1;
-    if (indicator) indicator.textContent = `${artistPage + 1}/${totalPages}`;
+    if (indicator) indicator.style.display = 'none';
 }
 
 // ── PAÍSES / BANDERAS ─────────────────────────────────────────────────────
@@ -164,12 +158,11 @@ async function loadHome() {
     artistPage = 0;
     await renderArtistsPage();
 
-    document.getElementById('btn-artists-prev')?.addEventListener('click', async () => {
-        if (artistPage > 0) { artistPage--; await renderArtistsPage(); }
+    document.getElementById('btn-artists-prev')?.addEventListener('click', () => {
+        document.getElementById('grid-artists')?.scrollBy({ left: -ARTIST_SCROLL_PX, behavior: 'smooth' });
     });
-    document.getElementById('btn-artists-next')?.addEventListener('click', async () => {
-        const totalPages = Math.ceil(allTopArtists.length / ARTISTS_PER_PAGE);
-        if (artistPage < totalPages - 1) { artistPage++; await renderArtistsPage(); }
+    document.getElementById('btn-artists-next')?.addEventListener('click', () => {
+        document.getElementById('grid-artists')?.scrollBy({ left: ARTIST_SCROLL_PX, behavior: 'smooth' });
     });
 
     // ── DIRECTORES MEJOR VALORADOS ────────────────────────────────────────
