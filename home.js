@@ -270,19 +270,6 @@ async function loadHome() {
         }
     }
 
-    // ── ALEATORIO ─────────────────────────────────────────────────────────
-    renderRandom(albums);
-    document.getElementById('btn-shuffle')?.addEventListener('click', () => renderRandom(albums));
-}
-
-function renderRandom(albums) {
-    const scored = albums.filter(a => parseFloat(a.rating) > 0);
-    if (scored.length === 0) {
-        document.getElementById('grid-random').innerHTML = `<p class="home-empty">No hay álbumes puntuados todavía.</p>`;
-        return;
-    }
-    const pick = scored[Math.floor(Math.random() * scored.length)];
-    renderScrollGrid('grid-random', [pick], (item) => albumCard(item, `album.html?id=${item.id}`));
 }
 
 // ── HELPERS DE RENDER ─────────────────────────────────────────────────────
