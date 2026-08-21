@@ -7,18 +7,18 @@
     <title>BitRevs - Mi Perfil</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        /* ── PROFILE PAGE OVERRIDES ── */
-        .profile-layout {
+        /* ── PROFILE HERO CARD ── */
+        .profile-hero-card {
             border: 1px solid var(--border-color);
             border-radius: 20px;
             overflow: visible;
-            margin-bottom: 50px;
+            margin-bottom: 24px;
             box-shadow: var(--shadow-subtle);
             background: white;
         }
 
-        .profile-banner-container {
-            height: 200px;
+        .profile-banner {
+            height: 240px;
             background: var(--bg-secondary);
             background-size: cover;
             background-position: center;
@@ -27,58 +27,21 @@
             overflow: hidden;
         }
 
-        .profile-header-content {
-            display: flex;
-            align-items: flex-end;
-            padding: 0 40px 32px 40px;
-            background: white;
-            border-radius: 0 0 20px 20px;
-            gap: 24px;
+        /* Fade banner bottom to white */
+        .profile-banner::after {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            height: 90px;
+            background: linear-gradient(to bottom, transparent, white);
+            pointer-events: none;
+            z-index: 1;
         }
 
-        .avatar-container {
-            width: 110px;
-            height: 110px;
-            flex-shrink: 0;
-            margin-top: -55px;
-            position: relative;
-            z-index: 2;
-        }
-
-        .profile-avatar {
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            border: 4px solid white;
-            background: var(--accent-red);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.12);
-            background-size: cover;
-            background-position: center;
-        }
-
-        .avatar-overlay {
+        .banner-edit-overlay {
             position: absolute;
             inset: 0;
-            border-radius: 50%;
-            background: rgba(0,0,0,0.5);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 0.7rem;
-            font-weight: 800;
-            letter-spacing: 0.5px;
-            cursor: pointer;
-            opacity: 0;
-            transition: opacity 0.2s;
-        }
-
-        .avatar-container:hover .avatar-overlay { opacity: 1; }
-
-        .banner-overlay {
-            position: absolute;
-            inset: 0;
-            background: rgba(0,0,0,0.3);
+            background: rgba(0,0,0,0.35);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -86,37 +49,94 @@
             font-size: 0.85rem;
             font-weight: 700;
             cursor: pointer;
-            opacity: 0;
             transition: opacity 0.2s;
+            z-index: 2;
         }
 
-        .profile-banner-container:hover .banner-overlay { opacity: 1; }
-
-        .profile-info-block {
-            flex: 1;
-            padding-top: 16px;
+        .profile-header-content {
             display: flex;
-            flex-direction: column;
-            gap: 8px;
-            min-width: 0;
+            align-items: flex-end;
+            padding: 0 36px 28px;
+            gap: 22px;
+            position: relative;
+            z-index: 1;
         }
 
-        .profile-header-top {
+        /* ── AVATAR ── */
+        .avatar-wrap {
+            position: relative;
+            width: 114px;
+            height: 114px;
+            flex-shrink: 0;
+            margin-top: -57px;
+            z-index: 2;
+        }
+
+        .profile-avatar {
+            width: 114px;
+            height: 114px;
+            border-radius: 50%;
+            border: 4px solid white;
+            background: var(--accent-red);
+            background-size: cover;
+            background-position: center;
+            box-shadow: 0 0 0 3px var(--profile-accent, #FF66CC);
+            position: relative;
+        }
+
+        #avatar-fallback-char {
             display: flex;
-            justify-content: space-between;
             align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+            font-size: 2.6rem;
+            font-weight: 900;
+            color: white;
+            border-radius: 50%;
+        }
+
+        .avatar-overlay {
+            position: absolute;
+            inset: 4px;
+            border-radius: 50%;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 0.62rem;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            transition: opacity 0.2s;
+            z-index: 3;
+        }
+
+        /* ── PROFILE INFO ── */
+        .profile-info {
+            flex: 1;
+            min-width: 0;
+            padding-top: 46px;
+        }
+
+        .profile-header-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
             gap: 16px;
         }
 
         #profile-name-view {
-            font-size: 1.8rem;
+            font-size: 1.75rem;
             font-weight: 900;
             letter-spacing: -0.5px;
             margin: 0;
+            line-height: 1.1;
         }
 
-        #profile-name-edit {
-            font-size: 1.8rem;
+        .profile-name-input {
+            font-size: 1.75rem;
             font-weight: 900;
             letter-spacing: -0.5px;
             border: none;
@@ -126,33 +146,69 @@
             width: 100%;
             font-family: 'Inter', sans-serif;
             color: var(--text-main);
-            padding: 4px 0;
+            padding: 2px 0;
         }
 
-        .profile-stats {
-            display: flex;
-            gap: 16px;
-            align-items: center;
-        }
-
-        .profile-stat-pill {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            padding: 4px 12px;
-            background: var(--bg-secondary);
-            border-radius: 20px;
-            font-size: 0.82rem;
-            font-weight: 700;
+        #profile-bio-view {
+            font-size: 0.88rem;
             color: var(--text-muted);
-            border: 1px solid var(--border-color);
+            margin: 6px 0 0;
+            line-height: 1.45;
+            min-height: 20px;
         }
 
-        .profile-stat-pill span.highlight {
-            color: var(--accent-red);
-            font-weight: 900;
+        .profile-bio-edit {
+            width: 100%;
+            box-sizing: border-box;
+            resize: none;
+            border: none;
+            border-bottom: 1px solid var(--border-color);
+            background: none;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.88rem;
+            color: var(--text-muted);
+            outline: none;
+            padding: 4px 0;
+            margin-top: 6px;
+            line-height: 1.45;
         }
 
+        .profile-bio-edit:focus { border-bottom-color: var(--accent-red); }
+
+        /* ── ACCENT PICKER ── */
+        .accent-picker {
+            margin-top: 14px;
+        }
+
+        .accent-picker-label {
+            font-size: 0.7rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+
+        .accent-swatches {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .accent-swatch {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 3px solid transparent;
+            box-sizing: border-box;
+            transition: transform 0.15s, border-color 0.15s;
+        }
+
+        .accent-swatch.selected { border-color: var(--text-main); transform: scale(1.2); }
+        .accent-swatch:hover:not(.selected) { transform: scale(1.1); }
+
+        /* ── EDIT CONTROLS ── */
         .edit-btn {
             background: var(--bg-secondary);
             border: 1px solid var(--border-color);
@@ -163,34 +219,261 @@
             font-weight: 700;
             color: var(--text-muted);
             font-family: 'Inter', sans-serif;
-            transition: all 0.2s;
+            transition: all 0.18s;
             white-space: nowrap;
             flex-shrink: 0;
         }
-        .edit-btn:hover { background: var(--text-main); color: white; }
+
+        .edit-btn:hover { background: var(--text-main); color: white; border-color: var(--text-main); }
 
         .edit-actions-bar {
             display: flex;
             gap: 12px;
-            padding: 16px 40px;
+            padding: 14px 36px;
             border-top: 1px solid var(--border-color);
             justify-content: flex-end;
         }
 
-        .edit-actions-bar button {
-            padding: 8px 20px;
+        .edit-cancel-btn {
+            background: var(--bg-secondary);
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            padding: 8px 18px;
             border-radius: 10px;
             font-weight: 700;
             cursor: pointer;
             font-family: 'Inter', sans-serif;
             font-size: 0.9rem;
-            border: none;
         }
 
-        #btn-cancel-edit {
+        /* ── STAT CARDS ── */
+        .profile-stat-cards {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 14px;
+            margin-bottom: 36px;
+        }
+
+        .profile-stat-card {
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 20px 20px 16px;
+            box-shadow: var(--shadow-subtle);
+        }
+
+        .profile-stat-num {
+            font-size: 2.1rem;
+            font-weight: 900;
+            letter-spacing: -1px;
+            line-height: 1;
+            color: var(--profile-accent, #FF66CC);
+        }
+
+        .profile-stat-label {
+            font-size: 0.7rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            color: var(--text-muted);
+            margin-top: 7px;
+        }
+
+        /* ── SCROLL SECTIONS ── */
+        .profile-section {
+            margin-bottom: 36px;
+        }
+
+        .profile-section-title {
+            font-size: 1.05rem;
+            font-weight: 900;
+            letter-spacing: -0.3px;
+            margin-bottom: 14px;
+        }
+
+        .profile-scroll-row {
+            display: flex;
+            gap: 12px;
+            overflow-x: auto;
+            padding-bottom: 6px;
+            scrollbar-width: none;
+        }
+
+        .profile-scroll-row::-webkit-scrollbar { display: none; }
+
+        .ps-card {
+            flex-shrink: 0;
+            cursor: pointer;
+            transition: transform 0.15s;
+            width: 120px;
+        }
+
+        .ps-card:hover { transform: translateY(-3px); }
+
+        .ps-card.portrait { width: 108px; }
+
+        .ps-card-cover {
+            position: relative;
+            border-radius: 10px;
+            overflow: hidden;
+            width: 120px;
+            height: 120px;
             background: var(--bg-secondary);
+        }
+
+        .ps-card-cover.portrait {
+            width: 108px;
+            height: 160px;
+        }
+
+        .ps-card-cover img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .ps-card-badge {
+            position: absolute;
+            bottom: 6px;
+            right: 6px;
+            padding: 2px 7px;
+            border-radius: 6px;
+            font-size: 0.77rem;
+            font-weight: 900;
+            color: white;
+        }
+
+        .ps-card-title {
+            font-size: 0.79rem;
+            font-weight: 700;
+            margin-top: 7px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .ps-card-sub {
+            font-size: 0.71rem;
+            color: var(--text-muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-top: 2px;
+        }
+
+        /* ── ACTIVITY LIST ── */
+        .activity-item {
+            display: flex;
+            align-items: center;
+            gap: 13px;
+            padding: 11px 0;
+            border-bottom: 1px solid var(--border-color);
+            cursor: pointer;
+            transition: opacity 0.15s;
+        }
+
+        .activity-item:last-child { border-bottom: none; }
+        .activity-item:hover { opacity: 0.7; }
+
+        .activity-thumb {
+            width: 40px;
+            height: 40px;
+            border-radius: 7px;
+            object-fit: cover;
+            flex-shrink: 0;
+            background: var(--bg-secondary);
+        }
+
+        .activity-info { flex: 1; min-width: 0; }
+
+        .activity-title {
+            font-size: 0.88rem;
+            font-weight: 700;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .activity-sub {
+            font-size: 0.74rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .activity-type {
+            font-size: 0.67rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            color: var(--text-muted);
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            padding: 2px 7px;
+            border-radius: 5px;
+            flex-shrink: 0;
+        }
+
+        .activity-badge {
+            padding: 3px 9px;
+            border-radius: 6px;
+            font-size: 0.82rem;
+            font-weight: 900;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        /* ── BACKUP CARD ── */
+        .backup-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 24px 28px;
+            margin-bottom: 50px;
+        }
+
+        .backup-card-title {
+            font-size: 0.72rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+
+        .backup-card-desc {
+            font-size: 0.88rem;
+            color: var(--text-muted);
+            margin-bottom: 16px;
+            line-height: 1.45;
+        }
+
+        .backup-btns { display: flex; gap: 12px; flex-wrap: wrap; }
+
+        .secondary-btn {
+            background: white;
+            border: 1px solid var(--border-color);
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-weight: 700;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem;
             color: var(--text-main);
-            border: 1px solid var(--border-color) !important;
+            transition: background 0.15s;
+        }
+
+        .secondary-btn:hover { background: #f0f0f0; }
+
+        .backup-message {
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-top: 12px;
+            transition: opacity 0.5s;
+            min-height: 20px;
         }
     </style>
 </head>
@@ -225,87 +508,91 @@
     </header>
 
     <main>
-        <div class="profile-layout">
-            <!-- Banner -->
-            <div class="profile-banner-container" id="profile-banner-view">
-                <div class="banner-overlay hidden" id="banner-edit-overlay">
-                    <span>Cambiar Banner</span>
-                </div>
+        <!-- Hero card -->
+        <div class="profile-hero-card" id="profile-layout">
+            <div class="profile-banner" id="profile-banner-view">
+                <div class="banner-edit-overlay hidden" id="banner-edit-overlay">Cambiar Banner</div>
             </div>
 
-            <!-- Header con avatar + info -->
             <div class="profile-header-content">
-                <div class="avatar-container" id="profile-avatar-view">
+                <div class="avatar-wrap" id="profile-avatar-view">
                     <div class="profile-avatar" id="avatar-circle">
-                        <span id="avatar-fallback-char" style="display:flex; align-items:center; justify-content:center; width:100%; height:100%; font-size:2.5rem; font-weight:900; color:white; border-radius:50%;">U</span>
+                        <span id="avatar-fallback-char">U</span>
                     </div>
-                    <div class="avatar-overlay hidden" id="avatar-edit-overlay">
-                        <span>EDITAR</span>
-                    </div>
+                    <div class="avatar-overlay hidden" id="avatar-edit-overlay">EDITAR</div>
                 </div>
 
-                <div class="profile-info-block">
-                    <div class="profile-header-top">
+                <div class="profile-info">
+                    <div class="profile-header-row">
                         <div style="flex:1; min-width:0;">
                             <h1 id="profile-name-view">Mi Perfil</h1>
-                            <input type="text" id="profile-name-edit" class="hidden" placeholder="Tu nombre">
+                            <input type="text" id="profile-name-edit" class="profile-name-input hidden" placeholder="Tu nombre">
                         </div>
                         <button id="btn-edit-profile" class="edit-btn">Editar Perfil</button>
                     </div>
-
-                    <div class="profile-stats" id="profile-stats-row">
-                        <!-- Se rellena desde JS -->
+                    <p id="profile-bio-view" class="hidden"></p>
+                    <textarea id="profile-bio-edit" class="profile-bio-edit hidden" placeholder="Escribe algo sobre ti..." maxlength="150" rows="2"></textarea>
+                    <div class="accent-picker hidden" id="accent-picker">
+                        <div class="accent-picker-label">Color de acento</div>
+                        <div class="accent-swatches" id="accent-swatches"></div>
                     </div>
                 </div>
             </div>
 
-            <!-- Barra de acciones de edición -->
             <div id="edit-actions" class="edit-actions-bar hidden">
-                <button id="btn-cancel-edit">Cancelar</button>
+                <button id="btn-cancel-edit" class="edit-cancel-btn">Cancelar</button>
                 <button id="btn-save-edit" class="save-btn">Guardar Cambios</button>
             </div>
         </div>
 
-        <input type="file" id="input-avatar" accept="image/*" class="hidden">
-        <input type="file" id="input-banner" accept="image/*" class="hidden">
+        <!-- Stat cards -->
+        <div class="profile-stat-cards" id="profile-stat-cards"></div>
 
-        <h2 class="section-title">Mis Mejores Álbumes</h2>
-        <div class="album-grid" id="top-albums-grid"></div>
-
-        <h2 class="section-title">Películas Mejor Puntuadas</h2>
-        <div class="album-grid" id="top-movies-grid"></div>
-
-        <h2 class="section-title">Series Mejor Puntuadas</h2>
-        <div class="album-grid" id="top-series-grid"></div>
-
-        <hr style="margin: 40px 0; border: none; border-top: 1px solid var(--border-color);">
-
-        <h2 class="section-title">Datos y Backup</h2>
-        <div style="display:flex; flex-direction:column; gap:12px; max-width:420px;">
-            <p style="color:var(--text-muted); font-size:0.9rem;">
-                Exporta tus datos para hacer una copia de seguridad, o importa un backup anterior.
-            </p>
-            <div style="display:flex; gap:12px;">
-                <button id="btn-export" class="save-btn">⬇ Exportar backup</button>
-                <button id="btn-import" style="background:var(--bg-secondary); border:1px solid var(--border-color); padding:10px 20px; border-radius:10px; font-weight:700; cursor:pointer; font-family:'Inter',sans-serif;">⬆ Importar backup</button>
-            </div>
-            <p id="backup-message" style="font-size:0.85rem; font-weight:600; transition: opacity 0.5s;"></p>
+        <!-- Scroll sections -->
+        <div class="profile-section" id="section-albums">
+            <div class="profile-section-title">Mis mejores álbumes</div>
+            <div class="profile-scroll-row" id="scroll-albums"></div>
         </div>
-        <input type="file" id="input-import" accept=".json" class="hidden">
 
-        <hr style="margin: 40px 0; border: none; border-top: 1px solid var(--border-color);">
+        <div class="profile-section" id="section-movies">
+            <div class="profile-section-title">Películas mejor valoradas</div>
+            <div class="profile-scroll-row" id="scroll-movies"></div>
+        </div>
 
-        <h2 class="section-title">Valoraciones recientes</h2>
-        <div class="album-grid" id="recent-albums-grid"></div>
+        <div class="profile-section" id="section-series">
+            <div class="profile-section-title">Series mejor valoradas</div>
+            <div class="profile-scroll-row" id="scroll-series"></div>
+        </div>
+
+        <!-- Activity -->
+        <div class="profile-section">
+            <div class="profile-section-title">Actividad reciente</div>
+            <div id="activity-list"></div>
+        </div>
+
+        <!-- Backup -->
+        <div class="backup-card">
+            <div class="backup-card-title">Datos y Backup</div>
+            <div class="backup-card-desc">Exporta tus datos para hacer una copia de seguridad, o importa un backup anterior.</div>
+            <div class="backup-btns">
+                <button id="btn-export" class="save-btn">Exportar backup</button>
+                <button id="btn-import" class="secondary-btn">Importar backup</button>
+            </div>
+            <p id="backup-message" class="backup-message"></p>
+        </div>
     </main>
+
+    <input type="file" id="input-avatar" accept="image/*" class="hidden">
+    <input type="file" id="input-banner" accept="image/*" class="hidden">
+    <input type="file" id="input-import" accept=".json" class="hidden">
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="firebase-config.js"></script>
 <script src="auth-guard.js"></script>
-    <script src="bitrevs-ui.js"></script>
+<script src="bitrevs-ui.js"></script>
 <script src="db.js"></script>
-    <script src="profile.js"></script>
+<script src="profile.js"></script>
 </body>
 </html>
