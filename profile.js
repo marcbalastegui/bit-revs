@@ -129,15 +129,27 @@ function renderStatCards(allAlbums, allMovies, allSeries) {
 
 // ── SCROLL SECTIONS ───────────────────────────────────────────────────────
 
+function applyMediaTiebreaker(a, b, tiebreaker) {
+    if (tiebreaker === 'year-desc') return (parseInt(b.year) || 0) - (parseInt(a.year) || 0);
+    if (tiebreaker === 'year-asc')  return (parseInt(a.year) || 0) - (parseInt(b.year) || 0);
+    if (tiebreaker === 'added')     return (a.id || 0) - (b.id || 0);
+    return (a.title || '').localeCompare(b.title || ''); // alphabetical (default)
+}
+
 function renderScrollSection(items, containerId, type) {
     const container = document.getElementById(containerId);
     if (!container) return;
 
-    const isPortrait = type === 'movie' || type === 'series';
+    const isPortrait  = type === 'movie' || type === 'series';
+    const tiebreaker  = isPortrait ? (localStorage.getItem('bitrevs_media_tiebreaker') || 'alphabetical') : null;
 
     const displayItems = [...items]
         .filter(i => parseFloat(i.rating) > 0)
-        .sort((a, b) => parseFloat(b.rating) - parseFloat(a.rating))
+        .sort((a, b) => {
+            const rDiff = parseFloat(b.rating) - parseFloat(a.rating);
+            if (rDiff !== 0) return rDiff;
+            return tiebreaker ? applyMediaTiebreaker(a, b, tiebreaker) : 0;
+        })
         .slice(0, 15);
 
     if (displayItems.length === 0) {
@@ -296,8 +308,8 @@ btnSaveEdit.addEventListener('click', async () => {
         return;
     }
 
-    const bioEdit = document.getElementById('profile-bio-edit');
-    const newBio  = bioEdit ? bioEdit.value.trim() : '';
+    const bioEditEl = document.getElementById('profile-bio-edit');
+    const newBio    = bioEditEl ? bioEditEl.value.trim() : '';
 
     const updatedProfile = {
         key:         'config',
@@ -308,23 +320,34 @@ btnSaveEdit.addEventListener('click', async () => {
         accentColor: tempAccentColor
     };
 
-    await saveUserProfileToDB(updatedProfile);
-    currentProfileData = updatedProfile;
-    toggleEditMode(false);
-    applyProfileDataToUI(updatedProfile);
+    btnSaveEdit.disabled    = true;
+    btnSaveEdit.textContent = 'Guardando…';
 
-    // Update header avatar
-    const headerAvatar = document.getElementById('global-header-avatar');
-    if (headerAvatar) {
-        if (tempAvatarData) {
-            headerAvatar.style.backgroundImage    = `url(${tempAvatarData})`;
-            headerAvatar.style.backgroundSize     = 'cover';
-            headerAvatar.style.backgroundPosition = 'center';
-            headerAvatar.textContent = '';
-        } else {
-            headerAvatar.style.backgroundImage = '';
-            headerAvatar.textContent = newName.charAt(0).toUpperCase();
+    try {
+        await saveUserProfileToDB(updatedProfile);
+        currentProfileData = updatedProfile;
+        toggleEditMode(false);
+        applyProfileDataToUI(updatedProfile);
+
+        // Update header avatar
+        const headerAvatar = document.getElementById('global-header-avatar');
+        if (headerAvatar) {
+            if (tempAvatarData) {
+                headerAvatar.style.backgroundImage    = `url(${tempAvatarData})`;
+                headerAvatar.style.backgroundSize     = 'cover';
+                headerAvatar.style.backgroundPosition = 'center';
+                headerAvatar.textContent = '';
+            } else {
+                headerAvatar.style.backgroundImage = '';
+                headerAvatar.textContent = newName.charAt(0).toUpperCase();
+            }
         }
+    } catch (err) {
+        console.error('Error al guardar perfil:', err);
+        await brAlert('No se pudo guardar el perfil. Comprueba tu conexión e inténtalo de nuevo.', 'Error al guardar');
+    } finally {
+        btnSaveEdit.disabled    = false;
+        btnSaveEdit.textContent = 'Guardar Cambios';
     }
 });
 

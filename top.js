@@ -428,8 +428,16 @@ async function initTop() {
     });
 
     // Criterio de desempate (películas/series)
+    const savedMediaTiebreaker = localStorage.getItem('bitrevs_media_tiebreaker');
+    if (savedMediaTiebreaker) {
+        mediaTiebreaker = savedMediaTiebreaker;
+        const sel = document.getElementById('top-media-tiebreaker');
+        if (sel) sel.value = savedMediaTiebreaker;
+    }
+
     document.getElementById('top-media-tiebreaker')?.addEventListener('change', async (e) => {
         mediaTiebreaker = e.target.value;
+        localStorage.setItem('bitrevs_media_tiebreaker', mediaTiebreaker);
         await reorder();
     });
 
