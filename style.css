@@ -1,5 +1,7 @@
 /* style.css - BitRevs */
 
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap');
+
 /* ── BUSCADOR GLOBAL ── */
 .gs-wrap {
     position: relative;
@@ -67,8 +69,6 @@
     font-weight: 900; color: white; flex-shrink: 0;
 }
 .gs-empty { padding: 20px 16px; text-align: center; color: var(--text-muted); font-size: 0.86rem; }
-
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap');
 
 :root {
     --bg-primary: #ffffff;
