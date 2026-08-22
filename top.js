@@ -95,6 +95,7 @@ async function buildRanking(mode, tiebreaker, dir) {
                 albumRating: albumRating,
                 cover:       album.coverBase64,
                 albumId:     album.id,
+                favorite:    track.favorite || false,
                 rating:      r
             });
         });
@@ -107,6 +108,12 @@ async function buildRanking(mode, tiebreaker, dir) {
             ? b.rating - a.rating
             : a.rating - b.rating;
         if (primaryDiff !== 0) return primaryDiff;
+
+        // 1.5. Favoritos primero (solo en modo best, entre notas iguales)
+        if (mode === 'best') {
+            const favDiff = (b.favorite ? 1 : 0) - (a.favorite ? 1 : 0);
+            if (favDiff !== 0) return favDiff;
+        }
 
         // 2. Boost de listas Top (automático, siempre)
         const boostDiff = b._boost - a._boost;

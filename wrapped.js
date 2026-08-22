@@ -52,6 +52,9 @@ async function loadWrapped() {
     const sortedBest = [...uniqueTracks].sort((a, b) => {
         const diff = parseFloat(b.rating) - parseFloat(a.rating);
         if (diff !== 0) return diff;
+        // Favoritos primero dentro del mismo rating
+        const favDiff = (b.favorite ? 1 : 0) - (a.favorite ? 1 : 0);
+        if (favDiff !== 0) return favDiff;
         const boostDiff = getTrackBoostScore(b.albumId, b.title, albumBoost, trackBoost)
                         - getTrackBoostScore(a.albumId, a.title, albumBoost, trackBoost);
         if (boostDiff !== 0) return boostDiff;

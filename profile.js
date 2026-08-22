@@ -290,9 +290,9 @@ function toggleEditMode(isEditing) {
 }
 
 btnEditProfile.addEventListener('click', () => {
-    tempAvatarData  = currentProfileData.avatarData;
-    tempBannerData  = currentProfileData.bannerData;
-    tempAccentColor = currentProfileData.accentColor || '#FF66CC';
+    tempAvatarData  = currentProfileData.avatarData  ?? null;
+    tempBannerData  = currentProfileData.bannerData  ?? null;
+    tempAccentColor = currentProfileData.accentColor ?? '#FF66CC';
     toggleEditMode(true);
 });
 

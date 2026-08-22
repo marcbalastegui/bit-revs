@@ -701,6 +701,17 @@ div.album-tag {
 .track-item:hover .track-review-btn { opacity: 1; }
 .track-review-btn.has-review { opacity: 1; color: var(--accent-red); }
 
+.track-fav-btn {
+    background: none; border: none; cursor: pointer; color: var(--text-muted);
+    display: flex; align-items: center; padding: 0 4px; opacity: 0;
+    transition: opacity 0.15s, color 0.15s;
+}
+.track-fav-btn svg { width: 14px; height: 14px; }
+.track-item:hover .track-fav-btn { opacity: 0.5; }
+.track-fav-btn.active { opacity: 1; color: #FFD700; }
+.track-fav-btn.active svg { fill: #FFD700; }
+.track-fav-btn:hover { opacity: 1 !important; color: #FFD700; }
+
 .album-review-btn {
     display: flex; align-items: center; gap: 8px;
     padding: 10px 18px; border-radius: 10px;

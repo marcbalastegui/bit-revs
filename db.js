@@ -119,7 +119,7 @@ async function getUserProfileFromDB() {
 
 async function saveUserProfileToDB(profileData) {
     await waitForAuth();
-    await userCol('userProfile').doc('config').set(profileData);
+    await userCol('userProfile').doc('config').set(stripUndefined(profileData));
     return true;
 }
 
