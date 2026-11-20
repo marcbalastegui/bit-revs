@@ -2,9 +2,14 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <link rel="icon" type="image/png" href="favicon.png">
-    <meta http-equiv="refresh" content="0; url=home.html">
+    <link rel="icon" type="image/png" href="assets/favicon.png">
     <title>BitRevs</title>
+    <script src="js/core/settings.js"></script>
+    <script>
+        // Ir a la página de inicio elegida en Ajustes (por defecto, Inicio)
+        window.location.replace(window.brSettings ? window.brSettings.startPage() : 'home.html');
+    </script>
+    <noscript><meta http-equiv="refresh" content="0; url=home.html"></noscript>
 </head>
 <body></body>
 </html>

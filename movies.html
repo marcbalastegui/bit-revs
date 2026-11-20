@@ -2,160 +2,27 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <link rel="icon" type="image/png" href="favicon.png">
+    <link rel="icon" type="image/png" href="assets/favicon.png">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BitRevs - Películas</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="manifest" href="/manifest.json">
-    <style>
-        .movie-drag-handle {
-            position: absolute;
-            top: 6px;
-            left: 6px;
-            flex-direction: column;
-            gap: 3px;
-            padding: 6px 5px;
-            cursor: grab;
-            opacity: 0;
-            transition: opacity 0.15s;
-            z-index: 2;
-            border-radius: 6px;
-        }
-        .album-card:hover .movie-drag-handle { opacity: 0.45; }
-        .movie-drag-handle:hover              { opacity: 1 !important; background: var(--bg-secondary); }
-        .movie-drag-handle div { width: 12px; height: 2px; background: var(--text-muted); border-radius: 1px; }
-        .movie-drag-handle[draggable="true"]:active { cursor: grabbing; }
-
-        /* ── SUGERENCIAS DE PAÍS ── */
-        .country-chip-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-            margin-top: 8px;
-        }
-        .country-chip {
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            padding: 5px 12px;
-            border-radius: 20px;
-            border: 1.5px solid var(--border-color);
-            background: var(--bg-primary);
-            cursor: pointer;
-            font-size: 0.82rem;
-            font-weight: 700;
-            color: var(--text-main);
-            font-family: 'Inter', sans-serif;
-            transition: all 0.13s;
-            user-select: none;
-        }
-        .country-chip:hover { border-color: var(--accent-red); color: var(--accent-red); }
-        .country-chip-badge {
-            font-size: 0.65rem;
-            font-weight: 700;
-            background: var(--bg-secondary);
-            padding: 1px 6px;
-            border-radius: 8px;
-            color: var(--text-muted);
-        }
-        .country-chip-badge.recent {
-            background: rgba(230,57,70,0.10);
-            color: var(--accent-red);
-        }
-
-        /* ── CUSTOM COUNTRY DROPDOWN ─────────────────────────────────────── */
-        .custom-country-select {
-            position: relative;
-            flex-shrink: 0;
-        }
-        .custom-country-trigger {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            height: 44px;
-            padding: 0 12px;
-            border-radius: 12px;
-            border: 1px solid transparent;
-            background: white;
-            box-shadow: var(--shadow-subtle);
-            cursor: pointer;
-            font-family: 'Inter', sans-serif;
-            font-size: 0.9rem;
-            font-weight: 600;
-            color: var(--text-main);
-            min-width: 175px;
-            user-select: none;
-            transition: border-color 0.15s;
-            white-space: nowrap;
-        }
-        .custom-country-trigger:hover { border-color: var(--border-color); }
-        .custom-country-select.open .custom-country-trigger { border-color: var(--text-main); }
-        .custom-country-dropdown {
-            position: absolute;
-            top: calc(100% + 4px);
-            left: 0;
-            min-width: 100%;
-            background: white;
-            border: 1.5px solid var(--border-color);
-            border-radius: 14px;
-            box-shadow: 0 8px 28px rgba(0,0,0,0.10);
-            z-index: 200;
-            display: none;
-            overflow: hidden;
-            max-height: 280px;
-            overflow-y: auto;
-        }
-        .custom-country-select.open .custom-country-dropdown { display: block; }
-        .custom-country-option {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 10px 14px;
-            cursor: pointer;
-            font-size: 0.88rem;
-            font-weight: 600;
-            transition: background 0.1s;
-            white-space: nowrap;
-        }
-        .custom-country-option:hover { background: var(--bg-secondary); }
-        .custom-country-option.selected { color: var(--accent-red); font-weight: 800; }
-    </style>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/pages/movies.css">
+    <script src="js/core/settings.js"></script>
 </head>
 <body data-store="movies">
 <header>
-    <div class="header-left">
-        <a href="home.html" class="logo">BitRevs</a>
-    </div>
-    <nav>
-        <a href="home.html" class="nav-home-icon" title="Inicio">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-        </a>
-        <div class="nav-dropdown">
-            <span class="nav-dropdown-trigger active">Reviews
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="nav-dropdown-arrow"><polyline points="6 9 12 15 18 9"/></svg>
-            </span>
-            <div class="nav-dropdown-menu">
-                <a href="movies.html" class="active">Películas</a>
-                <a href="series.html">Series</a>
-                <a href="music.html">Música</a>
-                <a href="collections.html">Colecciones</a>
-            </div>
-        </div>
-        <a href="top.html">Top</a>
-        <a href="wrapped.html">Wrapped</a>
-        <a href="lists.html">Listas</a>
-    </nav>
     <div class="header-right">
         <button id="btn-add-media" class="save-btn">+ Añadir Película</button>
         <a href="profile.html" class="header-avatar" id="global-header-avatar" title="Mi Perfil">U</a>
     </div>
 </header>
+<script src="js/core/header.js"></script>
 
 <main>
     <h1>Todas las Películas</h1>
-    <div class="controls-bar" style="margin-bottom:12px;">
+    <div class="controls-bar controls-bar-tight">
         <input type="text" id="filter-input" placeholder="Filtrar por título, director...">
-        <div style="display:flex;gap:6px;align-items:center;flex-shrink:0;">
+        <div class="sort-group">
             <select id="sort-select">
                 <option value="default">Orden por defecto</option>
                 <option value="rating-desc">Nota ↓ Mayor a Menor</option>
@@ -165,9 +32,7 @@
                 <option value="title-asc">Título A–Z</option>
                 <option value="title-desc">Título Z–A</option>
             </select>
-            <button id="btn-default-sort"
-                title="Guardar como orden predeterminado"
-                style="width:36px;height:44px;border-radius:12px;border:1.5px solid var(--border-color);background:none;cursor:pointer;font-family:'Inter',sans-serif;font-size:0.8rem;font-weight:900;color:var(--text-muted);transition:all 0.15s;flex-shrink:0;">D</button>
+            <button id="btn-default-sort" class="btn-default-sort" title="Guardar como orden predeterminado">D</button>
         </div>
     </div>
     <div class="controls-bar">
@@ -180,17 +45,32 @@
             <div class="custom-country-dropdown" id="country-filter-dropdown"></div>
         </div>
         <select id="country-filter" style="display:none;"><option value="">Todos los países</option></select>
-        <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
-            <input type="number" id="year-from" placeholder="Desde" min="1900" max="2100"
-                style="width:82px;height:44px;padding:0 10px;border-radius:12px;border:1px solid transparent;background:white;font-family:'Inter',sans-serif;font-weight:600;font-size:0.9rem;color:var(--text-main);box-shadow:var(--shadow-subtle);">
-            <span style="color:var(--text-muted);font-weight:700;">—</span>
-            <input type="number" id="year-to" placeholder="Hasta" min="1900" max="2100"
-                style="width:82px;height:44px;padding:0 10px;border-radius:12px;border:1px solid transparent;background:white;font-family:'Inter',sans-serif;font-weight:600;font-size:0.9rem;color:var(--text-main);box-shadow:var(--shadow-subtle);">
+        <div class="year-range">
+            <input type="number" id="year-from" placeholder="Desde" min="1900" max="2100" class="year-input">
+            <span class="year-range-sep">—</span>
+            <input type="number" id="year-to" placeholder="Hasta" min="1900" max="2100" class="year-input">
         </div>
-        <button id="btn-clear-filters"
-            style="height:44px;padding:0 16px;border-radius:12px;border:1px solid var(--border-color);background:none;cursor:pointer;color:var(--text-muted);font-family:'Inter',sans-serif;font-size:0.85rem;font-weight:700;white-space:nowrap;transition:all 0.2s;flex-shrink:0;">
+        <button id="btn-clear-filters" class="btn-clear-filters">
             ✕ Limpiar
         </button>
+    </div>
+    <div class="type-filter-bar">
+        <div class="view-toggle" role="group" aria-label="Vista de la cuadrícula" data-grid="media-grid" data-setting="defaults.moviesView">
+            <button type="button" class="view-toggle-btn" data-view="mini" title="Mini-cuadrícula (solo portada y nota)" aria-label="Mini-cuadrícula">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round">
+                    <rect x="3" y="3" width="7.5" height="7.5" rx="2"/>
+                    <rect x="13.5" y="3" width="7.5" height="7.5" rx="2"/>
+                    <rect x="3" y="13.5" width="7.5" height="7.5" rx="2"/>
+                    <rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2"/>
+                </svg>
+            </button>
+            <button type="button" class="view-toggle-btn active" data-view="normal" title="Cuadrícula normal" aria-label="Cuadrícula normal">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="4"/>
+                    <rect x="7.5" y="7.5" width="9" height="9" rx="2"/>
+                </svg>
+            </button>
+        </div>
     </div>
     <div class="album-grid" id="media-grid"></div>
 </main>
@@ -249,7 +129,7 @@
 
             <label>Review:</label>
             <textarea id="details-review" rows="5"
-                style="width:100%; padding:12px; border-radius:10px; border:1px solid var(--border-color); background:var(--bg-secondary); font-family:'Inter',sans-serif; font-size:0.95rem; resize:vertical; color:var(--text-main);"
+                class="modal-textarea"
                 placeholder="Escribe tu opinión sobre la película…"></textarea>
 
             <div class="modal-actions">
@@ -263,10 +143,10 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="firebase-config.js"></script>
-<script src="auth-guard.js"></script>
-<script src="bitrevs-ui.js"></script>
-<script src="db.js"></script>
-<script src="movies.js"></script>
+<script src="js/core/firebase-config.js"></script>
+<script src="js/core/auth-guard.js"></script>
+<script src="js/core/bitrevs-ui.js"></script>
+<script src="js/core/db.js"></script>
+<script src="js/pages/movies.js"></script>
 </body>
 </html>

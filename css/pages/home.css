@@ -1,0 +1,464 @@
+/* home.css - Estilos propios de home.html (antes estaban en un <style> dentro del HTML) */
+
+/* ── HOME PAGE ── */
+
+/* Hero */
+.home-hero {
+    padding: 80px 20px 60px;
+    max-width: 1400px;
+    margin: 0 auto;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 40px;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 60px;
+}
+
+.home-hero-left { flex: 1; }
+
+.home-greeting {
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+}
+
+.home-title {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: clamp(3rem, 6vw, 5.5rem);
+    font-weight: 900;
+    line-height: 1.05;
+    letter-spacing: -2px;
+    color: var(--text-main);
+    margin-bottom: 20px;
+}
+
+.home-title span {
+    color: var(--accent-red);
+    font-style: italic;
+}
+
+.home-subtitle {
+    font-size: 1rem;
+    color: var(--text-muted);
+    font-weight: 500;
+    max-width: 400px;
+    line-height: 1.6;
+}
+
+.home-hero-stats {
+    display: flex;
+    gap: 40px;
+    flex-shrink: 0;
+}
+
+.hero-stat {
+    text-align: right;
+}
+
+.hero-stat-number {
+    font-family: 'Playfair Display', serif;
+    font-size: 2.8rem;
+    font-weight: 900;
+    color: var(--text-main);
+    line-height: 1;
+    letter-spacing: -1px;
+}
+
+.hero-stat-label {
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+    margin-top: 4px;
+}
+
+/* Secciones */
+.home-section {
+    max-width: 1400px;
+    margin: 0 auto 60px;
+    padding: 0 20px;
+    animation: fadeUp 0.5s ease both;
+}
+
+.home-section:nth-child(2) { animation-delay: 0.05s; }
+.home-section:nth-child(3) { animation-delay: 0.10s; }
+.home-section:nth-child(4) { animation-delay: 0.15s; }
+.home-section:nth-child(5) { animation-delay: 0.20s; }
+.home-section:nth-child(6) { animation-delay: 0.25s; }
+.home-section:nth-child(7) { animation-delay: 0.30s; }
+
+@keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.home-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 20px;
+}
+
+.home-section-title {
+    font-size: 1.4rem;
+    font-weight: 900;
+    letter-spacing: -0.5px;
+    color: var(--text-main);
+}
+
+.home-section-subtitle {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    font-weight: 500;
+    font-style: italic;
+}
+
+.home-section-link {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--accent-red);
+    text-decoration: none;
+    transition: opacity 0.2s;
+}
+.home-section-link:hover { opacity: 0.7; }
+
+/* Grid horizontal con scroll */
+.home-scroll-grid {
+    display: flex;
+    gap: 16px;
+    overflow-x: auto;
+    padding-bottom: 8px;
+    scrollbar-width: none;
+}
+.home-scroll-grid::-webkit-scrollbar { display: none; }
+
+/* Card mini para la home */
+.home-card {
+    flex-shrink: 0;
+    width: 160px;
+    border-radius: 12px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    overflow: hidden;
+}
+.home-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+}
+
+.home-card-cover {
+    width: 100%;
+    aspect-ratio: 1/1;
+    object-fit: cover;
+    display: block;
+}
+
+.home-card-info {
+    padding: 10px 12px;
+}
+
+.home-card-title {
+    font-size: 0.82rem;
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 2px;
+}
+
+.home-card-meta {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.home-card-badge {
+    display: inline-block;
+    margin-top: 6px;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 900;
+    color: white;
+}
+
+/* Card de artista */
+.home-artist-card {
+    flex-shrink: 0;
+    width: 140px;
+    border-radius: 12px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    padding: 20px 12px;
+    text-align: center;
+}
+.home-artist-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+}
+
+.home-artist-avatar {
+    width: 60px; height: 60px;
+    border-radius: 50%;
+    background: var(--accent-red);
+    color: white;
+    font-size: 1.4rem;
+    font-weight: 900;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 10px;
+}
+
+.home-artist-name {
+    font-size: 0.85rem;
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.home-artist-meta {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+
+/* Card "hace un año" */
+.home-flashback-card {
+    flex-shrink: 0;
+    width: 260px;
+    border-radius: 12px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    display: flex;
+    gap: 14px;
+    align-items: center;
+    padding: 14px;
+}
+.home-flashback-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+}
+
+.home-flashback-cover {
+    width: 56px; height: 56px;
+    border-radius: 8px;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.home-flashback-info { min-width: 0; }
+
+.home-flashback-label {
+    font-size: 0.65rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--accent-red);
+    margin-bottom: 4px;
+}
+
+.home-flashback-title {
+    font-size: 0.9rem;
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.home-flashback-meta {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+
+/* Estado vacío inline */
+.home-empty {
+    color: var(--text-muted);
+    font-size: 0.88rem;
+    font-style: italic;
+    padding: 20px 0;
+}
+
+/* Divider decorativo */
+.home-divider {
+    max-width: 1400px;
+    margin: 0 auto 60px;
+    padding: 0 20px;
+    border: none;
+    border-top: 1px solid var(--border-color);
+}
+
+/* ── TIMELINE ── */
+.timeline-filters { display: flex; gap: 8px; align-items: center; }
+.timeline-filter-btn {
+    padding: 5px 14px;
+    border-radius: 20px;
+    border: 1.5px solid var(--border-color);
+    background: var(--bg-card);
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    transition: all 0.15s;
+}
+.timeline-filter-btn:hover { border-color: var(--text-main); color: var(--text-main); }
+.timeline-filter-btn.active { background: var(--text-main); border-color: var(--text-main); color: var(--bg-primary); }
+
+.timeline-year-group { margin-bottom: 40px; }
+
+.timeline-year-label {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 1.8rem;
+    font-weight: 900;
+    letter-spacing: -1px;
+    color: var(--text-main);
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.timeline-month-group { margin-bottom: 24px; }
+
+.timeline-month-label {
+    font-size: 0.72rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+}
+
+.timeline-row {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    padding-bottom: 6px;
+    scrollbar-width: none;
+}
+.timeline-row::-webkit-scrollbar { display: none; }
+
+.timeline-card {
+    flex-shrink: 0;
+    width: 130px;
+    border-radius: 10px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+.timeline-card:hover { transform: translateY(-4px); }
+
+.timeline-card img {
+    width: 100%;
+    aspect-ratio: 1/1;
+    object-fit: cover;
+    display: block;
+}
+.timeline-card.vertical img { aspect-ratio: 2/3; }
+
+.timeline-card-info { padding: 8px 10px; }
+.timeline-card-title {
+    font-size: 0.78rem;
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 2px;
+}
+.timeline-card-badge {
+    display: inline-block;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 900;
+    color: white;
+}
+
+.slider-arrow-btn {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    border: 1.5px solid var(--border-color);
+    background: var(--bg-secondary);
+    color: var(--text-main);
+    font-size: 1rem; font-weight: 700;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s; flex-shrink: 0;
+}
+.slider-arrow-btn:hover:not(:disabled) { background: var(--text-main); color: var(--bg-primary); border-color: var(--text-main); }
+.slider-arrow-btn:disabled { opacity: 0.3; cursor: default; }
+
+@media (max-width: 768px) {
+    .home-hero { flex-direction: column; align-items: flex-start; padding: 40px 20px 40px; }
+    .home-hero-stats { flex-direction: row; gap: 24px; }
+    .hero-stat { text-align: left; }
+    .home-title { font-size: 2.8rem; }
+}
+
+/* ── PILLS DE GÉNERO / PAÍS ── */
+.home-genre-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 18px;
+    border-radius: 100px;
+    background: var(--bg-card);
+    border: 1.5px solid var(--border-color);
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+    flex-shrink: 0;
+    text-decoration: none;
+}
+.home-genre-pill:hover {
+    border-color: var(--text-main);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.07);
+}
+.home-genre-pill-name {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--text-main);
+}
+.home-genre-pill-count {
+    font-size: 0.7rem;
+    font-weight: 800;
+    color: white;
+    background: var(--accent-red);
+    padding: 2px 8px;
+    border-radius: 20px;
+    line-height: 1.4;
+}
+
+/* ── AVISO DE BACKUP ── */
+.backup-reminder {
+    max-width: 1400px; margin: 0 auto 40px; padding: 0 20px;
+    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+    font-size: 0.88rem; font-weight: 600; color: var(--text-main);
+}
+.backup-reminder > span {
+    flex: 1; min-width: 200px; padding: 12px 16px; border-radius: 12px;
+    background: var(--bg-secondary); border: 1px solid var(--border-color);
+}
+.backup-reminder-link {
+    padding: 10px 16px; border-radius: 10px; background: var(--accent-red); color: white;
+    text-decoration: none; font-weight: 800; font-size: 0.85rem;
+}
+.backup-reminder-close {
+    width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--border-color);
+    background: var(--bg-card); color: var(--text-muted); cursor: pointer;
+}

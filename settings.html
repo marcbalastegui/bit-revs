@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/png" href="assets/favicon.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BitRevs - Ajustes</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/pages/settings.css">
+    <script src="js/core/settings.js"></script>
+</head>
+<body>
+<header>
+    <div class="header-right">
+        <button style="visibility:hidden;" class="save-btn">+</button>
+        <a href="profile.html" class="header-avatar" id="global-header-avatar" title="Mi Perfil">U</a>
+    </div>
+</header>
+<script src="js/core/header.js"></script>
+
+<main class="settings-page">
+    <h1>Ajustes</h1>
+
+    <div class="settings-layout">
+        <div class="settings-nav" role="navigation" aria-label="Secciones de ajustes">
+            <a href="#sec-ranking">Puntuaciones y orden</a>
+            <a href="#sec-album">Nota del álbum</a>
+            <a href="#sec-defaults">Orden por defecto</a>
+            <a href="#sec-display">Vista</a>
+            <a href="#sec-home">Inicio</a>
+            <a href="#sec-data">Datos</a>
+            <a href="#sec-account">Cuenta</a>
+        </div>
+
+        <div class="settings-content">
+            <section class="settings-card" id="sec-ranking">
+                <h2>Puntuaciones y orden</h2>
+                <p class="settings-card-desc">Cómo se ordenan las canciones, películas y series con la misma nota en el Top 100, Wrapped, artistas y géneros.</p>
+                <div class="settings-rows" id="rows-ranking"></div>
+            </section>
+
+            <section class="settings-card" id="sec-album">
+                <h2>Nota del álbum</h2>
+                <p class="settings-card-desc">La nota de un álbum sale de sus canciones. Con los factores puedes añadir otros criterios (por ejemplo "Concepto") que cuenten un porcentaje.</p>
+                <div class="settings-rows" id="rows-album"></div>
+
+                <h3 class="settings-subtitle">Factores personalizados</h3>
+                <p class="settings-help">Cada factor se puntúa de 0 a 10 en la página del álbum y pesa el % que elijas. Si un álbum no tiene puntuado un factor, ese factor no cuenta para él.
+                    "Solo algunos álbumes": el factor no aparece hasta que lo actives en el álbum.</p>
+                <div id="factor-list" class="factor-list"></div>
+                <div class="factor-footer">
+                    <button type="button" class="secondary-btn" id="btn-add-factor">+ Añadir factor</button>
+                    <span id="factor-total" class="factor-total"></span>
+                </div>
+
+                <div class="recalc-box" id="recalc-box">
+                    <div>
+                        <strong>Recalcular notas</strong>
+                        <p class="settings-help">Las notas de los álbumes se guardan al editarlos. Si cambias el método o los factores, recalcula para aplicarlo a todos.</p>
+                    </div>
+                    <button type="button" class="save-btn" id="btn-recalc">Recalcular todos los álbumes</button>
+                </div>
+                <p class="settings-message" id="album-message"></p>
+            </section>
+
+            <section class="settings-card" id="sec-defaults">
+                <h2>Orden por defecto</h2>
+                <p class="settings-card-desc">Cómo se abren Música, Películas y Series. Puedes cambiarlo en cada página; esto es lo que verás al entrar.</p>
+                <div class="settings-rows" id="rows-defaults"></div>
+            </section>
+
+            <section class="settings-card" id="sec-display">
+                <h2>Vista</h2>
+                <div class="settings-rows" id="rows-display"></div>
+                <h3 class="settings-subtitle">Colores de las notas</h3>
+                <div class="palette-grid" id="palette-grid"></div>
+            </section>
+
+            <section class="settings-card" id="sec-home">
+                <h2>Inicio</h2>
+                <div class="settings-rows" id="rows-home"></div>
+                <h3 class="settings-subtitle">Secciones de Inicio</h3>
+                <p class="settings-help">Marca las que quieres ver y ordénalas con las flechas.</p>
+                <div id="home-sections" class="home-sections-list"></div>
+            </section>
+
+            <section class="settings-card" id="sec-data">
+                <h2>Datos</h2>
+
+                <div class="settings-row">
+                    <div class="settings-row-text">
+                        <div class="settings-row-label">Copia de seguridad</div>
+                        <div class="settings-row-desc" id="last-backup-text">Exporta todos tus datos en un archivo .json.</div>
+                    </div>
+                    <div class="settings-row-control settings-btns">
+                        <button type="button" class="save-btn" id="btn-export">Exportar backup</button>
+                        <button type="button" class="secondary-btn" id="btn-import">Importar backup</button>
+                    </div>
+                </div>
+                <div class="settings-rows" id="rows-data"></div>
+
+                <div class="settings-row">
+                    <div class="settings-row-text">
+                        <div class="settings-row-label">Optimizar imágenes</div>
+                        <div class="settings-row-desc">Reduce las portadas, fotos y banners que ya tienes guardados para que las páginas carguen más rápido.</div>
+                    </div>
+                    <div class="settings-row-control">
+                        <button type="button" class="secondary-btn" id="btn-optimize-images">Optimizar</button>
+                    </div>
+                </div>
+
+                <div class="settings-row">
+                    <div class="settings-row-text">
+                        <div class="settings-row-label">Exportar a Excel (CSV)</div>
+                        <div class="settings-row-desc">Archivos separados por ";" con coma decimal, listos para Excel en español o Google Sheets.</div>
+                    </div>
+                    <div class="settings-row-control settings-btns">
+                        <button type="button" class="secondary-btn" data-csv="albums">Álbumes</button>
+                        <button type="button" class="secondary-btn" data-csv="tracks">Canciones</button>
+                        <button type="button" class="secondary-btn" data-csv="movies">Películas</button>
+                        <button type="button" class="secondary-btn" data-csv="series">Series</button>
+                    </div>
+                </div>
+
+                <div class="settings-row">
+                    <div class="settings-row-text">
+                        <div class="settings-row-label">Limpiar datos de este navegador</div>
+                        <div class="settings-row-desc">Borra preferencias y cachés guardadas solo aquí (vistas, histórico diario del Top). Tus reviews y ajustes en la nube no se tocan.</div>
+                    </div>
+                    <div class="settings-row-control">
+                        <button type="button" class="secondary-btn" id="btn-clear-local">Limpiar</button>
+                    </div>
+                </div>
+
+                <div class="settings-row">
+                    <div class="settings-row-text">
+                        <div class="settings-row-label">Restablecer ajustes</div>
+                        <div class="settings-row-desc">Vuelve a dejar todos los ajustes como venían. Los factores personalizados se borran.</div>
+                    </div>
+                    <div class="settings-row-control">
+                        <button type="button" class="danger-btn" id="btn-reset-settings">Restablecer</button>
+                    </div>
+                </div>
+                <p class="settings-message" id="data-message"></p>
+            </section>
+
+            <section class="settings-card" id="sec-account">
+                <h2>Cuenta</h2>
+                <div class="settings-row">
+                    <div class="settings-row-text">
+                        <div class="settings-row-label">Sesión</div>
+                        <div class="settings-row-desc" id="account-email">—</div>
+                    </div>
+                    <div class="settings-row-control">
+                        <button type="button" class="danger-btn" id="btn-logout">Cerrar sesión</button>
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <div class="settings-row-text">
+                        <div class="settings-row-label">Spotify</div>
+                        <div class="settings-row-desc" id="spotify-status">—</div>
+                    </div>
+                    <div class="settings-row-control">
+                        <button type="button" class="secondary-btn" id="btn-spotify">—</button>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+</main>
+
+<input type="file" id="input-import" accept=".json" class="hidden">
+<div class="settings-toast" id="settings-toast" role="status" aria-live="polite">Guardado</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="js/core/firebase-config.js"></script>
+<script src="js/core/auth-guard.js"></script>
+<script src="js/core/bitrevs-ui.js"></script>
+<script src="js/core/db.js"></script>
+<script src="js/spotify/spotify-auth.js"></script>
+<script src="js/pages/settings.js"></script>
+</body>
+</html>

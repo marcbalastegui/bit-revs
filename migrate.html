@@ -2,49 +2,13 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <link rel="icon" type="image/png" href="favicon.png">
+    <link rel="icon" type="image/png" href="assets/favicon.png">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BitRevs - Migración de datos</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --bg-primary: #0f0f0f; --bg-secondary: #1a1a1a; --card-bg: #1e1e1e;
-            --border-color: #2a2a2a; --text-main: #f0f0f0; --text-muted: #888;
-            --accent-red: #e63946;
-        }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Inter', sans-serif; background: var(--bg-primary); color: var(--text-main); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
-        .card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 20px; padding: 40px; width: 100%; max-width: 560px; }
-        h1 { font-size: 1.6rem; font-weight: 900; margin-bottom: 8px; }
-        .subtitle { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 28px; line-height: 1.5; }
-        .info-box { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 12px; padding: 16px; margin-bottom: 24px; font-size: 0.88rem; color: var(--text-muted); line-height: 1.6; }
-        .info-box strong { color: var(--text-main); }
-        #user-info { font-size: 0.88rem; color: var(--text-muted); margin-bottom: 20px; }
-        #user-info strong { color: #66CC33; }
-        #btn-migrate {
-            width: 100%; padding: 14px; background: var(--accent-red); color: white;
-            border: none; border-radius: 12px; font-family: 'Inter', sans-serif;
-            font-weight: 800; font-size: 1rem; cursor: pointer; transition: opacity 0.2s;
-        }
-        #btn-migrate:hover { opacity: 0.85; }
-        #btn-migrate:disabled { opacity: 0.4; cursor: not-allowed; }
-        #migrate-log {
-            background: #111; border: 1px solid var(--border-color); border-radius: 12px;
-            padding: 16px; margin-top: 20px; max-height: 280px; overflow-y: auto;
-            font-family: 'Courier New', monospace; font-size: 0.82rem;
-            display: none;
-        }
-        #migrate-progress { margin-top: 12px; font-size: 0.9rem; font-weight: 700; color: var(--text-muted); }
-        #btn-go-home {
-            display: none; width: 100%; padding: 12px; background: #1a2a1a;
-            border: 1px solid #66CC33; color: #66CC33; border-radius: 12px;
-            font-family: 'Inter', sans-serif; font-weight: 800; font-size: 0.95rem;
-            cursor: pointer; margin-top: 16px; transition: background 0.2s;
-        }
-        #btn-go-home:hover { background: #223322; }
-        #btn-logout { background: none; border: none; color: var(--text-muted); font-size: 0.82rem; cursor: pointer; margin-top: 12px; text-decoration: underline; display: block; }
-    </style>
+    <link rel="stylesheet" href="css/pages/migrate.css">
+    <script src="js/core/settings.js"></script>
 </head>
 <body>
 <div class="card">
@@ -68,8 +32,8 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="firebase-config.js"></script>
-<script src="db.js"></script>
-<script src="migrate.js"></script>
+<script src="js/core/firebase-config.js"></script>
+<script src="js/core/db.js"></script>
+<script src="js/pages/migrate.js"></script>
 </body>
 </html>

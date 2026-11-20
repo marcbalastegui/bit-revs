@@ -2,350 +2,28 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <link rel="icon" type="image/png" href="favicon.png">
+    <link rel="icon" type="image/png" href="assets/favicon.png">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BitRevs - Tu Wrapped</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="css/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
-   <link rel="manifest" href="/manifest.json">
-    <style>
-        /* ── WRAPPED PAGE ── */
-        .wrapped-hero {
-            text-align: center;
-            padding: 60px 20px 40px;
-            position: relative;
-        }
-
-        .wrapped-hero h1 {
-            font-family: 'Playfair Display', Georgia, serif;
-            font-size: 4rem;
-            font-weight: 900;
-            letter-spacing: -2px;
-            margin-bottom: 8px;
-            background: linear-gradient(135deg, var(--text-main) 0%, var(--accent-red) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .wrapped-hero p {
-            color: var(--text-muted);
-            font-size: 1rem;
-            margin: 0;
-        }
-
-        /* ── GRID DE STATS ── */
-        .wrapped-grid {
-            display: grid;
-            grid-template-columns: repeat(12, 1fr);
-            gap: 20px;
-            max-width: 1100px;
-            margin: 0 auto;
-            padding: 0 20px 60px;
-        }
-
-        .stat-card {
-            background: white;
-            border: 1px solid var(--border-color);
-            border-radius: 20px;
-            padding: 28px;
-            box-shadow: var(--shadow-subtle);
-            animation: fadeUp 0.5s ease both;
-        }
-
-        @keyframes fadeUp {
-            from { opacity: 0; transform: translateY(20px); }
-            to   { opacity: 1; transform: translateY(0); }
-        }
-
-        /* Tamaños de cards en el grid */
-        .col-4  { grid-column: span 4; }
-        .col-6  { grid-column: span 6; }
-        .col-8  { grid-column: span 8; }
-        .col-12 { grid-column: span 12; }
-
-        /* Delays escalonados */
-        .stat-card:nth-child(1) { animation-delay: 0.05s; }
-        .stat-card:nth-child(2) { animation-delay: 0.10s; }
-        .stat-card:nth-child(3) { animation-delay: 0.15s; }
-        .stat-card:nth-child(4) { animation-delay: 0.20s; }
-        .stat-card:nth-child(5) { animation-delay: 0.25s; }
-        .stat-card:nth-child(6) { animation-delay: 0.30s; }
-        .stat-card:nth-child(7) { animation-delay: 0.35s; }
-
-        .stat-label {
-            font-size: 0.75rem;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            color: var(--text-muted);
-            margin-bottom: 14px;
-        }
-
-        .stat-value-big {
-            font-size: 3.5rem;
-            font-weight: 900;
-            letter-spacing: -2px;
-            color: var(--accent-red);
-            line-height: 1;
-        }
-
-        .stat-value-sub {
-            font-size: 0.9rem;
-            color: var(--text-muted);
-            margin-top: 6px;
-            font-weight: 500;
-        }
-
-        /* ── CARD: ARTISTA ── */
-        .artist-card {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-        }
-
-        .artist-initials {
-            width: 70px; height: 70px;
-            border-radius: 50%;
-            background: var(--accent-red);
-            color: white;
-            font-size: 1.8rem;
-            font-weight: 900;
-            display: flex; align-items: center; justify-content: center;
-            flex-shrink: 0;
-        }
-
-        .artist-name {
-            font-size: 1.6rem;
-            font-weight: 900;
-            letter-spacing: -0.5px;
-            color: var(--text-main);
-        }
-
-        .artist-count {
-            font-size: 0.85rem;
-            color: var(--text-muted);
-            font-weight: 500;
-            margin-top: 4px;
-        }
-
-        /* ── CARD: ÁLBUM Y CANCIÓN DESTACADOS ── */
-        .highlight-card {
-            display: flex;
-            gap: 20px;
-            align-items: center;
-        }
-
-        .highlight-cover {
-            width: 80px; height: 80px;
-            border-radius: 10px;
-            object-fit: cover;
-            flex-shrink: 0;
-            border: 1px solid var(--border-color);
-        }
-
-        .highlight-cover.square { border-radius: 10px; }
-
-        .highlight-info { min-width: 0; }
-
-        .highlight-title {
-            font-size: 1.15rem;
-            font-weight: 800;
-            color: var(--text-main);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            margin-bottom: 4px;
-        }
-
-        .highlight-meta {
-            font-size: 0.82rem;
-            color: var(--text-muted);
-            font-weight: 500;
-        }
-
-        .highlight-badge {
-            display: inline-block;
-            margin-top: 8px;
-            padding: 3px 10px;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            font-weight: 900;
-            color: white;
-        }
-
-        /* ── CARD: GÉNERO ── */
-        .genre-pill {
-            display: inline-block;
-            padding: 8px 20px;
-            border-radius: 30px;
-            background: var(--accent-red);
-            color: white;
-            font-size: 1.3rem;
-            font-weight: 800;
-            margin-top: 8px;
-        }
-
-        /* ── CARD: GRÁFICO DE BARRAS ── */
-        .chart-container {
-            display: flex;
-            align-items: flex-end;
-            gap: 8px;
-            height: 120px;
-            margin-top: 16px;
-        }
-
-        .chart-bar-wrap {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 6px;
-            height: 100%;
-            justify-content: flex-end;
-        }
-
-        .chart-bar {
-            width: 100%;
-            border-radius: 6px 6px 0 0;
-            background: var(--accent-red);
-            transition: height 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
-            min-height: 4px;
-            position: relative;
-        }
-
-        .chart-bar:hover { opacity: 0.8; }
-
-        .chart-bar-count {
-            position: absolute;
-            top: -20px;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 0.65rem;
-            font-weight: 700;
-            color: var(--text-muted);
-            white-space: nowrap;
-        }
-
-        .chart-label {
-            font-size: 0.65rem;
-            font-weight: 700;
-            color: var(--text-muted);
-            text-align: center;
-        }
-
-        /* ── TOP 3 PELÍCULAS ── */
-        .movie-top3-grid {
-            display: flex;
-            gap: 12px;
-            margin-top: 12px;
-        }
-        .movie-top3-item {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px;
-            border-radius: 14px;
-            cursor: pointer;
-            transition: background 0.15s;
-            min-width: 0;
-        }
-        .movie-top3-item:hover { background: var(--bg-secondary); }
-        .movie-top3-rank {
-            font-size: 2rem;
-            font-weight: 900;
-            letter-spacing: -2px;
-            width: 28px;
-            flex-shrink: 0;
-            text-align: center;
-            line-height: 1;
-        }
-        .movie-top3-cover {
-            width: 46px;
-            height: 68px;
-            object-fit: cover;
-            border-radius: 7px;
-            flex-shrink: 0;
-            border: 1px solid var(--border-color);
-        }
-        .movie-top3-info { min-width: 0; }
-        .movie-top3-title {
-            font-size: 0.88rem;
-            font-weight: 800;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            color: var(--text-main);
-        }
-        .movie-top3-meta {
-            font-size: 0.72rem;
-            color: var(--text-muted);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            margin: 3px 0 6px;
-        }
-        @media (max-width: 600px) {
-            .movie-top3-grid { flex-direction: column; }
-        }
-
-        /* ── ESTADO VACÍO ── */
-        .wrapped-empty {
-            text-align: center;
-            padding: 80px 20px;
-            color: var(--text-muted);
-        }
-
-        .wrapped-empty p { font-size: 1.1rem; margin-top: 10px; }
-
-        /* ── RESPONSIVE ── */
-        @media (max-width: 900px) {
-            .col-4  { grid-column: span 6; }
-            .col-8  { grid-column: span 12; }
-        }
-
-        @media (max-width: 600px) {
-            .wrapped-hero h1 { font-size: 2.8rem; }
-            .col-4, .col-6, .col-8 { grid-column: span 12; }
-            .stat-value-big { font-size: 2.8rem; }
-        }
-    </style>
+    <link rel="stylesheet" href="css/pages/wrapped.css">
+    <script src="js/core/settings.js"></script>
 </head>
 <body>
 <header>
-    <div class="header-left">
-        <a href="home.html" class="logo">BitRevs</a>
-    </div>
-<nav>
-    <a href="home.html" class="nav-home-icon" title="Inicio">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-    </a>
-    <div class="nav-dropdown">
-        <span class="nav-dropdown-trigger">Reviews
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="nav-dropdown-arrow"><polyline points="6 9 12 15 18 9"/></svg>
-        </span>
-        <div class="nav-dropdown-menu">
-            <a href="movies.html">Películas</a>
-            <a href="series.html">Series</a>
-            <a href="music.html">Música</a>
-            <a href="collections.html">Colecciones</a>
-        </div>
-    </div>
-    <a href="top.html">Top</a>
-    <a href="wrapped.html" class="active">Wrapped</a>
-    <a href="lists.html">Listas</a>
-</nav>
     <div class="header-right">
         <button style="visibility:hidden;" class="save-btn">+</button>
         <a href="profile.html" class="header-avatar" id="global-header-avatar" title="Mi Perfil">U</a>
     </div>
 </header>
+<script src="js/core/header.js"></script>
 
 <main>
     <div class="wrapped-hero">
         <h1>Tu Wrapped</h1>
-        <p>Un vistazo a todo lo que has puntuado en BitRevs</p>
+        <p id="wrapped-subtitle">Un vistazo a todo lo que has puntuado en BitRevs</p>
+        <div class="wrapped-year-bar" id="wrapped-years" role="group" aria-label="Año"></div>
     </div>
 
     <div class="wrapped-grid" id="wrapped-grid">
@@ -358,9 +36,10 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="firebase-config.js"></script>
-<script src="auth-guard.js"></script>
-<script src="db.js"></script>
-<script src="wrapped.js"></script>
+<script src="js/core/firebase-config.js"></script>
+<script src="js/core/auth-guard.js"></script>
+<script src="js/core/bitrevs-ui.js"></script>
+<script src="js/core/db.js"></script>
+<script src="js/pages/wrapped.js"></script>
 </body>
 </html>

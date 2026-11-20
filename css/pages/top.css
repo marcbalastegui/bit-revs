@@ -1,0 +1,155 @@
+/* top.css - Estilos propios de top.html (antes estaban en un <style> dentro del HTML) */
+
+.top-page-header { margin-bottom: 32px; }
+.top-page-header h1 { margin-bottom: 8px; }
+.top-page-header p { color: var(--text-muted); font-size: 0.9rem; margin: 0; }
+
+.top-search-input { flex: 1; min-width: 180px; }
+
+.top-mode-toggle {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+}
+
+.top-mode-btn {
+    padding: 8px 20px;
+    border-radius: 20px;
+    border: 1.5px solid var(--border-color);
+    background: var(--bg-card);
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: 'Inter', sans-serif;
+}
+.top-mode-btn.active {
+    background: var(--text-main);
+    border-color: var(--text-main);
+    color: var(--bg-primary);
+}
+.top-mode-btn:hover:not(.active) {
+    border-color: var(--text-main);
+    color: var(--text-main);
+}
+
+/* Select de desempate + toggle asc/desc */
+.top-tiebreaker-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.top-dir-btn {
+    width: 36px; height: 36px;
+    border-radius: 8px;
+    border: 1.5px solid var(--border-color);
+    background: var(--bg-card);
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: 'Inter', sans-serif;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+}
+.top-dir-btn:hover {
+    border-color: var(--text-main);
+    color: var(--text-main);
+}
+
+#top-list { display: flex; flex-direction: column; gap: 6px; }
+
+.top-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    transition: background 0.15s;
+    cursor: pointer;
+}
+.top-row:hover { background: var(--bg-secondary); }
+
+.top-rank {
+    font-size: 1rem; font-weight: 700;
+    color: var(--text-muted);
+    min-width: 36px; text-align: right; flex-shrink: 0;
+}
+
+.top-rank-dual {
+    display: flex; flex-direction: column;
+    align-items: flex-end;
+    min-width: 44px; flex-shrink: 0; gap: 2px;
+}
+.top-rank-global { font-size: 1rem; font-weight: 700; color: var(--text-main); }
+.top-rank-filtered { font-size: 0.7rem; font-weight: 600; color: var(--accent-red); }
+
+.top-arrow {
+    font-size: 0.75rem; font-weight: 700;
+    min-width: 18px; text-align: center; flex-shrink: 0;
+}
+.top-arrow.up   { color: #1DB954; }
+.top-arrow.down { color: #E53935; }
+.top-arrow.new  { color: var(--text-muted); font-size: 0.6rem; letter-spacing: 0.03em; }
+
+.top-cover {
+    width: 44px; height: 44px;
+    object-fit: cover; border-radius: 4px; flex-shrink: 0;
+}
+
+.top-info { flex: 1; min-width: 0; overflow: hidden; }
+.top-track-title {
+    font-size: 0.95rem; font-weight: 600; color: var(--text-main);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.top-track-meta {
+    font-size: 0.78rem; color: var(--text-muted);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    margin-top: 2px;
+}
+
+.top-badge {
+    flex-shrink: 0; padding: 3px 10px; border-radius: 20px;
+    font-size: 0.85rem; font-weight: 700; color: #fff;
+    min-width: 42px; text-align: center;
+}
+
+.top-empty { color: var(--text-muted); margin-top: 40px; text-align: center; }
+
+/* Tabs de contenido */
+.top-content-tabs {
+    display: flex; gap: 0;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 24px;
+}
+.top-content-btn {
+    padding: 10px 24px;
+    border: none; background: none;
+    font-size: 0.95rem; font-weight: 700;
+    color: var(--text-muted); cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition: all 0.15s;
+}
+.top-content-btn.active {
+    color: var(--text-main);
+    border-bottom-color: var(--accent-red);
+}
+.top-content-btn:hover:not(.active) { color: var(--text-main); }
+
+@media (max-width: 540px) {
+    .top-cover { width: 36px; height: 36px; }
+    .top-rank  { min-width: 26px; font-size: 0.85rem; }
+    .top-track-title { font-size: 0.88rem; }
+}
+
+@media (max-width: 860px) {
+    .top-content-tabs { overflow-x: auto; scrollbar-width: none; }
+    .top-content-btn { padding: 10px 14px; flex-shrink: 0; }
+}

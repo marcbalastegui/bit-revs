@@ -1,0 +1,128 @@
+/* movie-genre.css - Estilos propios de movie-genre.html (antes estaban en un <style> dentro del HTML) */
+
+.genre-hero {
+    padding: 48px 0 32px;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 40px;
+}
+.genre-hero-label {
+    font-size: 0.75rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--accent-red);
+    margin-bottom: 10px;
+}
+.genre-hero-title {
+    font-size: clamp(2.2rem, 5vw, 3.8rem);
+    font-weight: 900;
+    letter-spacing: -2px;
+    color: var(--text-main);
+    margin: 0 0 8px;
+}
+.genre-hero-meta {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.genre-section { margin-bottom: 48px; }
+.genre-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 18px;
+}
+.genre-section-title {
+    font-size: 1.1rem;
+    font-weight: 900;
+    letter-spacing: -0.3px;
+}
+
+/* Grid de películas */
+.genre-movie-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 16px;
+}
+.genre-movie-card {
+    border-radius: 12px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+.genre-movie-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+}
+.genre-movie-card img {
+    width: 100%;
+    aspect-ratio: 2/3;
+    object-fit: cover;
+    display: block;
+}
+.genre-movie-card-info { padding: 10px 12px; }
+.genre-movie-card-title {
+    font-size: 0.82rem;
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 2px;
+}
+.genre-movie-card-meta {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.genre-movie-card-badge {
+    display: inline-block;
+    margin-top: 6px;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 900;
+    color: white;
+}
+
+/* Colapsable */
+.genre-todo-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    padding: 14px 0;
+    border-top: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border-color);
+    user-select: none;
+}
+.genre-todo-chevron {
+    color: var(--text-muted);
+    transition: transform 0.25s;
+    display: flex;
+    align-items: center;
+}
+.genre-todo-chevron.open { transform: rotate(180deg); }
+.genre-todo-body {
+    overflow: hidden;
+    max-height: 0;
+    transition: max-height 0.4s ease;
+}
+.genre-todo-body.open { max-height: 9999px; }
+.genre-todo-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 16px;
+    padding: 20px 0;
+}
+
+.genre-empty {
+    color: var(--text-muted);
+    font-size: 0.88rem;
+    font-style: italic;
+    padding: 16px 0;
+}
